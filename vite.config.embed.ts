@@ -1,5 +1,5 @@
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vite-plus'
 import vue from '@vitejs/plugin-vue'
 import Icons from 'unplugin-icons/vite'
 import { FileSystemIconLoader } from 'unplugin-icons/loaders'
@@ -86,7 +86,6 @@ export default defineConfig({
     rollupOptions: {
       external: isExternalRuntimeDependency,
       output: {
-        interop: 'esModule',
         assetFileNames: assetInfo => {
           const name = assetInfo.names?.[0] || assetInfo.name || ''
           if (/\.(woff2?|ttf|otf|eot)$/i.test(name)) return 'fonts/[name][extname]'
@@ -102,8 +101,8 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         additionalData: `
-          @import '@/assets/styles/variable.scss';
-          @import '@/assets/styles/mixin.scss';
+          @use '@/assets/styles/variable.scss' as *;
+          @use '@/assets/styles/mixin.scss' as *;
         `,
       },
     },
@@ -111,6 +110,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      vuedraggable: fileURLToPath(new URL('./node_modules/vuedraggable/src/vuedraggable.js', import.meta.url)),
     },
   },
 })
