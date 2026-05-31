@@ -1,7 +1,7 @@
 <template>
   <div class="shape-pool">
-    <div class="category" v-for="item in SHAPE_LIST" :key="item.type">
-      <div class="category-name">{{item.type}}</div>
+    <div class="category" v-for="item in shapeList" :key="item.categoryKey">
+      <div class="category-name">{{ item.label }}</div>
       <div class="shape-list">
         <ShapeItemThumbnail 
           class="shape-item"
@@ -16,8 +16,28 @@
 </template>
 
 <script lang="ts" setup>
-import { SHAPE_LIST, type ShapePoolItem } from '@/configs/shapes'
+import { computed } from 'vue'
+import { SHAPE_LIST, type ShapeCategoryKey, type ShapePoolItem } from '@/configs/shapes'
+import { useI18nContext } from '@/i18n/useI18nContext'
 import ShapeItemThumbnail from './ShapeItemThumbnail.vue'
+
+const { LL } = useI18nContext()
+
+const shapeList = computed(() => {
+  const shapes = LL.value.configs.shapes
+  const labels: Record<ShapeCategoryKey, () => string> = {
+    rectangle: shapes.categoryRectangle,
+    common: shapes.categoryCommon,
+    arrow: shapes.categoryArrow,
+    other: shapes.categoryOther,
+    line: shapes.categoryLine,
+  }
+  return SHAPE_LIST.map(item => ({
+    categoryKey: item.categoryKey,
+    label: labels[item.categoryKey](),
+    children: item.children,
+  }))
+})
 
 const emit = defineEmits<{
   (event: 'select', payload: ShapePoolItem): void

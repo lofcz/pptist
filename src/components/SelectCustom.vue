@@ -37,7 +37,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import Popover from './Popover.vue'
 
 withDefaults(defineProps<{
@@ -47,7 +47,7 @@ withDefaults(defineProps<{
 })
 
 const popoverVisible = ref(false)
-const selectRef = useTemplateRef<HTMLElement>('selectRef')
+const selectRef = ref<HTMLElement | null>(null)
 const width = ref(0)
 
 const updateWidth = () => {

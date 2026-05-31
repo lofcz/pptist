@@ -13,38 +13,41 @@
     />
 
     <div class="content" :class="type" @mousedown.stop>
-      <Input class="input" v-model:value="searchWord" placeholder="输入查找内容" @enter="searchNext()" ref="searchInpRef">
+      <Input class="input" v-model:value="searchWord" :placeholder="LL.editor.search.enterSearchQuery()" @enter="searchNext()" ref="searchInpRef">
         <template #suffix>
           <span class="count">{{searchIndex + 1}}/{{searchResults.length}}</span>
           <Divider type="vertical" />
           <span class="ignore-case"
             :class="{ 'active': modifiers === 'g' }"
-            v-tooltip="'忽略大小写'"
+            v-tooltip="LL.editor.search.ignoreCase()"
             @click="toggleModifiers()"
           >Aa</span>
           <Divider type="vertical" />
-          <span class="next-btn left" @click="searchPrev()" v-tooltip="'上一个'"><i-icon-park-outline:left /></span>
-          <span class="next-btn right" @click="searchNext()" v-tooltip="'下一个'"><i-icon-park-outline:right /></span>
+          <span class="next-btn left" @click="searchPrev()" v-tooltip="LL.editor.search.previous()"><i-icon-park-outline:left /></span>
+          <span class="next-btn right" @click="searchNext()" v-tooltip="LL.editor.search.next()"><i-icon-park-outline:right /></span>
         </template>
       </Input>
-      <Input class="input" v-model:value="replaceWord" placeholder="输入替换内容" @enter="replace()" v-if="type === 'replace'"></Input>
+      <Input class="input" v-model:value="replaceWord" :placeholder="LL.editor.search.enterReplaceText()" @enter="replace()" v-if="type === 'replace'"></Input>
       <div class="footer" v-if="type === 'replace'">
-        <Button :disabled="!searchWord" style="margin-left: 5px;" @click="replace()">替换</Button>
-        <Button :disabled="!searchWord" type="primary" style="margin-left: 5px;" @click="replaceAll()">全部替换</Button>
+        <Button :disabled="!searchWord" style="margin-left: 5px;" @click="replace()">{{ LL.editor.search.replace() }}</Button>
+        <Button :disabled="!searchWord" type="primary" style="margin-left: 5px;" @click="replaceAll()">{{ LL.editor.search.replaceAll() }}</Button>
       </div>
     </div>
   </MoveablePanel>
 </template>
 
 <script lang="ts" setup>
-import { nextTick, onMounted, ref, watch, useTemplateRef } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useMainStore } from '@/store'
 import useSearch from '@/hooks/useSearch'
+import { useI18nContext } from '@/i18n/useI18nContext'
 import MoveablePanel from '@/components/MoveablePanel.vue'
 import Tabs from '@/components/Tabs.vue'
 import Divider from '@/components/Divider.vue'
 import Input from '@/components/Input.vue'
 import Button from '@/components/Button.vue'
+
+const { LL } = useI18nContext()
 
 type TypeKey = 'search' | 'replace'
 interface TabItem {
@@ -68,16 +71,16 @@ const {
 } = useSearch()
 
 const type = ref<TypeKey>('search')
-const tabs: TabItem[] = [
-  { key: 'search', label: '查找' },
-  { key: 'replace', label: '替换' },
-]
+const tabs = computed<TabItem[]>(() => [
+  { key: 'search', label: LL.value.editor.search.tabFind() },
+  { key: 'replace', label: LL.value.editor.search.tabReplace() },
+])
 
 const close = () => {
   mainStore.setSearchPanelState(false)
 }
 
-const searchInpRef = useTemplateRef<InstanceType<typeof Input>>('searchInpRef')
+const searchInpRef = ref<InstanceType<typeof Input> | null>(null)
 onMounted(() => {
   searchInpRef.value!.focus()
 })

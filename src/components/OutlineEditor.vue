@@ -1,5 +1,5 @@
 <template>
-  <div class="outline-editor">
+  <div class="outline-editor" :style="flagLabelStyles">
     <div class="item" 
       :class="[{ 'title': item.title }, `lv-${item.lv}`]"
       v-for="item in data"
@@ -24,10 +24,20 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick, onMounted, watch } from 'vue'
+import { ref, nextTick, onMounted, watch, computed } from 'vue'
 import { nanoid } from 'nanoid'
 import type { ContextmenuItem } from '@/components/Contextmenu/types'
+import { useI18nContext } from '@/i18n/useI18nContext'
+import { queryPptist } from '@/utils/portal'
 import Input from './Input.vue'
+
+const { LL } = useI18nContext()
+
+const flagLabelStyles = computed(() => ({
+  '--outline-flag-topic': `"${LL.value.components.outlineEditor.flags.topic()}"`,
+  '--outline-flag-chapter': `"${LL.value.components.outlineEditor.flags.chapter()}"`,
+  '--outline-flag-section': `"${LL.value.components.outlineEditor.flags.section()}"`,
+}))
 
 interface OutlineItem {
   id: string
@@ -102,8 +112,8 @@ const handleFocus = (id: string) => {
   activeItemId.value = id
 
   nextTick(() => {
-    const editableRef = document.querySelector('.editable-text input') as HTMLInputElement
-    editableRef.focus()
+    const editableRef = queryPptist<HTMLInputElement>('.editable-text input')
+    editableRef?.focus()
   })
 }
 
@@ -193,26 +203,27 @@ const contextmenus = (el: HTMLElement): ContextmenuItem[] => {
   const lv = +el.dataset.lv!
   const id = el.dataset.id!
 
+  const t = LL.value.components.outlineEditor
   if (lv === 1) {
     return [
       {
-        text: '添加子级大纲（章）',
-        handler: () => addItem(id, 'next', '新的一章'),
+        text: t.contextmenu.addChildChapter(),
+        handler: () => addItem(id, 'next', t.defaultContent.newChapter()),
       },
     ]
   }
   else if (lv === 2) {
     return [
       {
-        text: '上方添加同级大纲（章）',
-        handler: () => addItem(id, 'prev', '新的一章'),
+        text: t.contextmenu.addSiblingChapterAbove(),
+        handler: () => addItem(id, 'prev', t.defaultContent.newChapter()),
       },
       {
-        text: '添加子级大纲（节）',
-        handler: () => addItem(id, 'next', '新的一节'),
+        text: t.contextmenu.addChildSection(),
+        handler: () => addItem(id, 'next', t.defaultContent.newSection()),
       },
       {
-        text: '删除此章',
+        text: t.contextmenu.deleteChapter(),
         handler: () => deleteItem(id, true),
       },
     ]
@@ -220,30 +231,30 @@ const contextmenus = (el: HTMLElement): ContextmenuItem[] => {
   else if (lv === 3) {
     return [
       {
-        text: '上方添加同级大纲（节）',
-        handler: () => addItem(id, 'prev', '新的一节'),
+        text: t.contextmenu.addSiblingSectionAbove(),
+        handler: () => addItem(id, 'prev', t.defaultContent.newSection()),
       },
       {
-        text: '添加子级大纲（项）',
-        handler: () => addItem(id, 'next', '新的一项'),
+        text: t.contextmenu.addChildItem(),
+        handler: () => addItem(id, 'next', t.defaultContent.newItem()),
       },
       {
-        text: '删除此节',
+        text: t.contextmenu.deleteSection(),
         handler: () => deleteItem(id, true),
       },
     ]
   }
   return [
     {
-      text: '上方添加同级大纲（项）',
-      handler: () => addItem(id, 'prev', '新的一项'),
+      text: t.contextmenu.addSiblingItemAbove(),
+      handler: () => addItem(id, 'prev', t.defaultContent.newItem()),
     },
     {
-      text: '下方添加同级大纲（项）',
-      handler: () => addItem(id, 'next', '新的一项'),
+      text: t.contextmenu.addSiblingItemBelow(),
+      handler: () => addItem(id, 'next', t.defaultContent.newItem()),
     },
     {
-      text: '删除此项',
+      text: t.contextmenu.deleteItem(),
       handler: () => deleteItem(id),
     },
   ]
@@ -335,13 +346,13 @@ const contextmenus = (el: HTMLElement): ContextmenuItem[] => {
     }
   }
   .item.lv-1 .flag::after {
-    content: '主题';
+    content: var(--outline-flag-topic);
   }
   .item.lv-2 .flag::after {
-    content: '章';
+    content: var(--outline-flag-chapter);
   }
   .item.lv-3 .flag::after {
-    content: '节';
+    content: var(--outline-flag-section);
   }
   .item.lv-4 .flag::after {
     opacity: 0;

@@ -2,7 +2,7 @@
   <div class="toolbar-content">
     <button class="toolbar-btn" @click="openDataEditor()">
       <i-icon-park-outline:edit class="icon" />
-      <span>编辑数据</span>
+      <span>{{ LL.canvas.floatingToolbar.chart.editData() }}</span>
     </button>
     <Popover trigger="click">
       <template #content>
@@ -17,7 +17,7 @@
       </template>
       <button class="toolbar-btn">
         <i-icon-park-outline:chart-histogram class="icon" />
-        <span>类型</span>
+        <span>{{ LL.canvas.floatingToolbar.chart.type() }}</span>
       </button>
     </Popover>
   </div>
@@ -31,6 +31,7 @@ import type { ChartType, PPTChartElement } from '@/types/slides'
 import { CHART_TYPE_MAP } from '@/configs/chart'
 import emitter, { EmitterEvents } from '@/utils/emitter'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
+import { useI18nContext } from '@/i18n/useI18nContext'
 
 import Popover from '@/components/Popover.vue'
 import PopoverMenuItem from '@/components/PopoverMenuItem.vue'
@@ -38,6 +39,8 @@ import PopoverMenuItem from '@/components/PopoverMenuItem.vue'
 defineProps<{
   elementInfo: PPTChartElement
 }>()
+
+const { LL } = useI18nContext()
 
 const slidesStore = useSlidesStore()
 const { handleElement, handleElementId } = storeToRefs(useMainStore())

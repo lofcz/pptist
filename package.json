@@ -1,19 +1,66 @@
 {
-  "name": "pptist",
+  "name": "@lofcz/pptist",
   "version": "2.0.0",
-  "private": true,
+  "description": "PPTist presentation editor embed bundle with a typed agentic bridge.",
   "type": "module",
+  "main": "dist/embed/pptist-embed.js",
+  "module": "dist/embed/pptist-embed.js",
+  "types": "dist/types/embed/index.d.ts",
+  "files": [
+    "dist/embed",
+    "dist/types",
+    "docs/EMBED.md",
+    "docs/AGENTIC_BRIDGE.md",
+    "docs/RELEASE.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/types/embed/index.d.ts",
+      "import": "./dist/embed/pptist-embed.js",
+      "default": "./dist/embed/pptist-embed.js"
+    },
+    "./embed": {
+      "types": "./dist/types/embed/index.d.ts",
+      "import": "./dist/embed/pptist-embed.js",
+      "default": "./dist/embed/pptist-embed.js"
+    },
+    "./embed.css": {
+      "import": "./dist/embed/pptist-embed.css",
+      "default": "./dist/embed/pptist-embed.css"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": [
+    "*.css",
+    "dist/embed/pptist-embed.css"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "run-p type-check \"build-only {@}\" --",
+    "build:embed": "npm run i18n:build && npm run build:types && vite build --config vite.config.embed.ts && node scripts/scope-embed-css.mjs && node scripts/extract-embed-fonts.mjs && node scripts/copy-embed-public.mjs",
+    "build:types": "vue-tsc -p tsconfig.types.json && node scripts/rewrite-embed-types.mjs",
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "i18n": "typesafe-i18n",
+    "i18n:build": "typesafe-i18n --no-watch",
+    "test:agentic-bridge": "node scripts/check-agentic-bridge.mjs"
   },
   "author": "pipipi_pikachu@163.com",
-  "homepage": "https://github.com/pipipi-pikachu/PPTist",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lofcz/PPTist.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lofcz/PPTist/issues"
+  },
+  "homepage": "https://github.com/lofcz/PPTist#readme",
   "dependencies": {
     "animate.css": "^4.1.1",
     "axios": "^1.7.9",
@@ -69,6 +116,7 @@
     "husky": "^8.0.3",
     "npm-run-all2": "^6.1.1",
     "sass": "1.69.6",
+    "typesafe-i18n": "^5.27.1",
     "typescript": "~5.3.0",
     "unplugin-icons": "^22.5.0",
     "unplugin-vue-components": "^30.0.0",

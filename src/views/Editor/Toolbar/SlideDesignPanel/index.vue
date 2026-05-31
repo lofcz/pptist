@@ -1,16 +1,12 @@
 <template>
   <div class="slide-design-panel">
-    <div class="title">背景填充</div>
+    <div class="title">{{ LL.editor.slideDesign.backgroundFill() }}</div>
     <div class="row">
       <Select 
         style="flex: 1;" 
         :value="background.type" 
         @update:value="value => updateBackgroundType(value as 'gradient' | 'image' | 'solid')"
-        :options="[
-          { label: '纯色填充', value: 'solid' },
-          { label: '图片填充', value: 'image' },
-          { label: '渐变填充', value: 'gradient' },
-        ]"
+        :options="backgroundTypeOptions"
       />
       <div style="width: 10px;"></div>
 
@@ -29,11 +25,7 @@
         :value="background.image?.size || 'cover'" 
         @update:value="value => updateImageBackground({ size: value as SlideBackgroundImageSize })"
         v-else-if="background.type === 'image'"
-        :options="[
-          { label: '缩放', value: 'contain' },
-          { label: '拼贴', value: 'repeat' },
-          { label: '缩放铺满', value: 'cover' },
-        ]"
+        :options="imageSizeOptions"
       />
 
       <Select 
@@ -41,10 +33,7 @@
         :value="background.gradient?.type || ''" 
         @update:value="value => updateGradientBackground({ type: value as GradientType })"
         v-else
-        :options="[
-          { label: '线性渐变', value: 'linear' },
-          { label: '径向渐变', value: 'radial' },
-        ]"
+        :options="gradientTypeOptions"
       />
     </div>
 
@@ -68,7 +57,7 @@
         />
       </div>
       <div class="row">
-        <div style="width: 40%;">当前色块：</div>
+        <div style="width: 40%;">{{ LL.editor.slideDesign.currentColorStop() }}</div>
         <Popover trigger="click" style="width: 60%;">
           <template #content>
             <ColorPicker
@@ -80,7 +69,7 @@
         </Popover>
       </div>
       <div class="row" v-if="background.gradient?.type === 'linear'">
-        <div style="width: 40%;">渐变角度：</div>
+        <div style="width: 40%;">{{ LL.editor.slideDesign.gradientAngle() }}</div>
         <Slider
           :min="0"
           :max="360"
@@ -93,7 +82,7 @@
     </div>
 
     <div class="row">
-      <Button style="flex: 1;" @click="applyBackgroundAllSlide()"><i-icon-park-outline:check /> 应用背景到全部</Button>
+      <Button style="flex: 1;" @click="applyBackgroundAllSlide()"><i-icon-park-outline:check /> {{ LL.editor.slideDesign.applyBackgroundToAll() }}</Button>
     </div>
 
     <Divider />
@@ -101,47 +90,41 @@
     <div class="row">
       <Select 
         style="width: 100%;" 
-        defaultLabel="自定义"
+        :defaultLabel="LL.editor.slideDesign.custom()"
         :value="viewportRatio" 
         @update:value="value => updateViewportRatio(value as number)"
-        :options="[
-          { label: '宽屏 16 : 9', value: 0.5625 },
-          { label: '宽屏 16 : 10', value: 0.625 },
-          { label: '标准 4 : 3', value: 0.75 },
-          { label: '纸张 A3 / A4', value: 0.70710678 },
-          { label: '竖向 A3 / A4', value: 1.41421356 },
-        ]"
+        :options="viewportRatioOptions"
       />
     </div>
 
     <div class="row">
-      <div class="canvas-size">画布尺寸：{{  viewportSize  }} × {{ toFixed(viewportSize * viewportRatio) }}</div>
+      <div class="canvas-size">{{ LL.editor.slideDesign.canvasSize({ width: viewportSize, height: toFixed(viewportSize * viewportRatio) }) }}</div>
     </div>
 
     <Divider />
 
     <div class="title">
-      <span>全局主题</span>
+      <span>{{ LL.editor.slideDesign.globalTheme() }}</span>
       <span class="more" @click="moreThemeConfigsVisible = !moreThemeConfigsVisible">
-        <span class="text">更多</span>
+        <span class="text">{{ LL.editor.slideDesign.more() }}</span>
         <i-icon-park-outline:down v-if="moreThemeConfigsVisible" />
         <i-icon-park-outline:right v-else />
       </span>
     </div>
     <div class="row">
-      <div style="width: 40%;">字体：</div>
+      <div style="width: 40%;">{{ LL.editor.slideDesign.font() }}</div>
       <Select
         style="width: 60%;"
         :value="theme.fontName"
         search
-        searchLabel="搜索字体"
+        :searchLabel="LL.editor.multiStyle.searchFont()"
         autofocus
         @update:value="value => updateTheme({ fontName: value as string })"
         :options="FONTS"
       />
     </div>
     <div class="row">
-      <div style="width: 40%;">字体颜色：</div>
+      <div style="width: 40%;">{{ LL.editor.slideDesign.fontColor() }}</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -153,7 +136,7 @@
       </Popover>
     </div>
     <div class="row">
-      <div style="width: 40%;">背景颜色：</div>
+      <div style="width: 40%;">{{ LL.editor.slideDesign.backgroundColor() }}</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -165,13 +148,13 @@
       </Popover>
     </div>
     <div class="row">
-      <div style="width: 40%;">主题色：</div>
+      <div style="width: 40%;">{{ LL.editor.slideDesign.themeColor() }}</div>
       <ColorListButton style="width: 60%;" :colors="theme.themeColors" @click="themeColorsSettingVisible = true" />
     </div>
     
     <template v-if="moreThemeConfigsVisible">
       <div class="row">
-        <div style="width: 40%;">边框样式：</div>
+        <div style="width: 40%;">{{ LL.editor.multiStyle.borderStyle() }}</div>
         <SelectCustom style="width: 60%;">
           <template #options>
             <div class="option" v-for="item in lineStyleOptions" :key="item" @click="updateTheme({ outline: { ...theme.outline, style: item } })">
@@ -184,7 +167,7 @@
         </SelectCustom>
       </div>
       <div class="row">
-        <div style="width: 40%;">边框颜色：</div>
+        <div style="width: 40%;">{{ LL.editor.multiStyle.borderColor() }}</div>
         <Popover trigger="click" style="width: 60%;">
           <template #content>
             <ColorPicker
@@ -196,7 +179,7 @@
         </Popover>
       </div>
       <div class="row">
-        <div style="width: 40%;">边框粗细：</div>
+        <div style="width: 40%;">{{ LL.editor.multiStyle.borderWidth() }}</div>
         <NumberInput 
           :value="theme.outline.width || 0" 
           @update:value="value => updateTheme({ outline: { ...theme.outline, width: value } })" 
@@ -204,7 +187,7 @@
         />
       </div>
       <div class="row" style="height: 30px;">
-        <div style="width: 40%;">水平阴影：</div>
+        <div style="width: 40%;">{{ LL.editor.slideDesign.horizontalShadow() }}</div>
         <Slider 
           style="width: 60%;"
           :min="-10" 
@@ -215,7 +198,7 @@
         />
       </div>
       <div class="row" style="height: 30px;">
-        <div style="width: 40%;">垂直阴影：</div>
+        <div style="width: 40%;">{{ LL.editor.slideDesign.verticalShadow() }}</div>
         <Slider
           style="width: 60%;"
           :min="-10"
@@ -226,7 +209,7 @@
         />
       </div>
       <div class="row" style="height: 30px;">
-        <div style="width: 40%;">模糊距离：</div>
+        <div style="width: 40%;">{{ LL.editor.slideDesign.blurDistance() }}</div>
         <Slider
           style="width: 60%;"
           :min="1"
@@ -237,7 +220,7 @@
         />
       </div>
       <div class="row">
-        <div style="width: 40%;">阴影颜色：</div>
+        <div style="width: 40%;">{{ LL.editor.slideDesign.shadowColor() }}</div>
         <Popover trigger="click" style="width: 60%;">
           <template #content>
             <ColorPicker
@@ -251,20 +234,20 @@
     </template>
 
     <div class="row">
-      <Button style="flex: 1;" @click="applyThemeToAllSlides(moreThemeConfigsVisible)"><i-icon-park-outline:check /> 应用主题到全部</Button>
+      <Button style="flex: 1;" @click="applyThemeToAllSlides(moreThemeConfigsVisible)"><i-icon-park-outline:check /> {{ LL.editor.slideDesign.applyThemeToAll() }}</Button>
     </div>
 
     <div class="row">
-      <Button style="flex: 1;" @click="applyFontToAllSlides(theme.fontName)"><i-icon-park-outline:check /> 全局统一字体</Button>
+      <Button style="flex: 1;" @click="applyFontToAllSlides(theme.fontName)"><i-icon-park-outline:check /> {{ LL.editor.slideDesign.unifyFontGlobally() }}</Button>
     </div>
 
     <div class="row">
-      <Button style="flex: 1;" @click="themeStylesExtractVisible = true"><i-icon-park-outline:platte /> 从幻灯片提取主题</Button>
+      <Button style="flex: 1;" @click="themeStylesExtractVisible = true"><i-icon-park-outline:platte /> {{ LL.editor.slideDesign.extractThemeFromSlide() }}</Button>
     </div>
 
     <Divider />
 
-    <div class="title">预置主题</div>
+    <div class="title">{{ LL.editor.slideDesign.presetThemes() }}</div>
     <div class="theme-list">
       <div 
         class="theme-item" 
@@ -276,14 +259,14 @@
         }"
       >
         <div class="theme-item-content">
-          <div class="text" :style="{ color: item.fontColor }">文字 Aa</div>
+          <div class="text" :style="{ color: item.fontColor }">{{ LL.editor.slideDesign.sampleText() }}</div>
           <div class="colors">
             <div class="color-block" v-for="(color, index) in item.colors" :key="index" :style="{ backgroundColor: color}"></div>
           </div>
 
           <div class="btns">
-            <Button type="primary" size="small" @click="applyPresetTheme(item)">设置</Button>
-            <Button type="primary" size="small" style="margin-top: 3px;" @click="applyPresetTheme(item, true)">设置并应用</Button>
+            <Button type="primary" size="small" @click="applyPresetTheme(item)">{{ LL.editor.slideDesign.set() }}</Button>
+            <Button type="primary" size="small" style="margin-top: 3px;" @click="applyPresetTheme(item, true)">{{ LL.editor.slideDesign.setAndApply() }}</Button>
           </div>
         </div>
       </div>
@@ -343,6 +326,34 @@ import SelectCustom from '@/components/SelectCustom.vue'
 import NumberInput from '@/components/NumberInput.vue'
 import Modal from '@/components/Modal.vue'
 import GradientBar from '@/components/GradientBar.vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
+
+const backgroundTypeOptions = computed(() => [
+  { label: LL.value.editor.slideDesign.solidFill(), value: 'solid' },
+  { label: LL.value.editor.slideDesign.imageFill(), value: 'image' },
+  { label: LL.value.editor.slideDesign.gradientFill(), value: 'gradient' },
+])
+
+const imageSizeOptions = computed(() => [
+  { label: LL.value.editor.slideDesign.imageSizeContain(), value: 'contain' },
+  { label: LL.value.editor.slideDesign.imageSizeRepeat(), value: 'repeat' },
+  { label: LL.value.editor.slideDesign.imageSizeCover(), value: 'cover' },
+])
+
+const gradientTypeOptions = computed(() => [
+  { label: LL.value.editor.slideDesign.linearGradient(), value: 'linear' },
+  { label: LL.value.editor.slideDesign.radialGradient(), value: 'radial' },
+])
+
+const viewportRatioOptions = computed(() => [
+  { label: LL.value.editor.slideDesign.widescreen169(), value: 0.5625 },
+  { label: LL.value.editor.slideDesign.widescreen1610(), value: 0.625 },
+  { label: LL.value.editor.slideDesign.standard43(), value: 0.75 },
+  { label: LL.value.editor.slideDesign.paperA3A4(), value: 0.70710678 },
+  { label: LL.value.editor.slideDesign.portraitA3A4(), value: 1.41421356 },
+])
 
 const slidesStore = useSlidesStore()
 const { slides, currentSlide, slideIndex, viewportRatio, viewportSize, theme } = storeToRefs(slidesStore)

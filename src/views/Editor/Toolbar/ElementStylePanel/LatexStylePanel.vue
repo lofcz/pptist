@@ -1,13 +1,13 @@
 <template>
   <div class="latex-style-panel">
     <div class="row">
-      <Button style="flex: 1;" @click="openLatexEditor()"><i-icon-park-outline:edit /> 编辑 LaTeX</Button>
+      <Button style="flex: 1;" @click="openLatexEditor()"><i-icon-park-outline:edit /> {{ LL.canvas.floatingToolbar.editLatex() }}</Button>
     </div>
 
     <Divider />
 
     <div class="row">
-      <div style="width: 40%;">颜色：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.latex.color() }}</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -19,7 +19,7 @@
       </Popover>
     </div>
     <div class="row">
-      <div style="width: 40%;">粗细：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.latex.strokeWidth() }}</div>
       <NumberInput 
         :min="1"
         :max="3"
@@ -38,6 +38,7 @@ import { useMainStore, useSlidesStore } from '@/store'
 import type { PPTLatexElement } from '@/types/slides'
 import emitter, { EmitterEvents } from '@/utils/emitter'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
+import { useI18nContext } from '@/i18n/useI18nContext'
 
 import ColorButton from '@/components/ColorButton.vue'
 import ColorPicker from '@/components/ColorPicker/index.vue'
@@ -45,6 +46,8 @@ import Divider from '@/components/Divider.vue'
 import Button from '@/components/Button.vue'
 import NumberInput from '@/components/NumberInput.vue'
 import Popover from '@/components/Popover.vue'
+
+const { LL } = useI18nContext()
 
 const slidesStore = useSlidesStore()
 const { handleElement } = storeToRefs(useMainStore())

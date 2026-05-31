@@ -3,12 +3,12 @@
     <div class="catalogs">
       <div class="catalog" 
         :class="{ 'active': activeCatalog === item.id }" 
-        v-for="item in templates" 
+        v-for="item in templateCatalogs" 
         :key="item.id"
         @click="changeCatalog(item.id)"
       >{{ item.name }}</div>
     </div>
-    <div class="content" v-loading="{ state: loading, text: '加载中...' }">
+    <div class="content" v-loading="{ state: loading, text: LL.common.loading() }">
       <div class="header">
         <div class="types">
           <div class="type" 
@@ -18,7 +18,7 @@
             @click="activeType = item.value"
           >{{ item.label }}</div>
         </div>
-        <div class="insert-all" @click="insertTemplates({ slides, theme })">插入全部</div>
+        <div class="insert-all" @click="insertTemplates({ slides, theme })">{{ LL.editor.templates.insertAll() }}</div>
       </div>
       <div class="list" ref="listRef">
         <template v-for="slide in slides" :key="slide.id">
@@ -29,7 +29,7 @@
             <ThumbnailSlide class="thumbnail" :slide="slide" :size="180" />
     
             <div class="btns">
-              <Button class="btn" type="primary" size="small" @click="insertTemplate(slide)">插入模板</Button>
+              <Button class="btn" type="primary" size="small" @click="insertTemplate(slide)">{{ LL.editor.templates.insertTemplate() }}</Button>
             </div>
           </div>
         </template>
@@ -39,11 +39,12 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, useTemplateRef } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSlidesStore } from '@/store'
 import type { Slide, SlideTheme } from '@/types/slides'
 import api from '@/services'
+import { useI18nContext } from '@/i18n/useI18nContext'
 
 import ThumbnailSlide from '@/views/components/ThumbnailSlide/index.vue'
 import Button from '@/components/Button.vue'
@@ -53,23 +54,43 @@ const emit = defineEmits<{
   (event: 'selectAll', payload: { slides: Slide[], theme: Partial<SlideTheme> }): void
 }>()
 
+const { LL } = useI18nContext()
+
 const slidesStore = useSlidesStore()
 const { templates } = storeToRefs(slidesStore)
 
+const templateCatalogs = computed(() => {
+  const T = LL.value.editor.templates
+  const nameById: Record<string, () => string> = {
+    template_1: T.template1.name,
+    template_2: T.template2.name,
+    template_3: T.template3.name,
+    template_4: T.template4.name,
+    template_5: T.template5.name,
+    template_6: T.template6.name,
+    template_7: T.template7.name,
+    template_8: T.template8.name,
+  }
+  return templates.value.map(item => ({
+    ...item,
+    name: nameById[item.id]?.() ?? item.name,
+  }))
+})
+
 const slides = ref<Slide[]>([])
 const theme = ref<Partial<SlideTheme>>({})
-const listRef = useTemplateRef<HTMLElement>('listRef')
-const types = ref<{
-  label: string
-  value: string
-}[]>([
-  { label: '全部', value: 'all' },
-  { label: '封面', value: 'cover' },
-  { label: '目录', value: 'contents' },
-  { label: '过渡', value: 'transition' },
-  { label: '内容', value: 'content' },
-  { label: '结束', value: 'end' },
-])
+const listRef = ref<HTMLElement | null>(null)
+const types = computed(() => {
+  const slideTypes = LL.value.editor.templates.slideTypes
+  return [
+    { label: slideTypes.all(), value: 'all' },
+    { label: slideTypes.cover(), value: 'cover' },
+    { label: slideTypes.contents(), value: 'contents' },
+    { label: slideTypes.transition(), value: 'transition' },
+    { label: slideTypes.content(), value: 'content' },
+    { label: slideTypes.end(), value: 'end' },
+  ]
+})
 const activeType = ref('all')
 
 const activeCatalog = ref('')

@@ -2,12 +2,12 @@
   <div class="toolbar-content">
     <button class="toolbar-btn" @click="clipImage()">
       <i-icon-park-outline:tailoring class="icon" />
-      <span>裁剪</span>
+      <span>{{ LL.canvas.floatingToolbar.image.crop() }}</span>
     </button>
     <FileInput @change="files => replaceImage(files)">
       <button class="toolbar-btn">
         <i-icon-park-outline:transform class="icon" />
-        <span>替换</span>
+        <span>{{ LL.canvas.floatingToolbar.image.replace() }}</span>
       </button>
     </FileInput>
   </div>
@@ -18,12 +18,15 @@ import { storeToRefs } from 'pinia'
 import { useMainStore } from '@/store'
 import type { PPTImageElement } from '@/types/slides'
 import useImageHandler from '@/hooks/useImageHandler'
+import { useI18nContext } from '@/i18n/useI18nContext'
 
 import FileInput from '@/components/FileInput.vue'
 
 defineProps<{
   elementInfo: PPTImageElement
 }>()
+
+const { LL } = useI18nContext()
 
 const mainStore = useMainStore()
 const { handleElementId } = storeToRefs(mainStore)

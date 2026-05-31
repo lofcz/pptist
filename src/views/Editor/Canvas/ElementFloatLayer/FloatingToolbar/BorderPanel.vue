@@ -6,7 +6,7 @@
     <template #content>
       <div class="border-popover">
         <div class="row">
-          <div class="label">边框样式：</div>
+          <div class="label">{{ LL.canvas.floatingToolbar.border.styleLabel() }}</div>
           <SelectCustom class="control">
             <template #options>
               <div
@@ -24,7 +24,7 @@
           </SelectCustom>
         </div>
         <div class="row">
-          <div class="label">边框颜色：</div>
+          <div class="label">{{ LL.canvas.floatingToolbar.border.colorLabel() }}</div>
           <Popover trigger="click" class="control">
             <template #content>
               <ColorPicker :modelValue="outline?.color || '#000'" @update:modelValue="value => updateOutline({ color: value })" />
@@ -33,7 +33,7 @@
           </Popover>
         </div>
         <div class="row">
-          <div class="label">边框粗细：</div>
+          <div class="label">{{ LL.canvas.floatingToolbar.border.widthLabel() }}</div>
           <NumberInput
             class="control"
             :value="outline?.width || 0"
@@ -44,7 +44,7 @@
     </template>
     <div class="toolbar-btn">
       <i-icon-park-outline:selected class="icon" />
-      <span>边框</span>
+      <span>{{ LL.canvas.floatingToolbar.border.label() }}</span>
     </div>
   </Popover>
 </template>
@@ -52,6 +52,7 @@
 <script lang="ts" setup>
 import { computed, type Ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useI18nContext } from '@/i18n/useI18nContext'
 import { useMainStore, useSlidesStore } from '@/store'
 import type { LineStyleType, PPTElementOutline, PPTShapeElement, PPTTableElement } from '@/types/slides'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
@@ -62,6 +63,8 @@ import ColorButton from '@/components/ColorButton.vue'
 import ColorPicker from '@/components/ColorPicker/index.vue'
 import NumberInput from '@/components/NumberInput.vue'
 import SelectCustom from '@/components/SelectCustom.vue'
+
+const { LL } = useI18nContext()
 
 const slidesStore = useSlidesStore()
 const { theme } = storeToRefs(slidesStore)

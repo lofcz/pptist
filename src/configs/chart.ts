@@ -1,55 +1,73 @@
 import type { ChartData } from '@/types/slides'
+import { getLL } from '@/i18n/getLL'
+
+const LL = getLL()
+const chartTypes = LL.configs.chart.types
+const d = LL.configs.chart.defaultData
+
+const defaultLabels = [
+  d.category1(),
+  d.category2(),
+  d.category3(),
+  d.category4(),
+  d.category5(),
+]
+
+const defaultLegends = [d.series1(), d.series2()]
+const defaultPieLegends = [d.value()]
+const scatterLabels = [d.coord1(), d.coord2(), d.coord3(), d.coord4(), d.coord5()]
+const scatterLegends = ['X', 'Y']
 
 export const CHART_TYPE_MAP: Record<string, string> = {
-  'bar': '柱状图',
-  'column': '条形图',
-  'line': '折线图',
-  'area': '面积图',
-  'scatter': '散点图',
-  'pie': '饼图',
-  'ring': '环形图',
-  'radar': '雷达图',
+  bar: chartTypes.bar(),
+  column: chartTypes.column(),
+  line: chartTypes.line(),
+  area: chartTypes.area(),
+  scatter: chartTypes.scatter(),
+  pie: chartTypes.pie(),
+  ring: chartTypes.ring(),
+  radar: chartTypes.radar(),
 }
 
 export const CHART_DEFAULT_DATA: Record<string, ChartData> = {
-  'bar': {
-    labels: ['类别1', '类别2', '类别3', '类别4', '类别5'],
-    legends: ['系列1', '系列2'],
+  bar: {
+    labels: defaultLabels,
+    legends: defaultLegends,
     series: [[12, 19, 5, 2, 18], [7, 11, 13, 21, 9]],
   },
-  'column': {
-    labels: ['类别1', '类别2', '类别3', '类别4', '类别5'],
-    legends: ['系列1', '系列2'],
+  column: {
+    labels: defaultLabels,
+    legends: defaultLegends,
     series: [[12, 19, 5, 2, 18], [7, 11, 13, 21, 9]],
   },
-  'line': {
-    labels: ['类别1', '类别2', '类别3', '类别4', '类别5'],
-    legends: ['系列1', '系列2'],
+  line: {
+    labels: defaultLabels,
+    legends: defaultLegends,
     series: [[12, 19, 5, 2, 18], [7, 11, 13, 21, 9]],
   },
-  'pie': {
-    labels: ['类别1', '类别2', '类别3', '类别4', '类别5'],
-    legends: ['值'],
+  pie: {
+    labels: defaultLabels,
+    legends: defaultPieLegends,
     series: [[12, 19, 5, 2, 18]],
   },
-  'ring': {
-    labels: ['类别1', '类别2', '类别3', '类别4', '类别5'],
-    legends: ['值'],
+  ring: {
+    labels: defaultLabels,
+    legends: defaultPieLegends,
     series: [[12, 19, 5, 2, 18]],
   },
-  'area': {
-    labels: ['类别1', '类别2', '类别3', '类别4', '类别5'],
-    legends: ['系列1', '系列2'],
+  area: {
+    labels: defaultLabels,
+    legends: defaultLegends,
     series: [[12, 19, 5, 2, 18], [7, 11, 13, 21, 9]],
   },
-  'radar': {
-    labels: ['类别1', '类别2', '类别3', '类别4', '类别5'],
-    legends: ['系列1', '系列2'],
+  radar: {
+    labels: defaultLabels,
+    legends: defaultLegends,
     series: [[12, 19, 5, 2, 18], [7, 11, 13, 21, 9]],
   },
-  'scatter': {
-    labels: ['坐标1', '坐标2', '坐标3', '坐标4', '坐标5'],
-    legends: ['X', 'Y'],
+  scatter: {
+    labels: scatterLabels,
+    legends: scatterLegends,
     series: [[12, 19, 5, 2, 18], [7, 11, 13, 21, 9]],
   },
 }

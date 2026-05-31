@@ -1,5 +1,5 @@
 <template>
-  <Teleport to="body">
+  <Teleport :to="teleportTarget">
     <Transition name="modal-fade">
       <div class="modal" ref="modalRef" v-show="visible" :style="wrapStyle || {}" tabindex="-1" @keyup.esc="onEsc()">
         <div class="mask" @click="onClickMask()"></div>
@@ -18,7 +18,8 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, ref, watch, useTemplateRef, type CSSProperties } from 'vue'
+import { computed, nextTick, ref, watch, type CSSProperties } from 'vue'
+import { getPptistPortalTarget } from '@/utils/portal'
 
 const props = withDefaults(defineProps<{
   visible: boolean
@@ -35,7 +36,8 @@ const props = withDefaults(defineProps<{
   closeOnEsc: true,
 })
 
-const modalRef = useTemplateRef<HTMLDivElement>('modalRef')
+const modalRef = ref<HTMLDivElement | null>(null)
+const teleportTarget = getPptistPortalTarget()
 
 const emit = defineEmits<{
   (event: 'update:visible', payload: boolean): void

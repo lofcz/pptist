@@ -35,7 +35,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref, useTemplateRef, type CSSProperties } from 'vue'
+import { computed, onMounted, onUnmounted, ref, type CSSProperties } from 'vue'
 
 const Z_INDEX_KEY = '__moveable_panel_z_index__'
 const Z_INDEX_BASE = 900
@@ -75,7 +75,7 @@ const x = ref(0)
 const y = ref(0)
 const w = ref(0)
 const h = ref(0)
-const moveablePanelRef = useTemplateRef<HTMLElement>('moveablePanelRef')
+const moveablePanelRef = ref<HTMLElement | null>(null)
 const zIndex = ref(900)
 
 const realHeight = computed(() => {

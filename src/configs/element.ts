@@ -1,13 +1,17 @@
+import { getLL } from '@/i18n/getLL'
+
+const types = getLL().configs.element.types
+
 export const ELEMENT_TYPE_ZH: Record<string, string> = {
-  text: '文本',
-  image: '图片',
-  shape: '形状',
-  line: '线条',
-  chart: '图表',
-  table: '表格',
-  video: '视频',
-  audio: '音频',
-  latex: '公式',
+  text: types.text(),
+  image: types.image(),
+  shape: types.shape(),
+  line: types.line(),
+  chart: types.chart(),
+  table: types.table(),
+  video: types.video(),
+  audio: types.audio(),
+  latex: types.latex(),
 }
 
 export const MIN_SIZE: Record<string, number> = {

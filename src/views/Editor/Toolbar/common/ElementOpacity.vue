@@ -1,7 +1,7 @@
 <template>
   <div class="element-opacity">
     <div class="row">
-      <div style="width: 40%;">不透明度：</div>
+      <div style="width: 40%;">{{ LL.editor.elementCommon.opacity() }}</div>
       <Slider
         :min="0"
         :max="1"
@@ -20,6 +20,10 @@ import { storeToRefs } from 'pinia'
 import { useMainStore, useSlidesStore } from '@/store'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 import Slider from '@/components/Slider.vue'
+
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 const slidesStore = useSlidesStore()
 const { handleElement } = storeToRefs(useMainStore())

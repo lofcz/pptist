@@ -18,12 +18,15 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useKeyboardStore, useMainStore, useSlidesStore } from '@/store'
 import type { CreateCustomShapeData } from '@/types/edit'
 import { KEYS } from '@/configs/hotkey'
+import { useI18nContext } from '@/i18n/useI18nContext'
 import message from '@/utils/message'
+
+const { LL } = useI18nContext()
 
 const emit = defineEmits<{
   (event: 'created', payload: CreateCustomShapeData): void
@@ -32,7 +35,7 @@ const mainStore = useMainStore()
 const { ctrlOrShiftKeyActive } = storeToRefs(useKeyboardStore())
 const { theme } = storeToRefs(useSlidesStore())
 
-const shapeCanvasRef = useTemplateRef<HTMLElement>('shapeCanvasRef')
+const shapeCanvasRef = ref<HTMLElement | null>(null)
 const isMouseDown = ref(false)
 const offset = ref({
   x: 0,
@@ -165,7 +168,7 @@ const keydownListener = (e: KeyboardEvent) => {
   if (key === KEYS.ENTER) create()
 }
 onMounted(() => {
-  message.success('点击绘制任意形状，首尾闭合完成绘制，按 ESC 键或鼠标右键取消，按 ENTER 键提前完成', {
+  message.success(LL.value.canvas.shapeCreate.drawHint(), {
     duration: 0,
   })
   document.addEventListener('keydown', keydownListener)

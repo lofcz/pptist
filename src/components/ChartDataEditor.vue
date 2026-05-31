@@ -68,7 +68,7 @@
 
     <div class="btns">
       <div class="left">
-        图表类型：{{ CHART_TYPE_MAP[chartType] }}
+        {{ LL.components.chartDataEditor.chartTypeLabel() }}{{ chartTypeLabel(chartType) }}
         <Popover trigger="click" placement="top" v-model:value="chartTypeSelectVisible">
           <template #content>
             <PopoverMenuItem
@@ -76,15 +76,15 @@
               v-for="item in chartList" 
               :key="item" 
               @click="chartType = item; chartTypeSelectVisible = false"
-            >{{CHART_TYPE_MAP[item]}}</PopoverMenuItem>
+            >{{ chartTypeLabel(item) }}</PopoverMenuItem>
           </template>
-          <span class="change">点击更换</span>
+          <span class="change">{{ LL.components.chartDataEditor.clickToChange() }}</span>
         </Popover>
       </div>
       <div class="right">
-        <Button class="btn" @click="closeEditor()">取消</Button>
-        <Button class="btn" @click="clear()">清空数据</Button>
-        <Button type="primary" class="btn" @click="getTableData()">确认</Button>
+        <Button class="btn" @click="closeEditor()">{{ LL.common.cancel() }}</Button>
+        <Button class="btn" @click="clear()">{{ LL.components.chartDataEditor.clearData() }}</Button>
+        <Button type="primary" class="btn" @click="getTableData()">{{ LL.common.confirm() }}</Button>
       </div>
     </div>
   </div>
@@ -94,11 +94,19 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { ChartData, ChartType } from '@/types/slides'
 import { KEYS } from '@/configs/hotkey'
-import { CHART_TYPE_MAP } from '@/configs/chart'
 import { pasteCustomClipboardString, pasteExcelClipboardString, pasteHTMLTableClipboardString } from '@/utils/clipboard'
+import { queryPptist } from '@/utils/portal'
 import Button from '@/components/Button.vue'
 import Popover from '@/components/Popover.vue'
 import PopoverMenuItem from '@/components/PopoverMenuItem.vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
+
+const chartTypeLabel = (type: ChartType) => {
+  const types = LL.value.configs.chart.types
+  return types[type]()
+}
 
 const props = defineProps<{
   type: ChartType
@@ -164,7 +172,7 @@ const initData = () => {
 
   for (let rowIndex = 0; rowIndex < rowCount + 1; rowIndex++) {
     for (let colIndex = 0; colIndex < colCount + 1; colIndex++) {
-      const inputRef = document.querySelector(`#cell-${rowIndex}-${colIndex}`) as HTMLInputElement
+      const inputRef = queryPptist<HTMLInputElement>(`#cell-${rowIndex}-${colIndex}`)
       if (!inputRef) continue
       inputRef.value = _data[rowIndex][colIndex] + ''
     }
@@ -180,7 +188,7 @@ const moveNextRow = () => {
   if (!focusCell.value) return
 
   const [rowIndex, colIndex] = focusCell.value
-  const inputRef = document.querySelector(`#cell-${rowIndex + 1}-${colIndex}`) as HTMLInputElement
+  const inputRef = queryPptist<HTMLInputElement>(`#cell-${rowIndex + 1}-${colIndex}`)
   inputRef && inputRef.focus()
 }
 
@@ -206,14 +214,14 @@ const getTableData = () => {
 
   // 第一行为系列名，第一列为项目名，实际数据从第二行第二列开始
   for (let rowIndex = 1; rowIndex < row; rowIndex++) {
-    let labelsItem = `类别${rowIndex}`
-    const labelInputRef = document.querySelector(`#cell-${rowIndex}-0`) as HTMLInputElement
+    let labelsItem: string = `${LL.value.components.chartDataEditor.categoryDefault({ n: rowIndex })}`
+    const labelInputRef = queryPptist<HTMLInputElement>(`#cell-${rowIndex}-0`)
     if (labelInputRef && labelInputRef.value) labelsItem = labelInputRef.value
     labels.push(labelsItem)
   }
   for (let colIndex = 1; colIndex < col; colIndex++) {
-    let legendsItem = `系列${colIndex}`
-    const labelInputRef = document.querySelector(`#cell-0-${colIndex}`) as HTMLInputElement
+    let legendsItem: string = `${LL.value.components.chartDataEditor.seriesDefault({ n: colIndex })}`
+    const labelInputRef = queryPptist<HTMLInputElement>(`#cell-0-${colIndex}`)
     if (labelInputRef && labelInputRef.value) legendsItem = labelInputRef.value
     legends.push(legendsItem)
   }
@@ -221,7 +229,7 @@ const getTableData = () => {
   for (let colIndex = 1; colIndex < col; colIndex++) {
     const seriesItem = []
     for (let rowIndex = 1; rowIndex < row; rowIndex++) {
-      const valueInputRef = document.querySelector(`#cell-${rowIndex}-${colIndex}`) as HTMLInputElement
+      const valueInputRef = queryPptist<HTMLInputElement>(`#cell-${rowIndex}-${colIndex}`)
       let value = 0
       if (valueInputRef && valueInputRef.value && !!(+valueInputRef.value)) {
         value = +valueInputRef.value
@@ -258,7 +266,7 @@ const getTableData = () => {
 const clear = () => {
   for (let rowIndex = 1; rowIndex < 31; rowIndex++) {
     for (let colIndex = 1; colIndex < 7; colIndex++) {
-      const inputRef = document.querySelector(`#cell-${rowIndex}-${colIndex}`) as HTMLInputElement
+      const inputRef = queryPptist<HTMLInputElement>(`#cell-${rowIndex}-${colIndex}`)
       if (!inputRef) continue
       inputRef.value = ''
     }
@@ -270,7 +278,7 @@ const fillTableData = (data: string[][], rowIndex: number, colIndex: number) => 
   const maxCol = colIndex + data[0].length
   for (let i = rowIndex; i < maxRow; i++) {
     for (let j = colIndex; j < maxCol; j++) {
-      const inputRef = document.querySelector(`#cell-${i}-${j}`) as HTMLInputElement
+      const inputRef = queryPptist<HTMLInputElement>(`#cell-${i}-${j}`)
       if (!inputRef) continue
       inputRef.value = data[i - rowIndex][j - colIndex]
     }

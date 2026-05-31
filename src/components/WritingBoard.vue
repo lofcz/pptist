@@ -66,7 +66,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref, watch, useTemplateRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
 const props = withDefaults(defineProps<{
   color?: string
@@ -93,8 +93,8 @@ const emit = defineEmits<{
 }>()
 
 let ctx: CanvasRenderingContext2D | null = null
-const writingBoardRef = useTemplateRef<HTMLElement>('writingBoardRef')
-const canvasRef = useTemplateRef<HTMLCanvasElement>('canvasRef')
+const writingBoardRef = ref<HTMLElement | null>(null)
+const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 let lastPos = {
   x: 0,

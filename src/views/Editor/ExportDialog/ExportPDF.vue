@@ -22,17 +22,17 @@
     </div>
     <div class="configs">
       <div class="row">
-        <div class="title">导出范围：</div>
+        <div class="title">{{ LL.export.dialog.exportRange() }}</div>
         <RadioGroup
           class="config-item"
           v-model:value="rangeType"
         >
-          <RadioButton style="width: 50%;" value="all">全部</RadioButton>
-          <RadioButton style="width: 50%;" value="current">当前页</RadioButton>
+          <RadioButton style="width: 50%;" value="all">{{ LL.export.dialog.rangeAll() }}</RadioButton>
+          <RadioButton style="width: 50%;" value="current">{{ LL.export.dialog.rangeCurrent() }}</RadioButton>
         </RadioGroup>
       </div>
       <div class="row">
-        <div class="title">每页数量：</div>
+        <div class="title">{{ LL.export.pdf.slidesPerPage() }}</div>
         <Select 
           class="config-item"
           v-model:value="count"
@@ -44,28 +44,29 @@
         />
       </div>
       <div class="row">
-        <div class="title">边缘留白：</div>
+        <div class="title">{{ LL.export.pdf.pageMargin() }}</div>
         <div class="config-item">
           <Switch v-model:value="padding" />
         </div>
       </div>
       <div class="tip">
-        建议：请在弹出的打印窗口中勾选「背景图形」选项，边距选择「默认」。
+        {{ LL.export.pdf.printTip() }}
       </div>
     </div>
 
     <div class="btns">
-      <Button class="btn export" type="primary" @click="expPDF()"><i-icon-park-outline:download /> 打印 / 导出 PDF</Button>
-      <Button class="btn close" @click="emit('close')">关闭</Button>
+      <Button class="btn export" type="primary" @click="expPDF()"><i-icon-park-outline:download /> {{ LL.export.pdf.exportButton() }}</Button>
+      <Button class="btn close" @click="emit('close')">{{ LL.common.close() }}</Button>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, useTemplateRef } from 'vue'
+import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSlidesStore } from '@/store'
 import { print } from '@/utils/print'
+import { useI18nContext } from '@/i18n/useI18nContext'
 
 import ThumbnailSlide from '@/views/components/ThumbnailSlide/index.vue'
 import Switch from '@/components/Switch.vue'
@@ -74,13 +75,15 @@ import RadioButton from '@/components/RadioButton.vue'
 import RadioGroup from '@/components/RadioGroup.vue'
 import Select from '@/components/Select.vue'
 
+const { LL } = useI18nContext()
+
 const emit = defineEmits<{
   (event: 'close'): void
 }>()
 
 const { slides, currentSlide, viewportRatio } = storeToRefs(useSlidesStore())
 
-const pdfThumbnailsRef = useTemplateRef<HTMLElement>('pdfThumbnailsRef')
+const pdfThumbnailsRef = ref<HTMLElement | null>(null)
 const rangeType = ref<'all' | 'current'>('all')
 const count = ref(1)
 const padding = ref(true)

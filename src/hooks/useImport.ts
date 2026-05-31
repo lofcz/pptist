@@ -11,7 +11,10 @@ import useAddSlidesOrElements from '@/hooks/useAddSlidesOrElements'
 import useSlideHandler from '@/hooks/useSlideHandler'
 import useHistorySnapshot from './useHistorySnapshot'
 import message from '@/utils/message'
+import { getLL } from '@/i18n/getLL'
 import { getSvgPathRange } from '@/utils/svgPathParser'
+
+const LL = getLL()
 import type {
   Slide,
   TableCellStyle,
@@ -311,7 +314,7 @@ export default () => {
         else addSlidesFromData(slides)
       }
       catch {
-        message.error('无法正确读取 / 解析该文件')
+        message.error(LL.common.fileParseError())
       }
     })
     reader.readAsText(file)
@@ -344,7 +347,7 @@ export default () => {
         else addSlidesFromData(slides)
       }
       catch {
-        message.error('无法正确读取 / 解析该文件')
+        message.error(LL.common.fileParseError())
       }
     })
     reader.readAsText(file)
@@ -554,7 +557,7 @@ export default () => {
       }
       catch {
         exporting.value = false
-        message.error('无法正确读取 / 解析该文件')
+        message.error(LL.common.fileParseError())
         return
       }
 
@@ -1078,7 +1081,7 @@ export default () => {
               let series: number[][]
   
               if (el.chartType === 'scatterChart' || el.chartType === 'bubbleChart') {
-                labels = el.data[0].map((item, index) => `坐标${index + 1}`)
+                labels = el.data[0].map((item, index) => LL.editor.import.chartCoordinate({ index: index + 1 }))
                 legends = ['X', 'Y']
                 series = el.data
               }

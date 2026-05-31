@@ -1,7 +1,7 @@
 import { computed, type Ref } from 'vue'
 import type { PPTElementShadow } from '@/types/slides'
 
-// 计算元素的阴影样式
+// Compute element box-shadow CSS from shadow props
 export default (shadow: Ref<PPTElementShadow | undefined>) => {
   const shadowStyle = computed(() => {
     if (shadow.value) {

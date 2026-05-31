@@ -3,14 +3,14 @@
     class="notes-panel" 
     :width="300" 
     :height="130" 
-    title="幻灯片类型标注" 
+    :title="LL.editor.markup.title()" 
     :left="-270" 
     :top="90"
     @close="close()"
   >
     <div class="container">
       <div class="row">
-        <div style="width: 40%;">当前页面类型：</div>
+        <div style="width: 40%;">{{ LL.editor.markup.slideTypeLabel() }}</div>
         <Select
           style="width: 60%;"
           :value="slideType"
@@ -19,7 +19,7 @@
         />
       </div>
       <div class="row" v-if="handleElement && (handleElement.type === 'text' || (handleElement.type === 'shape' && handleElement.text))">
-        <div style="width: 40%;">当前文本类型：</div>
+        <div style="width: 40%;">{{ LL.editor.markup.textTypeLabel() }}</div>
         <Select
           style="width: 60%;"
           :value="textType"
@@ -28,7 +28,7 @@
         />
       </div>
       <div class="row" v-else-if="handleElement && handleElement.type === 'image'">
-        <div style="width: 40%;">当前图片类型：</div>
+        <div style="width: 40%;">{{ LL.editor.markup.imageTypeLabel() }}</div>
         <Select
           style="width: 60%;"
           :value="imageType"
@@ -36,53 +36,56 @@
           :options="imageTypeOptions"
         />
       </div>
-      <div class="placeholder" v-else>选中图片、文字、带文字的形状，标记类型</div>
+      <div class="placeholder" v-else>{{ LL.editor.markup.placeholder() }}</div>
     </div>
   </MoveablePanel>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMainStore, useSlidesStore } from '@/store'
 import type { ImageType, SlideType, TextType } from '@/types/slides'
 
 import MoveablePanel from '@/components/MoveablePanel.vue'
 import Select from '@/components/Select.vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 const slidesStore = useSlidesStore()
 const mainStore = useMainStore()
 const { currentSlide } = storeToRefs(slidesStore)
 const { handleElement, handleElementId } = storeToRefs(mainStore)
 
-const slideTypeOptions = ref<{ label: string; value: SlideType | '' }[]>([
-  { label: '未标记类型', value: '' },
-  { label: '封面页', value: 'cover' },
-  { label: '目录页', value: 'contents' },
-  { label: '过渡页', value: 'transition' },
-  { label: '内容页', value: 'content' },
-  { label: '结束页', value: 'end' },
+const slideTypeOptions = computed(() => [
+  { label: LL.value.editor.markup.unmarked(), value: '' as const },
+  { label: LL.value.editor.markup.slideTypes.cover(), value: 'cover' as const },
+  { label: LL.value.editor.markup.slideTypes.contents(), value: 'contents' as const },
+  { label: LL.value.editor.markup.slideTypes.transition(), value: 'transition' as const },
+  { label: LL.value.editor.markup.slideTypes.content(), value: 'content' as const },
+  { label: LL.value.editor.markup.slideTypes.end(), value: 'end' as const },
 ])
 
-const textTypeOptions = ref<{ label: string; value: TextType | '' }[]>([
-  { label: '未标记类型', value: '' },
-  { label: '标题', value: 'title' },
-  { label: '副标题', value: 'subtitle' },
-  { label: '正文', value: 'content' },
-  { label: '列表项目', value: 'item' },
-  { label: '列表项标题', value: 'itemTitle' },
-  { label: '注释', value: 'notes' },
-  { label: '页眉', value: 'header' },
-  { label: '页脚', value: 'footer' },
-  { label: '节编号', value: 'partNumber' },
-  { label: '项目编号', value: 'itemNumber' },
+const textTypeOptions = computed(() => [
+  { label: LL.value.editor.markup.unmarked(), value: '' as const },
+  { label: LL.value.editor.markup.textTypes.title(), value: 'title' as const },
+  { label: LL.value.editor.markup.textTypes.subtitle(), value: 'subtitle' as const },
+  { label: LL.value.editor.markup.textTypes.content(), value: 'content' as const },
+  { label: LL.value.editor.markup.textTypes.item(), value: 'item' as const },
+  { label: LL.value.editor.markup.textTypes.itemTitle(), value: 'itemTitle' as const },
+  { label: LL.value.editor.markup.textTypes.notes(), value: 'notes' as const },
+  { label: LL.value.editor.markup.textTypes.header(), value: 'header' as const },
+  { label: LL.value.editor.markup.textTypes.footer(), value: 'footer' as const },
+  { label: LL.value.editor.markup.textTypes.partNumber(), value: 'partNumber' as const },
+  { label: LL.value.editor.markup.textTypes.itemNumber(), value: 'itemNumber' as const },
 ])
 
-const imageTypeOptions = ref<{ label: string; value: ImageType | '' }[]>([
-  { label: '未标记类型', value: '' },
-  { label: '页面插图', value: 'pageFigure' },
-  { label: '项目插图', value: 'itemFigure' },
-  { label: '背景图', value: 'background' },
+const imageTypeOptions = computed(() => [
+  { label: LL.value.editor.markup.unmarked(), value: '' as const },
+  { label: LL.value.editor.markup.imageTypes.pageFigure(), value: 'pageFigure' as const },
+  { label: LL.value.editor.markup.imageTypes.itemFigure(), value: 'itemFigure' as const },
+  { label: LL.value.editor.markup.imageTypes.background(), value: 'background' as const },
 ])
 
 const slideType = computed(() => currentSlide.value?.type || '')

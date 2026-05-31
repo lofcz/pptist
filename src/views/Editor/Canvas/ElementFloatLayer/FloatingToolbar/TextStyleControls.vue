@@ -3,7 +3,7 @@
     class="font-select"
     :value="richTextAttrs.fontname"
     search
-    searchLabel="搜索字体"
+    :searchLabel="LL.canvas.floatingToolbar.searchFonts()"
     @update:value="value => emitRichTextCommand('fontname', value as string)"
     :options="FONTS"
   />
@@ -11,7 +11,7 @@
     class="fontsize-select"
     :value="richTextAttrs.fontsize"
     search
-    searchLabel="搜索字号"
+    :searchLabel="LL.canvas.floatingToolbar.searchFontSizes()"
     @update:value="value => emitRichTextCommand('fontsize', value as string)"
     :options="fontSizeOptions.map(item => ({ label: item, value: item }))"
   />
@@ -81,6 +81,9 @@ import emitter, { EmitterEvents } from '@/utils/emitter'
 import Select from '@/components/Select.vue'
 import Popover from '@/components/Popover.vue'
 import ColorPicker from '@/components/ColorPicker/index.vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 const { richTextAttrs } = storeToRefs(useMainStore())
 

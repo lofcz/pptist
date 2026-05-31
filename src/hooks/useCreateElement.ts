@@ -2,6 +2,7 @@ import { storeToRefs } from 'pinia'
 import { nanoid } from 'nanoid'
 import { useMainStore, useSlidesStore } from '@/store'
 import { getImageSize } from '@/utils/image'
+import { queryPptist } from '@/utils/portal'
 import type { PPTLineElement, PPTElement, TableCell, TableCellStyle, PPTShapeElement, ChartType, PPTVideoElement, PPTAudioElement } from '@/types/slides'
 import { type ShapePoolItem, SHAPE_PATH_FORMULAS } from '@/configs/shapes'
 import type { LinePoolItem } from '@/configs/lines'
@@ -180,7 +181,7 @@ export default () => {
       vertical,
     }, () => {
       setTimeout(() => {
-        const editorRef: HTMLElement | null = document.querySelector(`#editable-element-${id} .ProseMirror`)
+        const editorRef = queryPptist<HTMLElement>(`#editable-element-${id} .ProseMirror`)
         if (editorRef) editorRef.focus()
       }, 0)
     })

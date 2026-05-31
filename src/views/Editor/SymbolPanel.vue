@@ -38,23 +38,39 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMainStore } from '@/store/main'
 import { SYMBOL_LIST } from '@/configs/symbol'
+import { useI18nContext } from '@/i18n/useI18nContext'
 import emitter, { EmitterEvents } from '@/utils/emitter'
+import { queryPptist } from '@/utils/portal'
 import useCreateElement from '@/hooks/useCreateElement'
 import MoveablePanel from '@/components/MoveablePanel.vue'
 import Tabs from '@/components/Tabs.vue'
+
+const { LL } = useI18nContext()
 
 const mainStore = useMainStore()
 const { handleElement } = storeToRefs(mainStore)
 
 const { createTextElement } = useCreateElement()
 
-const poolRef = useTemplateRef<HTMLElement>('poolRef')
+const poolRef = ref<HTMLElement | null>(null)
 const selectedSymbolKey = ref(SYMBOL_LIST[0].key)
-const emojiTypeList = ref(['表情', '动作', '动植物', '食物', '旅行', '活动', '物品', '符号'])
+const emojiTypeList = computed(() => {
+  const types = LL.value.editor.symbolPanel.emojiTypes
+  return [
+    types.expression(),
+    types.action(),
+    types.faunaFlora(),
+    types.food(),
+    types.travel(),
+    types.activity(),
+    types.objects(),
+    types.symbols(),
+  ]
+})
 const selectedEmojiTypeIndex = ref(0)
 const symbolPool = computed(() => {
   const selectedSymbol = SYMBOL_LIST.find(item => item.key === selectedSymbolKey.value)
@@ -68,10 +84,21 @@ const symbolPool = computed(() => {
   return selectedSymbol.children
 })
 
-const tabs = SYMBOL_LIST.map(item => ({
-  key: item.key,
-  label: item.label,
-}))
+const tabs = computed(() => {
+  const symbols = LL.value.configs.symbols
+  const labels: Record<string, () => string> = {
+    letter: symbols.letter,
+    number: symbols.number,
+    math: symbols.math,
+    arrow: symbols.arrow,
+    graph: symbols.graph,
+    emoji: symbols.emoji,
+  }
+  return SYMBOL_LIST.map(item => ({
+    key: item.key,
+    label: labels[item.key](),
+  }))
+})
 
 watch([selectedEmojiTypeIndex, selectedSymbolKey], () => {
   if (poolRef.value) poolRef.value.scrollTo(0, 0)
@@ -83,14 +110,14 @@ const selectSymbol = (value: string) => {
     return
   }
   if (handleElement.value?.type === 'shape') {
-    const editableElRef = document.querySelector(`#editable-element-${handleElement.value.id} .ProseMirror`)
+    const editableElRef = queryPptist(`#editable-element-${handleElement.value.id} .ProseMirror`)
     if (editableElRef) {
       emitter.emit(EmitterEvents.RICH_TEXT_COMMAND, { action: { command: 'insert', value } })
       return
     }
   }
   if (handleElement.value?.type === 'table') {
-    const editableElRef = document.querySelector(`#editable-element-${handleElement.value.id} .cell.active .cell-text`)
+    const editableElRef = queryPptist(`#editable-element-${handleElement.value.id} .cell.active .cell-text`)
     if (editableElRef) {
       document.execCommand('insertText', false, value)
       return

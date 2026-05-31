@@ -19,7 +19,7 @@
       </template>
       <button class="toolbar-btn">
         <i-icon-park-outline:connection class="icon" />
-        <span>样式</span>
+        <span>{{ LL.canvas.floatingToolbar.style() }}</span>
       </button>
     </Popover>
     <Popover trigger="click">
@@ -28,7 +28,7 @@
       </template>
       <button class="toolbar-btn">
         <i-icon-park-outline:platte class="icon" />
-        <span>颜色</span>
+        <span>{{ LL.canvas.floatingToolbar.color() }}</span>
       </button>
     </Popover>
     <div class="width-slider">
@@ -54,6 +54,10 @@ import SVGLine from '@/views/Editor/Toolbar/common/SVGLine.vue'
 import Popover from '@/components/Popover.vue'
 import ColorPicker from '@/components/ColorPicker/index.vue'
 import Slider from '@/components/Slider.vue'
+
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 defineProps<{
   elementInfo: PPTLineElement

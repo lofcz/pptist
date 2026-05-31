@@ -1,7 +1,7 @@
 <template>
   <div class="element-filter">
     <div class="row">
-      <div style="flex: 2;">启用滤镜：</div>
+      <div style="flex: 2;">{{ LL.editor.elementFilter.enableFilter() }}</div>
       <div class="switch-wrapper" style="flex: 3;">
         <Switch 
           :value="hasFilters" 
@@ -34,11 +34,12 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, type Ref } from 'vue'
+import { ref, watch, computed, type Ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMainStore, useSlidesStore } from '@/store'
 import type { ImageElementFilterKeys, ImageElementFilters, PPTImageElement } from '@/types/slides'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
+import { useI18nContext } from '@/i18n/useI18nContext'
 
 import Switch from '@/components/Switch.vue'
 import Slider from '@/components/Slider.vue'
@@ -53,40 +54,47 @@ interface FilterOption {
   step: number
 }
 
-const defaultFilters: FilterOption[] = [
-  { label: '模糊', key: 'blur', default: 0, value: 0, unit: 'px', max: 10, step: 1 },
-  { label: '亮度', key: 'brightness', default: 100, value: 100, unit: '%', max: 200, step: 5 },
-  { label: '对比度', key: 'contrast', default: 100, value: 100, unit: '%', max: 200, step: 5 },
-  { label: '灰度', key: 'grayscale', default: 0, value: 0, unit: '%', max: 100, step: 5 },
-  { label: '饱和度', key: 'saturate', default: 100, value: 100, unit: '%', max: 200, step: 5 },
-  { label: '色相', key: 'hue-rotate', default: 0, value: 0, unit: 'deg', max: 360, step: 10 },
-  { label: '褐色', key: 'sepia', default: 0, value: 0, unit: '%', max: 100, step: 5 },
-  { label: '反转', key: 'invert', default: 0, value: 0, unit: '%', max: 100, step: 5 },
-  { label: '不透明度', key: 'opacity', default: 100, value: 100, unit: '%', max: 100, step: 5 },
+const { LL } = useI18nContext()
+
+const createDefaultFilters = (): FilterOption[] => [
+  { label: LL.value.editor.elementFilter.blur(), key: 'blur', default: 0, value: 0, unit: 'px', max: 10, step: 1 },
+  { label: LL.value.editor.elementFilter.brightness(), key: 'brightness', default: 100, value: 100, unit: '%', max: 200, step: 5 },
+  { label: LL.value.editor.elementFilter.contrast(), key: 'contrast', default: 100, value: 100, unit: '%', max: 200, step: 5 },
+  { label: LL.value.editor.elementFilter.grayscale(), key: 'grayscale', default: 0, value: 0, unit: '%', max: 100, step: 5 },
+  { label: LL.value.editor.elementFilter.saturate(), key: 'saturate', default: 100, value: 100, unit: '%', max: 200, step: 5 },
+  { label: LL.value.editor.elementFilter.hueRotate(), key: 'hue-rotate', default: 0, value: 0, unit: 'deg', max: 360, step: 10 },
+  { label: LL.value.editor.elementFilter.sepia(), key: 'sepia', default: 0, value: 0, unit: '%', max: 100, step: 5 },
+  { label: LL.value.editor.elementFilter.invert(), key: 'invert', default: 0, value: 0, unit: '%', max: 100, step: 5 },
+  { label: LL.value.editor.elementFilter.opacity(), key: 'opacity', default: 100, value: 100, unit: '%', max: 100, step: 5 },
 ]
 
-const presetFilters: {
-  label: string
-  values: ImageElementFilters
-}[] = [
-  { label: '黑白', values: { 'grayscale': '100%' } },
-  { label: '复古', values: { 'sepia': '50%', 'contrast': '110%', 'brightness': '90%' } },
-  { label: '锐化', values: { 'contrast': '150%' } },
-  { label: '柔和', values: { 'brightness': '110%', 'contrast': '90%' } },
-  { label: '暖色', values: { 'sepia': '30%', 'saturate': '135%' } },
-  { label: '明亮', values: { 'brightness': '110%', 'contrast': '110%' } },
-  { label: '鲜艳', values: { 'saturate': '200%' } },
-  { label: '模糊', values: { 'blur': '2px' } },
-  { label: '反转', values: { 'invert': '100%' } },
-]
+const presetFilters = computed(() => [
+  { label: LL.value.editor.elementFilter.presetBlackWhite(), values: { 'grayscale': '100%' } as ImageElementFilters },
+  { label: LL.value.editor.elementFilter.presetVintage(), values: { 'sepia': '50%', 'contrast': '110%', 'brightness': '90%' } },
+  { label: LL.value.editor.elementFilter.presetSharpen(), values: { 'contrast': '150%' } },
+  { label: LL.value.editor.elementFilter.presetSoft(), values: { 'brightness': '110%', 'contrast': '90%' } },
+  { label: LL.value.editor.elementFilter.presetWarm(), values: { 'sepia': '30%', 'saturate': '135%' } },
+  { label: LL.value.editor.elementFilter.presetBright(), values: { 'brightness': '110%', 'contrast': '110%' } },
+  { label: LL.value.editor.elementFilter.presetVivid(), values: { 'saturate': '200%' } },
+  { label: LL.value.editor.elementFilter.presetBlur(), values: { 'blur': '2px' } },
+  { label: LL.value.editor.elementFilter.presetInvert(), values: { 'invert': '100%' } },
+])
 
 const slidesStore = useSlidesStore()
 const { handleElement, handleElementId } = storeToRefs(useMainStore())
 
 const handleImageElement = handleElement as Ref<PPTImageElement>
 
-const filterOptions = ref<FilterOption[]>(JSON.parse(JSON.stringify(defaultFilters)))
+const activeFilterValues = ref<Partial<Record<ImageElementFilterKeys, number>>>({})
 const hasFilters = ref(false)
+
+const filterOptions = computed((): FilterOption[] => {
+  const defaults = createDefaultFilters()
+  return defaults.map(item => ({
+    ...item,
+    value: activeFilterValues.value[item.key] ?? item.value,
+  }))
+})
 
 const { addHistorySnapshot } = useHistorySnapshot()
 
@@ -95,15 +103,16 @@ watch(handleElement, () => {
   
   const filters = handleElement.value.filters
   if (filters) {
-    filterOptions.value = defaultFilters.map(item => {
+    const values: Partial<Record<ImageElementFilterKeys, number>> = {}
+    for (const item of createDefaultFilters()) {
       const filterItem = filters[item.key]
-      if (filterItem) return { ...item, value: parseInt(filterItem) }
-      return item
-    })
+      if (filterItem) values[item.key] = parseInt(filterItem)
+    }
+    activeFilterValues.value = values
     hasFilters.value = true
   }
   else {
-    filterOptions.value = JSON.parse(JSON.stringify(defaultFilters))
+    activeFilterValues.value = {}
     hasFilters.value = false
   }
 }, { deep: true, immediate: true })

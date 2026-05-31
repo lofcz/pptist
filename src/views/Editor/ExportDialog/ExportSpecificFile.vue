@@ -2,18 +2,18 @@
   <div class="export-pptist-dialog">
     <div class="configs">
       <div class="row">
-        <div class="title">导出范围：</div>
+        <div class="title">{{ LL.export.dialog.exportRange() }}</div>
         <RadioGroup
           class="config-item"
           v-model:value="rangeType"
         >
-          <RadioButton style="width: 33.33%;" value="all">全部</RadioButton>
-          <RadioButton style="width: 33.33%;" value="current">当前页</RadioButton>
-          <RadioButton style="width: 33.33%;" value="custom">自定义</RadioButton>
+          <RadioButton style="width: 33.33%;" value="all">{{ LL.export.dialog.rangeAll() }}</RadioButton>
+          <RadioButton style="width: 33.33%;" value="current">{{ LL.export.dialog.rangeCurrent() }}</RadioButton>
+          <RadioButton style="width: 33.33%;" value="custom">{{ LL.export.dialog.rangeCustom() }}</RadioButton>
         </RadioGroup>
       </div>
       <div class="row" v-if="rangeType === 'custom'">
-        <div class="title" :data-range="`（${range[0]} ~ ${range[1]}）`">自定义范围：</div>
+        <div class="title" :data-range="customRangeHint">{{ LL.export.dialog.customRange() }}</div>
         <Slider
           class="config-item"
           range
@@ -24,12 +24,12 @@
         />
       </div>
       <div class="tip">
-        提示：.pptist 是本应用的特有文件后缀，支持将该类型的文件导入回应用中。
+        {{ LL.export.pptist.fileTip() }}
       </div>
     </div>
     <div class="btns">
-      <Button class="btn export" type="primary" @click="exportSpecificFile(selectedSlides)"><i-icon-park-outline:download /> 导出 PPTIST 文件</Button>
-      <Button class="btn close" @click="emit('close')">关闭</Button>
+      <Button class="btn export" type="primary" @click="exportSpecificFile(selectedSlides)"><i-icon-park-outline:download /> {{ LL.export.pptist.exportButton() }}</Button>
+      <Button class="btn close" @click="emit('close')">{{ LL.common.close() }}</Button>
     </div>
   </div>
 </template>
@@ -39,11 +39,14 @@ import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSlidesStore } from '@/store'
 import useExport from '@/hooks/useExport'
+import { useI18nContext } from '@/i18n/useI18nContext'
 
 import Slider from '@/components/Slider.vue'
 import Button from '@/components/Button.vue'
 import RadioButton from '@/components/RadioButton.vue'
 import RadioGroup from '@/components/RadioGroup.vue'
+
+const { LL } = useI18nContext()
 
 const emit = defineEmits<{
   (event: 'close'): void
@@ -55,6 +58,10 @@ const { exportSpecificFile } = useExport()
 
 const rangeType = ref<'all' | 'current' | 'custom'>('all')
 const range = ref<[number, number]>([1, slides.value.length])
+
+const customRangeHint = computed(() =>
+  LL.value.export.dialog.customRangeHint({ min: range.value[0], max: range.value[1] }),
+)
 
 const selectedSlides = computed(() => {
   if (rangeType.value === 'all') return slides.value

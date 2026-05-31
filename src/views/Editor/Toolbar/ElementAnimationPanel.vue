@@ -43,12 +43,12 @@
           </template>
         </template>
         <Button class="element-animation-btn" @click="handleAnimationId = ''">
-          <i-icon-park-outline:effects /> 添加动画
+          <i-icon-park-outline:effects /> {{ LL.editor.elementAnimation.addAnimation() }}
         </Button>
       </Popover>
     </div>
 
-    <div class="tip" v-else><i-icon-park-outline:click style="margin-right: 5px;" /> 选中画布中的元素添加动画</div>
+    <div class="tip" v-else><i-icon-park-outline:click style="margin-right: 5px;" /> {{ LL.editor.elementAnimation.selectElementTip() }}</div>
     
     <Divider />
 
@@ -66,10 +66,10 @@
         <div class="sequence-item" :class="[element.type, { 'active': handleElement?.id === element.elId }]" @click="selectElement(element.elId)">
           <div class="sequence-content">
             <div class="index">{{element.index}}</div>
-            <div class="text">「{{element.elType}}」{{element.animationEffect}}</div>
+            <div class="text">{{ LL.editor.elementAnimation.sequenceLabel({ elementType: element.elType, effect: element.animationEffect }) }}</div>
             <div class="handler">
-              <i-icon-park-outline:play-one class="handler-btn" v-tooltip="'预览'" @click.stop="runAnimation(element.elId, element.effect, element.duration)" />
-              <i-icon-park-outline:close-small class="handler-btn" v-tooltip="'删除'" @click.stop="deleteAnimation(element.id)" />
+              <i-icon-park-outline:play-one class="handler-btn" v-tooltip="LL.editor.elementAnimation.preview()" @click.stop="runAnimation(element.elId, element.effect, element.duration)" />
+              <i-icon-park-outline:close-small class="handler-btn" v-tooltip="LL.common.delete()" @click.stop="deleteAnimation(element.id)" />
             </div>
           </div>
 
@@ -77,7 +77,7 @@
             <Divider :margin="16" />
 
             <div class="config-item">
-              <div style="width: 35%;">持续时长：</div>
+              <div style="width: 35%;">{{ LL.editor.elementAnimation.duration() }}</div>
               <NumberInput 
                 :min="500"
                 :max="3000"
@@ -88,20 +88,16 @@
               />
             </div>
             <div class="config-item">
-              <div style="width: 35%;">触发方式：</div>
+              <div style="width: 35%;">{{ LL.editor.elementAnimation.trigger() }}</div>
               <Select
                 :value="element.trigger"
                 @update:value="value => updateElementAnimationTrigger(element.id, value as AnimationTrigger)"
                 style="width: 65%;"
-                :options="[
-                  { label: '主动触发', value: 'click' },
-                  { label: '与上一动画同时', value: 'meantime' },
-                  { label: '上一动画之后', value: 'auto' },
-                ]"
+                :options="animationTriggerOptions"
               />
             </div>
             <div class="config-item">
-              <Button style="width: 100%;" @click="openAnimationPool(element.id)"><i-icon-park-outline:switch /> 更换动画</Button>
+              <Button style="width: 100%;" @click="openAnimationPool(element.id)"><i-icon-park-outline:switch /> {{ LL.editor.elementAnimation.changeAnimation() }}</Button>
             </div>
           </div>
         </div>
@@ -111,7 +107,7 @@
     <template v-if="animationSequence.length >= 2">
       <Divider />
       <Button @click="runAllAnimation()">
-        <i-icon-park-outline:pause v-if="animateIn" /><i-icon-park-outline:play-one v-else /> {{ animateIn ? '停止预览' : '预览全部'}}
+        <i-icon-park-outline:pause v-if="animateIn" /><i-icon-park-outline:play-one v-else /> {{ animateIn ? LL.editor.elementAnimation.stopPreview() : LL.editor.elementAnimation.previewAll() }}
       </Button>
     </template>
   </div>
@@ -131,9 +127,10 @@ import {
   ANIMATION_DEFAULT_TRIGGER,
   ANIMATION_CLASS_PREFIX,
 } from '@/configs/animation'
-import { ELEMENT_TYPE_ZH } from '@/configs/element'
+import type { PPTElement } from '@/types/slides'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 import useSelectElement from '@/hooks/useSelectElement'
+import { queryPptist } from '@/utils/portal'
 
 import Tabs from '@/components/Tabs.vue'
 import Divider from '@/components/Divider.vue'
@@ -142,6 +139,21 @@ import Draggable from 'vuedraggable'
 import NumberInput from '@/components/NumberInput.vue'
 import Select from '@/components/Select.vue'
 import Popover from '@/components/Popover.vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
+
+const elementTypeLabels: Record<PPTElement['type'], () => string> = {
+  text: () => LL.value.editor.elementTypes.text(),
+  image: () => LL.value.editor.elementTypes.image(),
+  shape: () => LL.value.editor.elementTypes.shape(),
+  line: () => LL.value.editor.elementTypes.line(),
+  chart: () => LL.value.editor.elementTypes.chart(),
+  table: () => LL.value.editor.elementTypes.table(),
+  video: () => LL.value.editor.elementTypes.video(),
+  audio: () => LL.value.editor.elementTypes.audio(),
+  latex: () => LL.value.editor.elementTypes.latex(),
+}
 
 const animationEffects: Record<string, string> = {}
 for (const effect of ENTER_ANIMATIONS) {
@@ -172,11 +184,17 @@ const slidesStore = useSlidesStore()
 const { handleElement, handleElementId } = storeToRefs(useMainStore())
 const { currentSlide, formatedAnimations, currentSlideAnimations } = storeToRefs(slidesStore)
 
-const tabs: TabItem[] = [
-  { key: 'in', label: '入场', color: '#68a490' },
-  { key: 'out', label: '退场', color: '#d86344' },
-  { key: 'attention', label: '强调', color: '#e8b76a' },
-]
+const tabs = computed<TabItem[]>(() => [
+  { key: 'in', label: LL.value.editor.elementAnimation.tabIn(), color: '#68a490' },
+  { key: 'out', label: LL.value.editor.elementAnimation.tabOut(), color: '#d86344' },
+  { key: 'attention', label: LL.value.editor.elementAnimation.tabAttention(), color: '#e8b76a' },
+])
+
+const animationTriggerOptions = computed(() => [
+  { label: LL.value.editor.elementAnimation.triggerClick(), value: 'click' },
+  { label: LL.value.editor.elementAnimation.triggerMeantime(), value: 'meantime' },
+  { label: LL.value.editor.elementAnimation.triggerAuto(), value: 'auto' },
+])
 const activeTab = ref('in')
 const animateIn = ref(false)
 watch(() => handleElementId.value, () => {
@@ -199,7 +217,7 @@ const animationSequence = computed(() => {
       const el = currentSlide.value.elements.find(el => el.id === animation.elId)
       if (!el) continue
 
-      const elType = ELEMENT_TYPE_ZH[el.type]
+      const elType = elementTypeLabels[el.type]()
       const animationEffect = animationEffects[animation.effect]
       animationSequence.push({
         ...animation,
@@ -242,14 +260,14 @@ const handleDragEnd = (eventData: { newIndex: number; oldIndex: number }) => {
 
 // 执行动画预览
 const runAnimation = (elId: string, effect: string, duration: number) => {
-  const elRef = document.querySelector(`#editable-element-${elId} [class^=editable-element-]`)
+  const elRef = queryPptist<HTMLElement>(`#editable-element-${elId} [class^=editable-element-]`)
   if (elRef) {
     const animationName = `${ANIMATION_CLASS_PREFIX}${effect}`
-    document.documentElement.style.setProperty('--animate-duration', `${duration}ms`)
+    elRef.style.setProperty('--animate-duration', `${duration}ms`)
     elRef.classList.add(`${ANIMATION_CLASS_PREFIX}animated`, animationName)
 
     const handleAnimationEnd = () => {
-      document.documentElement.style.removeProperty('--animate-duration')
+      elRef.style.removeProperty('--animate-duration')
       elRef.classList.remove(`${ANIMATION_CLASS_PREFIX}animated`, animationName)
     }
     elRef.addEventListener('animationend', handleAnimationEnd, { once: true })

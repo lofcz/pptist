@@ -3,15 +3,15 @@
     class="select-panel" 
     :width="200" 
     :height="360" 
-    :title="`选择（${activeElementIdList.length}/${currentSlide.elements.length}）`" 
+    :title="panelTitle" 
     :left="-270" 
     :top="90"
     @close="close()"
   >
     <div class="handler" v-if="elements.length">
       <div class="btns">
-        <Button size="small" style="margin-right: 5px;" @click="showAllElements()">全部显示</Button>
-        <Button size="small" @click="hideAllElements()">全部隐藏</Button>
+        <Button size="small" style="margin-right: 5px;" @click="showAllElements()">{{ LL.editor.selectPanel.showAll() }}</Button>
+        <Button size="small" @click="hideAllElements()">{{ LL.editor.selectPanel.hideAll() }}</Button>
       </div>
       <div class="icon-btns" v-if="handleElement">
         <span class="icon-btn" @click="orderElement(handleElement!, ElementOrderCommands.UP)"><i-icon-park-outline:down /></span>
@@ -21,7 +21,7 @@
     <div class="element-list" v-if="elements.length">
       <template v-for="item in elements" :key="item.id">
         <div class="group-els" v-if="item.type === 'group'">
-          <div class="group-title">组合</div>
+          <div class="group-title">{{ LL.editor.selectPanel.group() }}</div>
           <div 
             class="item" 
             :class="{
@@ -36,14 +36,14 @@
           >
             <input 
               :id="`select-panel-input-${groupItem.id}`" 
-              :value="groupItem.name || ELEMENT_TYPE_ZH[groupItem.type]" 
+              :value="groupItem.name || elementTypeLabel(groupItem.type)" 
               class="input" 
               type="text" 
               v-if="editingElId === groupItem.id" 
               @blur="$event => saveElementName($event, groupItem.id)"
               @keydown.enter="$event => saveElementName($event, groupItem.id)"
             >
-            <div v-else class="name">{{groupItem.name || ELEMENT_TYPE_ZH[groupItem.type]}}</div>
+            <div v-else class="name">{{ groupItem.name || elementTypeLabel(groupItem.type) }}</div>
             <div class="icons">
               <i-icon-park-outline:lock class="icon" style="font-size: 14px;" @click="unlockElement(groupItem)" v-if="groupItem.lock" />
               <div class="icon" style="width: 14px;" v-else />
@@ -64,14 +64,14 @@
         >
           <input 
             :id="`select-panel-input-${item.id}`" 
-            :value="item.name || ELEMENT_TYPE_ZH[item.type]" 
+            :value="item.name || elementTypeLabel(item.type)" 
             class="input" 
             type="text" 
             v-if="editingElId === item.id" 
             @blur="$event => saveElementName($event, item.id)"
             @keydown.enter="$event => saveElementName($event, item.id)"
           >
-          <div v-else class="name">{{item.name || ELEMENT_TYPE_ZH[item.type]}}</div>
+          <div v-else class="name">{{ item.name || elementTypeLabel(item.type) }}</div>
           <div class="icons">
             <i-icon-park-outline:lock class="icon" style="font-size: 14px;" @click="unlockElement(item)" v-if="item.lock" />
             <div class="icon" style="width: 14px;" v-else />
@@ -81,7 +81,7 @@
         </div>
       </template>
     </div>
-    <div class="empty" v-if="!elements.length">本页无内容</div>
+    <div class="empty" v-if="!elements.length">{{ LL.editor.selectPanel.emptyPage() }}</div>
   </MoveablePanel>
 </template>
 
@@ -90,7 +90,8 @@ import { computed, nextTick, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSlidesStore, useMainStore } from '@/store'
 import type { PPTElement } from '@/types/slides'
-import { ELEMENT_TYPE_ZH } from '@/configs/element'
+import { useI18nContext } from '@/i18n/useI18nContext'
+import { queryPptist } from '@/utils/portal'
 import useOrderElement from '@/hooks/useOrderElement'
 import useHideElement from '@/hooks/useHideElement'
 import useSelectElement from '@/hooks/useSelectElement'
@@ -99,6 +100,8 @@ import { ElementOrderCommands } from '@/types/edit'
 
 import MoveablePanel from '@/components/MoveablePanel.vue'
 import Button from '@/components/Button.vue'
+
+const { LL } = useI18nContext()
 
 const slidesStore = useSlidesStore()
 const mainStore = useMainStore()
@@ -109,6 +112,29 @@ const { orderElement } = useOrderElement()
 const { selectElement } = useSelectElement()
 const { toggleHideElement, showAllElements, hideAllElements } = useHideElement()
 const { unlockElement } = useLockElement()
+
+const panelTitle = computed(() =>
+  LL.value.editor.selectPanel.title({
+    selected: activeElementIdList.value.length,
+    total: currentSlide.value.elements.length,
+  }),
+)
+
+const elementTypeLabel = (type: string) => {
+  const types = LL.value.editor.elementTypes
+  const labels: Record<string, () => string> = {
+    text: types.text,
+    image: types.image,
+    shape: types.shape,
+    line: types.line,
+    chart: types.chart,
+    table: types.table,
+    video: types.video,
+    audio: types.audio,
+    latex: types.latex,
+  }
+  return labels[type]?.() ?? type
+}
 
 interface GroupElements {
   type: 'group'
@@ -159,8 +185,8 @@ const saveElementName = (e: FocusEvent | KeyboardEvent, id: string) => {
 const enterEdit = (id: string) => {
   editingElId.value = id
   nextTick(() => {
-    const inputRef = document.querySelector(`#select-panel-input-${id}`) as HTMLInputElement
-    inputRef.focus()
+    const inputRef = queryPptist<HTMLInputElement>(`#select-panel-input-${id}`)
+    inputRef?.focus()
   })
 }
 

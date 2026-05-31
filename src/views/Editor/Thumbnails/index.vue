@@ -5,7 +5,7 @@
     v-click-outside="() => setThumbnailsFocus(false)"
   >
     <div class="add-slide">
-      <div class="btn" @click="createSlide()"><i-icon-park-outline:plus class="icon" />添加幻灯片</div>
+      <div class="btn" @click="createSlide()"><i-icon-park-outline:plus class="icon" />{{ LL.editor.thumbnails.addSlide() }}</div>
       <Popover trigger="click" placement="bottom-start" v-model:value="presetLayoutPopoverVisible" center>
         <template #content>
           <Templates 
@@ -41,13 +41,13 @@
               :id="`section-title-input-${element?.sectionTag?.id || 'default'}`" 
               type="text"
               :value="element?.sectionTag?.title || ''"
-              placeholder="输入节名称"
+              :placeholder="LL.editor.thumbnails.sectionNamePlaceholder()"
               @blur="$event => saveSection($event)"
               @keydown.enter.stop="$event => saveSection($event)"
               v-if="editingSectionId === element?.sectionTag?.id || (index === 0 && editingSectionId === 'default')"
             >
             <span class="text" v-else>
-              <div class="text-content">{{ element?.sectionTag ? (element?.sectionTag?.title || '无标题节') : '默认节' }}</div>
+              <div class="text-content">{{ element?.sectionTag ? (element?.sectionTag?.title || LL.editor.thumbnails.untitledSection()) : LL.editor.thumbnails.defaultSection() }}</div>
             </span>
           </div>
           <div
@@ -69,17 +69,18 @@
       </template>
     </Draggable>
 
-    <div class="page-number">幻灯片 {{slideIndex + 1}} / {{slides.length}}</div>
+    <div class="page-number">{{ LL.editor.thumbnails.slideCounter({ current: slideIndex + 1, total: slides.length }) }}</div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, ref, watch, useTemplateRef } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMainStore, useSlidesStore, useKeyboardStore } from '@/store'
 import type { Slide, SlideTheme } from '@/types/slides'
 import { fillDigit } from '@/utils/common'
 import { isElementInViewport } from '@/utils/element'
+import { queryPptist } from '@/utils/portal'
 import type { ContextmenuItem } from '@/components/Contextmenu/types'
 import useSlideHandler from '@/hooks/useSlideHandler'
 import useSectionHandler from '@/hooks/useSectionHandler'
@@ -91,6 +92,9 @@ import ThumbnailSlide from '@/views/components/ThumbnailSlide/index.vue'
 import Templates from './Templates.vue'
 import Popover from '@/components/Popover.vue'
 import Draggable from 'vuedraggable'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 const mainStore = useMainStore()
 const slidesStore = useSlidesStore()
@@ -133,7 +137,7 @@ const {
 } = useSectionHandler()
 
 // 页面被切换时
-const thumbnailsRef = useTemplateRef<InstanceType<typeof Draggable>>('thumbnailsRef')
+const thumbnailsRef = ref<InstanceType<typeof Draggable> | null>(null)
 watch(() => slideIndex.value, () => {
 
   // 清除多选状态的幻灯片
@@ -239,8 +243,8 @@ const editSection = (id: string) => {
   editingSectionId.value = id || 'default'
 
   nextTick(() => {
-    const inputRef = document.querySelector(`#section-title-input-${id || 'default'}`) as HTMLInputElement
-    inputRef.focus()
+    const inputRef = queryPptist<HTMLInputElement>(`#section-title-input-${id || 'default'}`)
+    inputRef?.focus()
   })
 }
 
@@ -259,25 +263,26 @@ const insertAllTemplates = ({ slides, theme }: { slides: Slide[], theme: Partial
 
 const contextmenusSection = (el: HTMLElement): ContextmenuItem[] => {
   const sectionId = el.dataset.sectionId!
+  const menu = LL.value.editor.thumbnails.contextMenu
 
   return [
     {
-      text: '删除节',
+      text: menu.deleteSection(),
       handler: () => removeSection(sectionId),
     },
     {
-      text: '删除节和幻灯片',
+      text: menu.deleteSectionAndSlides(),
       handler: () => {
         mainStore.setActiveElementIdList([])
         removeSectionSlides(sectionId)
       },
     },
     {
-      text: '删除所有节',
+      text: menu.deleteAllSections(),
       handler: removeAllSection,
     },
     {
-      text: '重命名节',
+      text: menu.renameSection(),
       handler: () => editSection(sectionId),
     },
   ]
@@ -286,24 +291,26 @@ const contextmenusSection = (el: HTMLElement): ContextmenuItem[] => {
 const { enterScreening, enterScreeningFromStart } = useScreening()
 
 const contextmenusThumbnails = (): ContextmenuItem[] => {
+  const menu = LL.value.editor.thumbnails.contextMenu
+
   return [
     {
-      text: '粘贴',
+      text: menu.paste(),
       subText: 'Ctrl + V',
       handler: pasteSlide,
     },
     {
-      text: '全选',
+      text: menu.selectAll(),
       subText: 'Ctrl + A',
       handler: selectAllSlide,
     },
     {
-      text: '新建页面',
+      text: menu.newSlide(),
       subText: 'Enter',
       handler: createSlide,
     },
     {
-      text: '幻灯片放映',
+      text: menu.slideShow(),
       subText: 'F5',
       handler: enterScreeningFromStart,
     },
@@ -311,51 +318,53 @@ const contextmenusThumbnails = (): ContextmenuItem[] => {
 }
 
 const contextmenusThumbnailItem = (): ContextmenuItem[] => {
+  const menu = LL.value.editor.thumbnails.contextMenu
+
   return [
     {
-      text: '剪切',
+      text: menu.cut(),
       subText: 'Ctrl + X',
       handler: cutSlide,
     },
     {
-      text: '复制',
+      text: menu.copy(),
       subText: 'Ctrl + C',
       handler: copySlide,
     },
     {
-      text: '粘贴',
+      text: menu.paste(),
       subText: 'Ctrl + V',
       handler: pasteSlide,
     },
     {
-      text: '全选',
+      text: menu.selectAll(),
       subText: 'Ctrl + A',
       handler: selectAllSlide,
     },
     { divider: true },
     {
-      text: '新建页面',
+      text: menu.newSlide(),
       subText: 'Enter',
       handler: createSlide,
     },
     {
-      text: '复制页面',
+      text: menu.duplicateSlide(),
       subText: 'Ctrl + D',
       handler: copyAndPasteSlide,
     },
     {
-      text: '删除页面',
+      text: menu.deleteSlide(),
       subText: 'Delete',
       handler: () => deleteSlide(),
     },
     {
-      text: '增加节',
+      text: menu.addSection(),
       handler: createSection,
       disable: !!currentSlide.value.sectionTag,
     },
     { divider: true },
     {
-      text: '从当前放映',
+      text: menu.presentFromCurrent(),
       subText: 'Shift + F5',
       handler: enterScreening,
     },

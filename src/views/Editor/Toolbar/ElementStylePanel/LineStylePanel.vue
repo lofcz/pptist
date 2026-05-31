@@ -1,7 +1,7 @@
 <template>
   <div class="line-style-panel">
     <div class="title">
-      <span>点击替换线条类型</span>
+      <span>{{ LL.editor.stylePanel.line.clickToReplaceLineType() }}</span>
       <i-icon-park-outline:down />
     </div>
     <div class="line-pool-wrapper">
@@ -49,7 +49,7 @@
     </div>
 
     <div class="row">
-      <div style="width: 40%;">线条样式：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.line.lineStyle() }}</div>
       <SelectCustom style="width: 60%;">
         <template #options>
           <div class="option" v-for="item in lineStyleOptions" :key="item" @click="updateLine({ style: item })">
@@ -62,7 +62,7 @@
       </SelectCustom>
     </div>
     <div class="row">
-      <div style="width: 40%;">线条颜色：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.line.lineColor() }}</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -74,7 +74,7 @@
       </Popover>
     </div>
     <div class="row">
-      <div style="width: 40%;">线条宽度：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.line.lineWidth() }}</div>
       <NumberInput 
         :value="handleLineElement.width" 
         @update:value="value => updateLine({ width: value })" 
@@ -83,7 +83,7 @@
     </div>
     
     <div class="row">
-      <div style="width: 40%;">起点样式：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.line.startPointStyle() }}</div>
       <SelectCustom style="width: 60%;">
         <template #options>
           <div class="option" v-for="item in lineMarkerOptions" :key="item" @click="updateLine({ points: [item, handleLineElement.points[1]] })">
@@ -96,7 +96,7 @@
       </SelectCustom>
     </div>
     <div class="row">
-      <div style="width: 40%;">终点样式：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.line.endPointStyle() }}</div>
       <SelectCustom style="width: 60%;">
         <template #options>
           <div class="option" v-for="item in lineMarkerOptions" :key="item" @click="updateLine({ points: [handleLineElement.points[0], item] })">
@@ -110,7 +110,7 @@
     </div>
 
     <div class="row" v-if="handleLineElement.broken2">
-      <div style="width: 40%;">线条方向：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.line.lineDirection() }}</div>
       <Select 
         style="width: 60%;"
         :value="handleLineElement.broken2Direction || 'auto'"
@@ -122,7 +122,7 @@
     <Divider />
 
     <div class="row">
-      <Button style="flex: 1;" @click="updateLine({ start: handleLineElement.end, end: handleLineElement.start })"><i-icon-park-outline:switch /> 交换方向</Button>
+      <Button style="flex: 1;" @click="updateLine({ start: handleLineElement.end, end: handleLineElement.start })"><i-icon-park-outline:switch /> {{ LL.editor.stylePanel.line.swapDirection() }}</Button>
     </div>
 
     <Divider />
@@ -131,7 +131,8 @@
 </template>
 
 <script lang="ts" setup>
-import { type Ref, ref } from 'vue'
+import { type Ref, computed, ref } from 'vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
 import { storeToRefs } from 'pinia'
 import { useMainStore, useSlidesStore } from '@/store'
 import type { Broken2LineDirection, LinePoint, LineStyleType, PPTLineElement } from '@/types/slides'
@@ -149,6 +150,8 @@ import Select from '@/components/Select.vue'
 import SelectCustom from '@/components/SelectCustom.vue'
 import Popover from '@/components/Popover.vue'
 
+const { LL } = useI18nContext()
+
 const slidesStore = useSlidesStore()
 const { handleElement } = storeToRefs(useMainStore())
 
@@ -159,10 +162,10 @@ const { addHistorySnapshot } = useHistorySnapshot()
 const lineStyleOptions = ref<LineStyleType[]>(['solid', 'dashed', 'dotted'])
 const lineMarkerOptions = ref<LinePoint[]>(['', 'arrow', 'dot'])
 
-const lineBroken2DirectionOptions = ref<{ label: string; value: Broken2LineDirection | 'auto' }[]>([
-  { label: '自动', value: 'auto' },
-  { label: '水平', value: 'horizontal' },
-  { label: '垂直', value: 'vertical' },
+const lineBroken2DirectionOptions = computed(() => [
+  { label: LL.value.editor.stylePanel.line.directionAuto(), value: 'auto' as const },
+  { label: LL.value.editor.stylePanel.line.directionHorizontal(), value: 'horizontal' as const },
+  { label: LL.value.editor.stylePanel.line.directionVertical(), value: 'vertical' as const },
 ])
 interface LineTypeOption {
   key: string

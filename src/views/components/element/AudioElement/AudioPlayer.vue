@@ -73,8 +73,11 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, ref } from 'vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
 import message from '@/utils/message'
+
+const { LL } = useI18nContext()
 
 const props = withDefaults(defineProps<{
   src: string
@@ -100,9 +103,9 @@ const getBoundingClientRectViewLeft = (element: HTMLElement) => {
   return element.getBoundingClientRect().left
 }
 
-const audioRef = useTemplateRef<HTMLAudioElement>('audioRef')
-const playBarWrapRef = useTemplateRef<HTMLElement>('playBarWrapRef')
-const volumeBarRef = useTemplateRef<HTMLElement>('volumeBarRef')
+const audioRef = ref<HTMLAudioElement | null>(null)
+const playBarWrapRef = ref<HTMLElement | null>(null)
+const volumeBarRef = ref<HTMLElement | null>(null)
 
 const volume = ref(0.5)
 const paused = ref(true)
@@ -184,7 +187,7 @@ const handleProgress = () => {
   loaded.value = audioRef.value?.buffered.length ? audioRef.value.buffered.end(audioRef.value.buffered.length - 1) : 0
 }
 
-const handleError = () => message.error('视频加载失败')
+const handleError = () => message.error(LL.value.components.audioPlayer.loadFailed())
 
 const thumbMove = (e: MouseEvent | TouchEvent) => {
   if (!audioRef.value || !playBarWrapRef.value) return

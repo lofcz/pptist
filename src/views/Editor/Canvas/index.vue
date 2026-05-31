@@ -103,7 +103,7 @@
 </template>
 
 <script lang="ts" setup>
-import { nextTick, onMounted, onUnmounted, provide, ref, watch, watchEffect, useTemplateRef } from 'vue'
+import { nextTick, onMounted, onUnmounted, provide, ref, watch, watchEffect } from 'vue'
 import { throttle } from 'lodash'
 import { storeToRefs } from 'pinia'
 import { useMainStore, useSlidesStore, useKeyboardStore } from '@/store'
@@ -147,7 +147,9 @@ import Operate from './Operate/index.vue'
 import LinkDialog from './LinkDialog.vue'
 import Modal from '@/components/Modal.vue'
 import message from '@/utils/message'
+import { useI18nContext } from '@/i18n/useI18nContext'
 
+const { LL } = useI18nContext()
 const mainStore = useMainStore()
 const {
   activeElementIdList,
@@ -166,7 +168,7 @@ const {
 const { currentSlide } = storeToRefs(useSlidesStore())
 const { ctrlKeyState, spaceKeyState } = storeToRefs(useKeyboardStore())
 
-const viewportRef = useTemplateRef<HTMLElement>('viewportRef')
+const viewportRef = ref<HTMLElement | null>(null)
 const alignmentLines = ref<AlignmentLineProps[]>([])
 
 const linkDialogVisible = ref(false)
@@ -182,7 +184,7 @@ const setLocalElementList = () => {
 }
 watchEffect(setLocalElementList)
 
-const canvasRef = useTemplateRef<HTMLElement>('canvasRef')
+const canvasRef = ref<HTMLElement | null>(null)
 const { dragViewport, viewportStyles } = useViewportSize(canvasRef)
 
 useDrop(canvasRef)
@@ -279,7 +281,9 @@ const toggleRuler = () => {
 // 开关浮动菜单
 const toggleBubbleMenu = () => {
   mainStore.setBubbleMenuState(!showBubbleMenu.value)
-  message.success(`元素气泡菜单已${showBubbleMenu.value ? '启用' : '禁用'}`)
+  message.success(
+    showBubbleMenu.value ? LL.value.canvas.bubbleMenuEnabled() : LL.value.canvas.bubbleMenuDisabled(),
+  )
 }
 
 // 在鼠标绘制的范围插入元素
@@ -307,58 +311,58 @@ const insertCustomShape = (data: CreateCustomShapeData) => {
 const contextmenus = (): ContextmenuItem[] => {
   return [
     {
-      text: '粘贴',
+      text: LL.value.canvas.contextMenu.paste(),
       subText: 'Ctrl + V',
       handler: pasteElement,
     },
     {
-      text: '全选',
+      text: LL.value.canvas.contextMenu.selectAll(),
       subText: 'Ctrl + A',
       handler: selectAllElements,
     },
     {
-      text: '标尺',
+      text: LL.value.canvas.contextMenu.ruler(),
       subText: showRuler.value ? '√' : '',
       handler: toggleRuler,
     },
     {
-      text: '网格线',
+      text: LL.value.canvas.contextMenu.gridLines(),
       handler: () => mainStore.setGridLineSize(gridLineSize.value ? 0 : 50),
       children: [
         {
-          text: '无',
+          text: LL.value.canvas.contextMenu.gridNone(),
           subText: gridLineSize.value === 0 ? '√' : '',
           handler: () => mainStore.setGridLineSize(0),
         },
         {
-          text: '小',
+          text: LL.value.canvas.contextMenu.gridSmall(),
           subText: gridLineSize.value === 25 ? '√' : '',
           handler: () => mainStore.setGridLineSize(25),
         },
         {
-          text: '中',
+          text: LL.value.canvas.contextMenu.gridMedium(),
           subText: gridLineSize.value === 50 ? '√' : '',
           handler: () => mainStore.setGridLineSize(50),
         },
         {
-          text: '大',
+          text: LL.value.canvas.contextMenu.gridLarge(),
           subText: gridLineSize.value === 100 ? '√' : '',
           handler: () => mainStore.setGridLineSize(100),
         },
       ],
     },
     {
-      text: '重置当前页',
+      text: LL.value.canvas.contextMenu.resetCurrentSlide(),
       handler: deleteAllElements,
     },
     {
-      text: '气泡菜单',
+      text: LL.value.canvas.contextMenu.bubbleMenu(),
       subText: showBubbleMenu.value ? '√' : '',
       handler: toggleBubbleMenu,
     },
     { divider: true },
     {
-      text: '幻灯片放映',
+      text: LL.value.canvas.contextMenu.slideShow(),
       subText: 'F5',
       handler: enterScreeningFromStart,
     },

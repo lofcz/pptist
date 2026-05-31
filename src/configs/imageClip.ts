@@ -1,3 +1,5 @@
+import { getLL } from '@/i18n/getLL'
+
 export const enum ClipPathTypes {
   RECT = 'rect',
   ELLIPSE = 'ellipse',
@@ -24,158 +26,164 @@ interface ClipPath {
   }
 }
 
-export const CLIPPATHS: ClipPath = {
-  rect: {
-    name: '矩形',
-    type: ClipPathTypes.RECT,
-    radius: '0',
-    style: '',
-  },
-  snip1Rect: {
-    name: '矩形2',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(0% 0%, 80% 0%, 100% 20%, 100% 100%, 0 100%)',
-    createPath: (width: number, height: number) => {
-      return `M 0 0 L ${width * 0.8} 0 L ${width} ${height * 0.2} L ${width} ${height} L 0 ${height} Z`
+function buildClipPaths(): ClipPath {
+  const c = getLL().configs.imageClip
+
+  return {
+    rect: {
+      name: c.rect(),
+      type: ClipPathTypes.RECT,
+      radius: '0',
+      style: '',
     },
-  },
-  snip2DiagRect: {
-    name: '矩形3',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(0% 0%, 80% 0%, 100% 20%, 100% 100%, 20% 100%, 0% 80%)',
-    createPath: (width: number, height: number) => {
-      return `M 0 0 L ${width * 0.8} 0 L ${width} ${height * 0.2} L ${width} ${height} L ${width * 0.2} ${height} L 0 ${height * 0.8} Z`
+    snip1Rect: {
+      name: c.snip1Rect(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(0% 0%, 80% 0%, 100% 20%, 100% 100%, 0 100%)',
+      createPath: (width: number, height: number) => {
+        return `M 0 0 L ${width * 0.8} 0 L ${width} ${height * 0.2} L ${width} ${height} L 0 ${height} Z`
+      },
     },
-  },
-  roundRect: {
-    name: '圆角矩形',
-    type: ClipPathTypes.RECT,
-    radius: '10px',
-    style: 'inset(0 round 10px)',
-  },
-  ellipse: {
-    name: '圆形',
-    type: ClipPathTypes.ELLIPSE,
-    style: 'ellipse(50% 50% at 50% 50%)',
-  },
-  triangle: {
-    name: '三角形',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(50% 0%, 0% 100%, 100% 100%)',
-    createPath: (width: number, height: number) => {
-      return `M ${width * 0.5} 0 L 0 ${height} L ${width} ${height} Z`
+    snip2DiagRect: {
+      name: c.snip2DiagRect(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(0% 0%, 80% 0%, 100% 20%, 100% 100%, 20% 100%, 0% 80%)',
+      createPath: (width: number, height: number) => {
+        return `M 0 0 L ${width * 0.8} 0 L ${width} ${height * 0.2} L ${width} ${height} L ${width * 0.2} ${height} L 0 ${height * 0.8} Z`
+      },
     },
-  },
-  rtTriangle: {
-    name: '直角三角形',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(0% 0%, 0% 100%, 100% 100%)',
-    createPath: (width: number, height: number) => {
-      return `M 0 0 L 0 ${height} L ${width} ${height} Z`
+    roundRect: {
+      name: c.roundRect(),
+      type: ClipPathTypes.RECT,
+      radius: '10px',
+      style: 'inset(0 round 10px)',
     },
-  },
-  triangleReverse: {
-    name: '倒三角形',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(50% 100%, 0% 0%, 100% 0%)',
-    createPath: (width: number, height: number) => {
-      return `M ${width * 0.5} ${height} L 0 0 L ${width} 0 Z`
+    ellipse: {
+      name: c.ellipse(),
+      type: ClipPathTypes.ELLIPSE,
+      style: 'ellipse(50% 50% at 50% 50%)',
     },
-  },
-  diamond: {
-    name: '菱形',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
-    createPath: (width: number, height: number) => {
-      return `M ${width * 0.5} 0 L ${width} ${height * 0.5} L ${width * 0.5} ${height} L 0 ${height * 0.5} Z`
+    triangle: {
+      name: c.triangle(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(50% 0%, 0% 100%, 100% 100%)',
+      createPath: (width: number, height: number) => {
+        return `M ${width * 0.5} 0 L 0 ${height} L ${width} ${height} Z`
+      },
     },
-  },
-  pentagon: {
-    name: '五边形',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)',
-    createPath: (width: number, height: number) => {
-      return `M ${width * 0.5} 0 L ${width} ${0.38 * height} L ${0.82 * width} ${height} L ${0.18 * width} ${height} L 0 ${0.38 * height} Z`
+    rtTriangle: {
+      name: c.rtTriangle(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(0% 0%, 0% 100%, 100% 100%)',
+      createPath: (width: number, height: number) => {
+        return `M 0 0 L 0 ${height} L ${width} ${height} Z`
+      },
     },
-  },
-  hexagon: {
-    name: '六边形',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(20% 0%, 80% 0%, 100% 50%, 80% 100%, 20% 100%, 0% 50%)',
-    createPath: (width: number, height: number) => {
-      return `M ${width * 0.2} 0 L ${width * 0.8} 0 L ${width} ${height * 0.5} L ${width * 0.8} ${height} L ${width * 0.2} ${height} L 0 ${height * 0.5} Z`
+    triangleReverse: {
+      name: c.triangleReverse(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(50% 100%, 0% 0%, 100% 0%)',
+      createPath: (width: number, height: number) => {
+        return `M ${width * 0.5} ${height} L 0 0 L ${width} 0 Z`
+      },
     },
-  },
-  heptagon: {
-    name: '七边形',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%)',
-    createPath: (width: number, height: number) => {
-      return `M ${width * 0.5} 0 L ${width * 0.9} ${height * 0.2} L ${width} ${height * 0.6} L ${width * 0.75} ${height} L ${width * 0.25} ${height} L 0 ${height * 0.6} L ${width * 0.1} ${height * 0.2} Z`
+    diamond: {
+      name: c.diamond(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+      createPath: (width: number, height: number) => {
+        return `M ${width * 0.5} 0 L ${width} ${height * 0.5} L ${width * 0.5} ${height} L 0 ${height * 0.5} Z`
+      },
     },
-  },
-  octagon: {
-    name: '八边形',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)',
-    createPath: (width: number, height: number) => {
-      return `M ${width * 0.3} 0 L ${width * 0.7} 0 L ${width} ${height * 0.3} L ${width} ${height * 0.7} L ${width * 0.7} ${height} L ${width * 0.3} ${height} L 0 ${height * 0.7} L 0 ${height * 0.3} Z`
+    pentagon: {
+      name: c.pentagon(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)',
+      createPath: (width: number, height: number) => {
+        return `M ${width * 0.5} 0 L ${width} ${0.38 * height} L ${0.82 * width} ${height} L ${0.18 * width} ${height} L 0 ${0.38 * height} Z`
+      },
     },
-  },
-  chevron: {
-    name: '人字形',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(75% 0%, 100% 50%, 75% 100%, 0% 100%, 25% 50%, 0% 0%)',
-    createPath: (width: number, height: number) => {
-      return `M ${width * 0.75} 0 L ${width} ${height * 0.5} L ${width * 0.75} ${height} L 0 ${height} L ${width * 0.25} ${height * 0.5} L 0 0 Z`
+    hexagon: {
+      name: c.hexagon(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(20% 0%, 80% 0%, 100% 50%, 80% 100%, 20% 100%, 0% 50%)',
+      createPath: (width: number, height: number) => {
+        return `M ${width * 0.2} 0 L ${width * 0.8} 0 L ${width} ${height * 0.5} L ${width * 0.8} ${height} L ${width * 0.2} ${height} L 0 ${height * 0.5} Z`
+      },
     },
-  },
-  homePlate: {
-    name: '点',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(0% 0%, 75% 0%, 100% 50%, 75% 100%, 0% 100%)',
-    createPath: (width: number, height: number) => {
-      return `M 0 0 L ${width * 0.75} 0 L ${width} ${height * 0.5} L ${width * 0.75} ${height} L 0 ${height} Z`
+    heptagon: {
+      name: c.heptagon(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%)',
+      createPath: (width: number, height: number) => {
+        return `M ${width * 0.5} 0 L ${width * 0.9} ${height * 0.2} L ${width} ${height * 0.6} L ${width * 0.75} ${height} L ${width * 0.25} ${height} L 0 ${height * 0.6} L ${width * 0.1} ${height * 0.2} Z`
+      },
     },
-  },
-  rightArrow: {
-    name: '箭头',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(0% 20%, 60% 20%, 60% 0%, 100% 50%, 60% 100%, 60% 80%, 0% 80%)',
-    createPath: (width: number, height: number) => {
-      return `M 0 ${height * 0.2} L ${width * 0.6} ${height * 0.2} L ${width * 0.6} 0 L ${width} ${height * 0.5} L ${width * 0.6} ${height} L ${width * 0.6} ${height * 0.8} L 0 ${height * 0.8} Z`
+    octagon: {
+      name: c.octagon(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)',
+      createPath: (width: number, height: number) => {
+        return `M ${width * 0.3} 0 L ${width * 0.7} 0 L ${width} ${height * 0.3} L ${width} ${height * 0.7} L ${width * 0.7} ${height} L ${width * 0.3} ${height} L 0 ${height * 0.7} L 0 ${height * 0.3} Z`
+      },
     },
-  },
-  parallelogram: {
-    name: '平行四边形',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(30% 0%, 100% 0%, 70% 100%, 0% 100%)',
-    createPath: (width: number, height: number) => {
-      return `M ${width * 0.3} 0 L ${width} 0 L ${width * 0.7} ${height} L 0 ${height} Z`
+    chevron: {
+      name: c.chevron(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(75% 0%, 100% 50%, 75% 100%, 0% 100%, 25% 50%, 0% 0%)',
+      createPath: (width: number, height: number) => {
+        return `M ${width * 0.75} 0 L ${width} ${height * 0.5} L ${width * 0.75} ${height} L 0 ${height} L ${width * 0.25} ${height * 0.5} L 0 0 Z`
+      },
     },
-  },
-  parallelogramReverse: {
-    name: '反平行四边形',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(30% 100%, 100% 100%, 70% 0%, 0% 0%)',
-    createPath: (width: number, height: number) => {
-      return `M ${width * 0.3} ${height} L ${width} ${height} L ${width * 0.7} 0 L 0 0 Z`
+    homePlate: {
+      name: c.homePlate(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(0% 0%, 75% 0%, 100% 50%, 75% 100%, 0% 100%)',
+      createPath: (width: number, height: number) => {
+        return `M 0 0 L ${width * 0.75} 0 L ${width} ${height * 0.5} L ${width * 0.75} ${height} L 0 ${height} Z`
+      },
     },
-  },
-  trapezoid: {
-    name: '梯形',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(25% 0%, 75% 0%, 100% 100%, 0% 100%)',
-    createPath: (width: number, height: number) => {
-      return `M ${width * 0.25} 0 L ${width * 0.75} 0 L ${width} ${height} L 0 ${height} Z`
+    rightArrow: {
+      name: c.rightArrow(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(0% 20%, 60% 20%, 60% 0%, 100% 50%, 60% 100%, 60% 80%, 0% 80%)',
+      createPath: (width: number, height: number) => {
+        return `M 0 ${height * 0.2} L ${width * 0.6} ${height * 0.2} L ${width * 0.6} 0 L ${width} ${height * 0.5} L ${width * 0.6} ${height} L ${width * 0.6} ${height * 0.8} L 0 ${height * 0.8} Z`
+      },
     },
-  },
-  trapezoidReverse: {
-    name: '倒梯形',
-    type: ClipPathTypes.POLYGON,
-    style: 'polygon(0% 0%, 100% 0%, 75% 100%, 25% 100%)',
-    createPath: (width: number, height: number) => {
-      return `M 0 0 L ${width} 0 L ${width * 0.75} ${height} L ${width * 0.25} ${height} Z`
+    parallelogram: {
+      name: c.parallelogram(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(30% 0%, 100% 0%, 70% 100%, 0% 100%)',
+      createPath: (width: number, height: number) => {
+        return `M ${width * 0.3} 0 L ${width} 0 L ${width * 0.7} ${height} L 0 ${height} Z`
+      },
     },
-  },
+    parallelogramReverse: {
+      name: c.parallelogramReverse(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(30% 100%, 100% 100%, 70% 0%, 0% 0%)',
+      createPath: (width: number, height: number) => {
+        return `M ${width * 0.3} ${height} L ${width} ${height} L ${width * 0.7} 0 L 0 0 Z`
+      },
+    },
+    trapezoid: {
+      name: c.trapezoid(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(25% 0%, 75% 0%, 100% 100%, 0% 100%)',
+      createPath: (width: number, height: number) => {
+        return `M ${width * 0.25} 0 L ${width * 0.75} 0 L ${width} ${height} L 0 ${height} Z`
+      },
+    },
+    trapezoidReverse: {
+      name: c.trapezoidReverse(),
+      type: ClipPathTypes.POLYGON,
+      style: 'polygon(0% 0%, 100% 0%, 75% 100%, 25% 100%)',
+      createPath: (width: number, height: number) => {
+        return `M 0 0 L ${width} 0 L ${width * 0.75} ${height} L ${width * 0.25} ${height} Z`
+      },
+    },
+  }
 }
+
+export const CLIPPATHS: ClipPath = buildClipPaths()

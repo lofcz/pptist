@@ -1,0 +1,60 @@
+import type { NamespaceExportTranslation } from '../../i18n-types'
+
+const pl_export: NamespaceExportTranslation = {
+  exportImageFailed: 'Nie udało się wyeksportować obrazu',
+  exportFailed: 'Eksport nie powiódł się',
+  chartSeries: 'Seria {index}',
+  dialog: {
+    tabs: {
+      pptist: 'Eksportuj plik PPTIST',
+      pptx: 'Eksportuj PPTX',
+      image: 'Eksportuj obrazy',
+      json: 'Eksportuj JSON',
+      pdf: 'Drukuj / eksportuj PDF',
+    },
+    exportRange: 'Zakres eksportu:',
+    rangeAll: 'Wszystko',
+    rangeCurrent: 'Bieżący slajd',
+    rangeCustom: 'Niestandardowy',
+    customRange: 'Zakres niestandardowy:',
+    customRangeHint: '({min} ~ {max})',
+    exporting: 'Trwa eksport…',
+  },
+  pdf: {
+    slidesPerPage: 'Liczba slajdów na stronę:',
+    pageMargin: 'Margines strony:',
+    printTip:
+      'Wskazówka: W oknie drukowania włącz opcję „Grafika w tle” i ustaw marginesy na „Domyślne”.',
+    exportButton: 'Drukuj / eksportuj PDF',
+  },
+  pptx: {
+    exportMode: 'Tryb eksportu:',
+    modeStandard: 'Standardowy',
+    modeImageOnly: 'Tylko obrazy',
+    ignoreMedia: 'Ignoruj audio/wideo:',
+    ignoreMediaTooltip:
+      'Podczas eksportu domyślnie ignorowane są audio i wideo. Jeśli slajdy zawierają multimedia i chcesz je mieć w pliku PPTX, wyłącz tę opcję — eksport potrwa znacznie dłużej.',
+    overwriteMaster: 'Nadpisz domyślny szablon:',
+    mediaExportTip:
+      'Wskazówka: 1. Obsługiwane formaty: avi, mp4, mov, wmv, mp3, wav; 2. Zasobów z innych domen nie można eksportować.',
+    exportButton: 'Eksportuj PPTX',
+  },
+  pptist: {
+    fileTip:
+      'Wskazówka: .pptist to natywne rozszerzenie tej aplikacji; pliki tego typu można ponownie zaimportować do aplikacji.',
+    exportButton: 'Eksportuj plik PPTIST',
+  },
+  image: {
+    formatLabel: 'Format eksportu:',
+    qualityLabel: 'Jakość obrazu:',
+    ignoreWebfontLabel: 'Ignoruj czcionki internetowe:',
+    ignoreWebfontTooltip:
+      'Podczas eksportu domyślnie ignorowane są czcionki internetowe. Jeśli na slajdach używasz czcionek internetowych i chcesz zachować ich wygląd po eksporcie, wyłącz tę opcję — eksport potrwa dłużej.',
+    exportButton: 'Eksportuj obrazy',
+  },
+  json: {
+    exportButton: 'Eksportuj JSON',
+  },
+}
+
+export default pl_export

@@ -2,8 +2,7 @@ import type { CSSProperties } from 'vue'
 import type { PPTElementOutline, TableCellStyle } from '@/types/slides'
 
 /**
- * 计算单元格样式
- * @param style 单元格文本样式原数据
+ * Compute table cell box styles from outline and optional cell style.
  */
 export const getCellStyle = (outline: PPTElementOutline, style?: TableCellStyle): CSSProperties => {
   return {
@@ -15,8 +14,7 @@ export const getCellStyle = (outline: PPTElementOutline, style?: TableCellStyle)
 }
 
 /**
- * 计算单元格文本样式
- * @param style 单元格文本样式原数据
+ * Compute table cell text layout styles from optional cell style.
  */
 export const getTextStyle = (cellMinHeight: number, style?: TableCellStyle): CSSProperties => {
   if (!style) return {}

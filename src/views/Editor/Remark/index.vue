@@ -6,14 +6,13 @@
     ></div>
     <Editor
       :value="remark"
-      ref="editorRef"
       @update="value => handleInput(value)"
     />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, useTemplateRef, watch } from 'vue'
+import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSlidesStore } from '@/store'
 
@@ -29,15 +28,6 @@ const emit = defineEmits<{
 
 const slidesStore = useSlidesStore()
 const { currentSlide } = storeToRefs(slidesStore)
-
-const editorRef = useTemplateRef<InstanceType<typeof Editor>>('editorRef')
-watch(() => currentSlide.value.id, () => {
-  nextTick(() => {
-    editorRef.value!.updateTextContent()
-  })
-}, {
-  immediate: true,
-})
 
 const remark = computed(() => currentSlide.value?.remark || '')
 

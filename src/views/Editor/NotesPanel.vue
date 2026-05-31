@@ -3,7 +3,7 @@
     class="notes-panel" 
     :width="300" 
     :height="560" 
-    :title="`幻灯片${slideIndex + 1}的批注`" 
+    :title="panelTitle" 
     :left="-270" 
     :top="90"
     :minWidth="300"
@@ -21,12 +21,12 @@
               <div class="avatar"><i-icon-park-outline:user /></div>
               <div class="user-info">
                 <div class="username">{{ note.user }}</div>
-                <div class="time">{{ new Date(note.time).toLocaleString() }}</div>
+                <div class="time">{{ formatNoteTime(note.time) }}</div>
               </div>
             </div>
             <div class="btns">
-              <div class="btn reply" @click="replyNoteId = note.id">回复</div>
-              <div class="btn delete" @click.stop="deleteNote(note.id)">删除</div>
+              <div class="btn reply" @click="replyNoteId = note.id">{{ LL.editor.notesPanel.reply() }}</div>
+              <div class="btn delete" @click.stop="deleteNote(note.id)">{{ LL.common.delete() }}</div>
             </div>
           </div>
           <div class="content">{{ note.content }}</div>
@@ -37,39 +37,39 @@
                   <div class="avatar"><i-icon-park-outline:user /></div>
                   <div class="user-info">
                     <div class="username">{{ reply.user }}</div>
-                    <div class="time">{{ new Date(reply.time).toLocaleString() }}</div>
+                    <div class="time">{{ formatNoteTime(reply.time) }}</div>
                   </div>
                 </div>
                 <div class="btns">
-                  <div class="btn delete" @click.stop="deleteReply(note.id, reply.id)">删除</div>
+                  <div class="btn delete" @click.stop="deleteReply(note.id, reply.id)">{{ LL.common.delete() }}</div>
                 </div>
               </div>
               <div class="content">{{ reply.content }}</div>
             </div>
           </div>
           <div class="note-reply" v-if="replyNoteId === note.id">
-            <TextArea :padding="6" v-model:value="replyContent" placeholder="输入回复内容" :rows="1" @enter.prevent="createNoteReply()" />
+            <TextArea :padding="6" v-model:value="replyContent" :placeholder="LL.editor.notesPanel.enterReplyContent()" :rows="1" @enter.prevent="createNoteReply()" />
             <div class="reply-btns">
-              <Button class="btn" size="small" @click="replyNoteId = ''">取消</Button>
-              <Button class="btn" size="small" type="primary" @click="createNoteReply()">回复</Button>
+              <Button class="btn" size="small" @click="replyNoteId = ''">{{ LL.common.cancel() }}</Button>
+              <Button class="btn" size="small" type="primary" @click="createNoteReply()">{{ LL.editor.notesPanel.reply() }}</Button>
             </div>
           </div>
         </div>
-        <div class="empty" v-if="!notes.length">本页暂无批注</div>
+        <div class="empty" v-if="!notes.length">{{ LL.editor.notesPanel.noNotesOnPage() }}</div>
       </div>
       <div class="send">
         <TextArea 
           ref="textAreaRef"
           v-model:value="content"
           :padding="6"
-          :placeholder="`输入批注（为${handleElementId ? '选中元素' : '当前页幻灯片' }）`"
+          :placeholder="notePlaceholder"
           :rows="2"
           @focus="replyNoteId = ''; activeNoteId = ''"
           @enter.prevent="createNote()"
         />
         <div class="footer">
-          <i-icon-park-outline:delete class="btn icon" v-tooltip="'清空本页批注'" style="flex: 1" @click="clear()" />
-          <Button type="primary" class="btn" style="flex: 12" @click="createNote()"><i-icon-park-outline:plus /> 添加批注</Button>
+          <i-icon-park-outline:delete class="btn icon" v-tooltip="LL.editor.notesPanel.clearPageNotes()" style="flex: 1" @click="clear()" />
+          <Button type="primary" class="btn" style="flex: 12" @click="createNote()"><i-icon-park-outline:plus /> {{ LL.editor.notesPanel.addNote() }}</Button>
         </div>
       </div>
     </div>
@@ -77,15 +77,21 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, nextTick, useTemplateRef } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { nanoid } from 'nanoid'
 import { useMainStore, useSlidesStore } from '@/store'
 import type { Note } from '@/types/slides'
+import { formatLocaleDateTime } from '@/i18n/formatters'
+import { useI18nContext } from '@/i18n/useI18nContext'
 
 import MoveablePanel from '@/components/MoveablePanel.vue'
 import TextArea from '@/components/TextArea.vue'
 import Button from '@/components/Button.vue'
+
+const { LL, locale } = useI18nContext()
+
+const formatNoteTime = (time: number) => formatLocaleDateTime(time, locale.value)
 
 const slidesStore = useSlidesStore()
 const mainStore = useMainStore()
@@ -97,8 +103,18 @@ const replyContent = ref('')
 const notes = computed(() => currentSlide.value?.notes || [])
 const activeNoteId = ref('')
 const replyNoteId = ref('')
-const textAreaRef = useTemplateRef<InstanceType<typeof TextArea>>('textAreaRef')
-const notesRef = useTemplateRef<HTMLElement>('notesRef')
+const textAreaRef = ref<InstanceType<typeof TextArea> | null>(null)
+const notesRef = ref<HTMLElement | null>(null)
+
+const panelTitle = computed(() =>
+  LL.value.editor.notesPanel.slideNotesTitle({ slideNumber: slideIndex.value + 1 }),
+)
+
+const notePlaceholder = computed(() =>
+  handleElementId.value
+    ? LL.value.editor.notesPanel.notePlaceholderElement()
+    : LL.value.editor.notesPanel.notePlaceholderSlide(),
+)
 
 watch(slideIndex, () => {
   activeNoteId.value = ''
@@ -121,7 +137,7 @@ const createNote = () => {
     id: nanoid(),
     content: content.value,
     time: new Date().getTime(),
-    user: '测试用户',
+    user: LL.value.editor.notesPanel.testUser(),
   }
   if (handleElementId.value) newNote.elId = handleElementId.value
 
@@ -153,7 +169,7 @@ const createNoteReply = () => {
       id: nanoid(),
       content: replyContent.value,
       time: new Date().getTime(),
-      user: '测试用户',
+      user: LL.value.editor.notesPanel.testUser(),
     },
   ]
   const newNote: Note = {

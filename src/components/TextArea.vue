@@ -21,7 +21,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useTemplateRef } from 'vue'
+import { ref } from 'vue'
 
 withDefaults(defineProps<{
   value: string
@@ -48,7 +48,7 @@ const handleInput = (e: Event) => {
   emit('update:value', (e.target as HTMLInputElement).value)
 }
 
-const textareaRef = useTemplateRef<HTMLTextAreaElement>('textareaRef')
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const focus = () => {
   if (textareaRef.value) textareaRef.value.focus()
 }

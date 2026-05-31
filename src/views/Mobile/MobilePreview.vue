@@ -10,11 +10,11 @@
       </div>
     </div>
     <div class="menu">
-      <div class="menu-item" @click="changeMode('editor')"><i-icon-park-outline:edit class="icon" /> 编辑</div>
+      <div class="menu-item" @click="changeMode('editor')"><i-icon-park-outline:edit class="icon" /> {{ LL.common.edit() }}</div>
       <Divider type="vertical" style="height: 30px;" />
-      <div class="menu-item" @click="changeMode('player')"><i-icon-park-outline:full-screen-play class="icon" /> 播放</div>
+      <div class="menu-item" @click="changeMode('player')"><i-icon-park-outline:full-screen-play class="icon" /> {{ LL.mobile.preview.play() }}</div>
       <Divider type="vertical" style="height: 30px;" />
-      <div class="menu-item ai" @click="openAIPPTDialog()">AIPPT</div>
+      <div class="menu-item ai" @click="openAIPPTDialog()">{{ LL.mobile.preview.aippt() }}</div>
     </div>
   </div>
 
@@ -32,7 +32,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref, useTemplateRef } from 'vue'
+import { onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMainStore, useSlidesStore } from '@/store'
 import useLoadSlides from '@/hooks/useLoadSlides'
@@ -42,6 +42,9 @@ import ThumbnailSlide from '@/views/components/ThumbnailSlide/index.vue'
 import Divider from '@/components/Divider.vue'
 import Modal from '@/components/Modal.vue'
 import AIPPTDialog from '../Editor/AIPPTDialog.vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 defineProps<{
   changeMode: (mode: Mode) => void
@@ -55,7 +58,7 @@ const { showAIPPTDialog } = storeToRefs(mainStore)
 const openAIPPTDialog = () => mainStore.setAIPPTDialogState(true)
 const closeAIPPTDialog = () => mainStore.setAIPPTDialogState(false)
 
-const mobileRef = useTemplateRef<HTMLElement>('mobileRef')
+const mobileRef = ref<HTMLElement | null>(null)
 const screenWidth = ref(0)
 const width = ref(400)
 

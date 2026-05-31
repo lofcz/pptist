@@ -1,3 +1,5 @@
+import { getLL } from '@/i18n/getLL'
+
 export const enum KEYS {
   C = 'C',
   X = 'X',
@@ -36,115 +38,122 @@ interface HotkeyItem {
   children: {
     label: string
     value?: string
-  }[] 
+  }[]
 }
 
-export const HOTKEY_DOC: HotkeyItem[] = [
-  {
-    type: '通用',
-    children: [
-      { label: '剪切', value: 'Ctrl + X' },
-      { label: '复制', value: 'Ctrl + C' },
-      { label: '粘贴', value: 'Ctrl + V' },
-      { label: '粘贴为纯文本', value: 'Ctrl + Shift + V' },
-      { label: '快速复制粘贴', value: 'Ctrl + D' },
-      { label: '全选', value: 'Ctrl + A' },
-      { label: '撤销', value: 'Ctrl + Z' },
-      { label: '恢复', value: 'Ctrl + Y' },
-      { label: '删除', value: 'Delete / Backspace' },
-      { label: '多选', value: '按住 Ctrl 或 Shift' },
-      { label: '打开搜索替换', value: 'Ctrl + F' },
-      { label: '打印', value: 'Ctrl + P' },
-      { label: '关闭弹窗', value: 'ESC' },
-    ],
-  },
-  {
-    type: '幻灯片放映',
-    children: [
-      { label: '从头开始放映幻灯片', value: 'F5' },
-      { label: '从当前开始放映幻灯片', value: 'Shift + F5' },
-      { label: '切换上一页', value: '↑ / ← / PgUp' },
-      { label: '切换下一页', value: '↓ / → / PgDown' },
-      { label: '切换下一页', value: 'Enter / Space' },
-      { label: '退出放映', value: 'ESC' },
-    ],
-  },
-  {
-    type: '幻灯片编辑',
-    children: [
-      { label: '新建幻灯片', value: 'Enter' },
-      { label: '移动画布', value: 'Space + 鼠标拖拽' },
-      { label: '缩放画布', value: 'Ctrl + 鼠标滚轮' },
-      { label: '放大画布', value: 'Ctrl + =' },
-      { label: '缩小画布', value: 'Ctrl + -' },
-      { label: '使画布适应当前屏幕', value: 'Ctrl + 0' },
-      { label: '上一页（未选中元素）', value: '↑' },
-      { label: '下一页（未选中元素）', value: '↓' },
-      { label: '上一页', value: '鼠标上滚 / PgUp' },
-      { label: '下一页', value: '鼠标下滚 / PgDown' },
-      { label: '快速创建文本', value: '双击空白处 / T' },
-      { label: '快速创建矩形', value: 'R' },
-      { label: '快速创建圆形', value: 'O' },
-      { label: '快速创建线条', value: 'L' },
-      { label: '退出绘制状态', value: '鼠标右键' },
-    ],
-  },
-  {
-    type: '元素操作',
-    children: [
-      { label: '移动', value: '↑ / ← / ↓ / →' },
-      { label: '锁定', value: 'Ctrl + L' },
-      { label: '组合', value: 'Ctrl + G' },
-      { label: '取消组合', value: 'Ctrl + Shift + G' },
-      { label: '置顶层', value: 'Alt + F' },
-      { label: '置底层', value: 'Alt + B' },
-      { label: '锁定宽高比例', value: '按住 Ctrl 或 Shift' },
-      { label: '快速复制', value: '按住 Ctrl + 拖拽' },
-      { label: '创建水平 / 垂直线条', value: '按住 Ctrl 或 Shift' },
-      { label: '切换焦点元素', value: 'Tab' },
-      { label: '确认图片裁剪', value: 'Enter' },
-      { label: '完成自定义形状绘制', value: 'Enter' },
-    ],
-  },
-  {
-    type: '表格编辑',
-    children: [
-      { label: '聚焦到下一个单元格', value: 'Tab' },
-      { label: '移动焦点单元格', value: '↑ / ← / ↓ / →' },
-      { label: '在上方插入一行', value: 'Ctrl + ↑' },
-      { label: '在下方插入一行', value: 'Ctrl + ↓' },
-      { label: '在左侧插入一列', value: 'Ctrl + ←' },
-      { label: '在右侧插入一列', value: 'Ctrl + →' },
-    ],
-  },
-  {
-    type: '图表数据编辑',
-    children: [
-      { label: '聚焦到下一行', value: 'Enter' },
-    ],
-  },
-  {
-    type: '文本编辑',
-    children: [
-      { label: '加粗', value: 'Ctrl + B' },
-      { label: '斜体', value: 'Ctrl + I' },
-      { label: '下划线', value: 'Ctrl + U' },
-      { label: '行内代码', value: 'Ctrl + E' },
-      { label: '上角标', value: 'Ctrl + ;' },
-      { label: '下角标', value: `Ctrl + '` },
-      { label: '选中段落', value: `ESC` },
-    ],
-  },
-  {
-    type: '其他快捷操作',
-    children: [
-      { label: '添加图片 - 粘贴来自系统剪贴板的图片' },
-      { label: '添加图片 - 将本地图片拖拽到画布中' },
-      { label: '添加图片 - 在画布中粘贴SVG代码' },
-      { label: '添加图片 - 粘贴来自 pexels 的图片链接' },
-      { label: '添加文本 - 粘贴来自系统剪贴板的文字' },
-      { label: '添加文本 - 将外部选中文字拖拽到画布中' },
-      { label: '文本编辑 - 支持 markdown 语法创建列表和引用' },
-    ],
-  },
-]
+function buildHotkeyDoc(): HotkeyItem[] {
+  const { hotkey: h } = getLL().configs
+  const v = h.values
+
+  return [
+    {
+      type: h.categories.general(),
+      children: [
+        { label: h.labels.cut(), value: 'Ctrl + X' },
+        { label: h.labels.copy(), value: 'Ctrl + C' },
+        { label: h.labels.paste(), value: 'Ctrl + V' },
+        { label: h.labels.pastePlainText(), value: 'Ctrl + Shift + V' },
+        { label: h.labels.quickDuplicatePaste(), value: 'Ctrl + D' },
+        { label: h.labels.selectAll(), value: 'Ctrl + A' },
+        { label: h.labels.undo(), value: 'Ctrl + Z' },
+        { label: h.labels.redo(), value: 'Ctrl + Y' },
+        { label: h.labels.delete(), value: 'Delete / Backspace' },
+        { label: h.labels.multiSelect(), value: v.holdCtrlOrShift() },
+        { label: h.labels.openFindReplace(), value: 'Ctrl + F' },
+        { label: h.labels.print(), value: 'Ctrl + P' },
+        { label: h.labels.closeDialog(), value: 'ESC' },
+      ],
+    },
+    {
+      type: h.categories.slideshow(),
+      children: [
+        { label: h.labels.slideshowFromStart(), value: 'F5' },
+        { label: h.labels.slideshowFromCurrent(), value: 'Shift + F5' },
+        { label: h.labels.previousSlide(), value: '↑ / ← / PgUp' },
+        { label: h.labels.nextSlideArrows(), value: '↓ / → / PgDown' },
+        { label: h.labels.nextSlideEnter(), value: 'Enter / Space' },
+        { label: h.labels.exitSlideshow(), value: 'ESC' },
+      ],
+    },
+    {
+      type: h.categories.slideEdit(),
+      children: [
+        { label: h.labels.newSlide(), value: 'Enter' },
+        { label: h.labels.panCanvas(), value: v.spaceDrag() },
+        { label: h.labels.zoomCanvas(), value: v.ctrlMouseWheel() },
+        { label: h.labels.zoomInCanvas(), value: 'Ctrl + =' },
+        { label: h.labels.zoomOutCanvas(), value: 'Ctrl + -' },
+        { label: h.labels.fitCanvasToScreen(), value: 'Ctrl + 0' },
+        { label: h.labels.prevSlideNoSelection(), value: '↑' },
+        { label: h.labels.nextSlideNoSelection(), value: '↓' },
+        { label: h.labels.prevSlide(), value: v.mouseWheelUpPgUp() },
+        { label: h.labels.nextSlide(), value: v.mouseWheelDownPgDown() },
+        { label: h.labels.quickCreateText(), value: v.doubleClickBlankOrT() },
+        { label: h.labels.quickCreateRect(), value: 'R' },
+        { label: h.labels.quickCreateCircle(), value: 'O' },
+        { label: h.labels.quickCreateLine(), value: 'L' },
+        { label: h.labels.exitDrawMode(), value: v.rightClick() },
+      ],
+    },
+    {
+      type: h.categories.elementOps(),
+      children: [
+        { label: h.labels.move(), value: '↑ / ← / ↓ / →' },
+        { label: h.labels.lock(), value: 'Ctrl + L' },
+        { label: h.labels.group(), value: 'Ctrl + G' },
+        { label: h.labels.ungroup(), value: 'Ctrl + Shift + G' },
+        { label: h.labels.bringToFront(), value: 'Alt + F' },
+        { label: h.labels.sendToBack(), value: 'Alt + B' },
+        { label: h.labels.lockAspectRatio(), value: v.holdCtrlOrShift() },
+        { label: h.labels.quickCopy(), value: v.holdCtrlDrag() },
+        { label: h.labels.createHVLine(), value: v.holdCtrlOrShift() },
+        { label: h.labels.cycleFocusElement(), value: 'Tab' },
+        { label: h.labels.confirmImageCrop(), value: 'Enter' },
+        { label: h.labels.finishCustomShape(), value: 'Enter' },
+      ],
+    },
+    {
+      type: h.categories.tableEdit(),
+      children: [
+        { label: h.labels.focusNextCell(), value: 'Tab' },
+        { label: h.labels.moveFocusCell(), value: '↑ / ← / ↓ / →' },
+        { label: h.labels.insertRowAbove(), value: 'Ctrl + ↑' },
+        { label: h.labels.insertRowBelow(), value: 'Ctrl + ↓' },
+        { label: h.labels.insertColLeft(), value: 'Ctrl + ←' },
+        { label: h.labels.insertColRight(), value: 'Ctrl + →' },
+      ],
+    },
+    {
+      type: h.categories.chartDataEdit(),
+      children: [
+        { label: h.labels.focusNextRow(), value: 'Enter' },
+      ],
+    },
+    {
+      type: h.categories.textEdit(),
+      children: [
+        { label: h.labels.bold(), value: 'Ctrl + B' },
+        { label: h.labels.italic(), value: 'Ctrl + I' },
+        { label: h.labels.underline(), value: 'Ctrl + U' },
+        { label: h.labels.inlineCode(), value: 'Ctrl + E' },
+        { label: h.labels.superscript(), value: 'Ctrl + ;' },
+        { label: h.labels.subscript(), value: `Ctrl + '` },
+        { label: h.labels.selectParagraph(), value: 'ESC' },
+      ],
+    },
+    {
+      type: h.categories.otherShortcuts(),
+      children: [
+        { label: h.labels.addImageClipboard() },
+        { label: h.labels.addImageDrag() },
+        { label: h.labels.addImageSvgPaste() },
+        { label: h.labels.addImagePexels() },
+        { label: h.labels.addTextClipboard() },
+        { label: h.labels.addTextDrag() },
+        { label: h.labels.textMarkdown() },
+      ],
+    },
+  ]
+}
+
+export const HOTKEY_DOC: HotkeyItem[] = buildHotkeyDoc()

@@ -1,10 +1,10 @@
 <template>
   <div class="theme-colors-setting">
-    <div class="title">图表主题配色</div>
+    <div class="title">{{ LL.editor.stylePanel.chart.themeColorsSetting.title() }}</div>
 
     <div class="list">
       <div class="row" v-for="(item, index) in themeColors" :key="index">
-        <div class="label" style="width: 40%;">主题配色{{ index + 1 }}：</div>
+        <div class="label" style="width: 40%;">{{ LL.editor.stylePanel.chart.themeColorsSetting.themeColorLabel({ index: index + 1 }) }}</div>
         <Popover trigger="click" style="width: 60%;">
           <template #content>
             <ColorPicker
@@ -14,7 +14,7 @@
           </template>
           <div class="color-btn-wrap" style="width: 100%;">
             <ColorButton :color="item" />
-            <div class="delete-color-btn" v-tooltip="'删除'" @click.stop="deleteThemeColor(index)" v-if="index !== 0"><i-icon-park-outline:close-small /></div>
+            <div class="delete-color-btn" v-tooltip="LL.common.delete()" @click.stop="deleteThemeColor(index)" v-if="index !== 0"><i-icon-park-outline:close-small /></div>
           </div>
         </Popover>
       </div>
@@ -23,11 +23,11 @@
         :disabled="themeColors.length >= 10"
         @click="addThemeColor()"
       >
-        <i-icon-park-outline:plus /> 添加主题色
+        <i-icon-park-outline:plus /> {{ LL.editor.stylePanel.chart.themeColorsSetting.addThemeColor() }}
       </Button>
     </div>
 
-    <Button class="btn" type="primary" @click="setThemeColors()">确认</Button>
+    <Button class="btn" type="primary" @click="setThemeColors()">{{ LL.common.confirm() }}</Button>
   </div>
 </template>
 
@@ -37,6 +37,10 @@ import Popover from '@/components/Popover.vue'
 import ColorPicker from '@/components/ColorPicker/index.vue'
 import ColorButton from '@/components/ColorButton.vue'
 import Button from '@/components/Button.vue'
+
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 const props = defineProps<{
   colors: string[]

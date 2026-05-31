@@ -1,0 +1,285 @@
+{
+  "description": "Translation batches for parallel i18n migration (Chinese UI strings to typesafe-i18n)",
+  "totalFiles": 171,
+  "batchCount": 50,
+  "locales": [
+    "en",
+    "cs",
+    "sk",
+    "pl"
+  ],
+  "baseLocale": "en",
+  "batches": {
+    "batch-01": [
+      "src/App.vue",
+      "src/components/ChartDataEditor.vue",
+      "src/components/ColorPicker/index.vue",
+      "src/components/LaTeXEditor/index.vue"
+    ],
+    "batch-02": [
+      "src/components/OutlineEditor.vue",
+      "src/components/Select.vue",
+      "src/components/Slider.vue",
+      "src/components/WritingBoard.vue"
+    ],
+    "batch-03": [
+      "src/configs/animation.ts",
+      "src/configs/chart.ts",
+      "src/configs/element.ts",
+      "src/configs/font.ts"
+    ],
+    "batch-04": [
+      "src/configs/hotkey.ts",
+      "src/configs/imageClip.ts",
+      "src/configs/latex.ts",
+      "src/configs/lines.ts"
+    ],
+    "batch-05": [
+      "src/configs/mime.ts",
+      "src/configs/shapes.ts",
+      "src/configs/symbol.ts",
+      "src/directive/contextmenu.ts"
+    ],
+    "batch-06": [
+      "src/hooks/useAddSlidesOrElements.ts",
+      "src/hooks/useAlignActiveElement.ts",
+      "src/hooks/useAlignElementToCanvas.ts",
+      "src/hooks/useCombineElement.ts"
+    ],
+    "batch-07": [
+      "src/hooks/useCopyAndPasteElement.ts",
+      "src/hooks/useCreateElement.ts",
+      "src/hooks/useDeleteElement.ts",
+      "src/hooks/useExport.ts"
+    ],
+    "batch-08": [
+      "src/hooks/useHistorySnapshot.ts",
+      "src/hooks/useImport.ts",
+      "src/hooks/useLink.ts",
+      "src/hooks/useLockElement.ts"
+    ],
+    "batch-09": [
+      "src/hooks/useMoveElement.ts",
+      "src/hooks/useOrderElement.ts",
+      "src/hooks/usePasteDataTransfer.ts",
+      "src/hooks/usePasteEvent.ts"
+    ],
+    "batch-10": [
+      "src/hooks/usePasteTextClipboardData.ts",
+      "src/hooks/useScaleCanvas.ts",
+      "src/hooks/useScreening.ts",
+      "src/hooks/useSearch.ts"
+    ],
+    "batch-11": [
+      "src/hooks/useSelectElement.ts",
+      "src/hooks/useSlideBackgroundStyle.ts",
+      "src/hooks/useSlideHandler.ts",
+      "src/hooks/useSlideTheme.ts"
+    ],
+    "batch-12": [
+      "src/hooks/useUniformDisplayElement.ts",
+      "src/services/axios.ts",
+      "src/services/fetch.ts",
+      "src/store/keyboard.ts"
+    ],
+    "batch-13": [
+      "src/store/main.ts",
+      "src/store/screen.ts",
+      "src/store/slides.ts",
+      "src/store/snapshot.ts"
+    ],
+    "batch-14": [
+      "src/types/slides.ts",
+      "src/utils/clipboard.ts",
+      "src/utils/common.ts",
+      "src/utils/crypto.ts"
+    ],
+    "batch-15": [
+      "src/utils/database.ts",
+      "src/utils/element.ts",
+      "src/utils/fullscreen.ts",
+      "src/utils/htmlParser/index.ts"
+    ],
+    "batch-16": [
+      "src/utils/image.ts",
+      "src/utils/selection.ts",
+      "src/utils/svg2Base64.ts",
+      "src/utils/svgPathParser.ts"
+    ],
+    "batch-17": [
+      "src/utils/textParser.ts",
+      "src/views/Editor/AIPPTDialog.vue",
+      "src/views/Editor/Canvas/AlignmentLine.vue",
+      "src/views/Editor/Canvas/EditableElement.vue"
+    ],
+    "batch-18": [
+      "src/views/Editor/Canvas/ElementCreateSelection.vue",
+      "src/views/Editor/Canvas/ElementFloatLayer/FloatingToolbar/BorderPanel.vue",
+      "src/views/Editor/Canvas/ElementFloatLayer/FloatingToolbar/ChartToolbar.vue",
+      "src/views/Editor/Canvas/ElementFloatLayer/FloatingToolbar/ImageToolbar.vue"
+    ],
+    "batch-19": [
+      "src/views/Editor/Canvas/ElementFloatLayer/FloatingToolbar/LatexToolbar.vue",
+      "src/views/Editor/Canvas/ElementFloatLayer/FloatingToolbar/LineToolbar.vue",
+      "src/views/Editor/Canvas/ElementFloatLayer/FloatingToolbar/ShapeToolbar.vue",
+      "src/views/Editor/Canvas/ElementFloatLayer/FloatingToolbar/TableToolbar.vue"
+    ],
+    "batch-20": [
+      "src/views/Editor/Canvas/ElementFloatLayer/FloatingToolbar/TextStyleControls.vue",
+      "src/views/Editor/Canvas/ElementFloatLayer/LinkHandler.vue",
+      "src/views/Editor/Canvas/GridLines.vue",
+      "src/views/Editor/Canvas/LinkDialog.vue"
+    ],
+    "batch-21": [
+      "src/views/Editor/Canvas/Operate/MultiSelectOperate.vue",
+      "src/views/Editor/Canvas/ShapeCreateCanvas.vue",
+      "src/views/Editor/Canvas/hooks/useCommonOperate.ts",
+      "src/views/Editor/Canvas/hooks/useDragElement.ts"
+    ],
+    "batch-22": [
+      "src/views/Editor/Canvas/hooks/useDragLineElement.ts",
+      "src/views/Editor/Canvas/hooks/useDrop.ts",
+      "src/views/Editor/Canvas/hooks/useInsertFromCreateSelection.ts"
+    ],
+    "batch-23": [
+      "src/views/Editor/Canvas/hooks/useMouseSelection.ts",
+      "src/views/Editor/Canvas/hooks/useRotateElement.ts",
+      "src/views/Editor/Canvas/hooks/useScaleElement.ts"
+    ],
+    "batch-24": [
+      "src/views/Editor/Canvas/hooks/useSelectElement.ts",
+      "src/views/Editor/Canvas/hooks/useViewportSize.ts",
+      "src/views/Editor/Canvas/index.vue"
+    ],
+    "batch-25": [
+      "src/views/Editor/CanvasTool/MediaInput.vue",
+      "src/views/Editor/CanvasTool/TableGenerator.vue",
+      "src/views/Editor/CanvasTool/index.vue"
+    ],
+    "batch-26": [
+      "src/views/Editor/EditorHeader/index.vue",
+      "src/views/Editor/ExportDialog/ExportImage.vue",
+      "src/views/Editor/ExportDialog/ExportJSON.vue"
+    ],
+    "batch-27": [
+      "src/views/Editor/ExportDialog/ExportPDF.vue",
+      "src/views/Editor/ExportDialog/ExportPPTX.vue",
+      "src/views/Editor/ExportDialog/ExportSpecificFile.vue"
+    ],
+    "batch-28": [
+      "src/views/Editor/ExportDialog/index.vue",
+      "src/views/Editor/ImageLibPanel.vue",
+      "src/views/Editor/MarkupPanel.vue"
+    ],
+    "batch-29": [
+      "src/views/Editor/NotesPanel.vue",
+      "src/views/Editor/Remark/Editor.vue",
+      "src/views/Editor/SearchPanel.vue"
+    ],
+    "batch-30": [
+      "src/views/Editor/SelectPanel.vue",
+      "src/views/Editor/SymbolPanel.vue",
+      "src/views/Editor/Thumbnails/Templates.vue"
+    ],
+    "batch-31": [
+      "src/views/Editor/Thumbnails/index.vue",
+      "src/views/Editor/Toolbar/ElementAnimationPanel.vue",
+      "src/views/Editor/Toolbar/ElementPositionPanel.vue"
+    ],
+    "batch-32": [
+      "src/views/Editor/Toolbar/ElementStylePanel/AudioStylePanel.vue",
+      "src/views/Editor/Toolbar/ElementStylePanel/ChartStylePanel/ThemeColorsSetting.vue",
+      "src/views/Editor/Toolbar/ElementStylePanel/ChartStylePanel/index.vue"
+    ],
+    "batch-33": [
+      "src/views/Editor/Toolbar/ElementStylePanel/ImageStylePanel.vue",
+      "src/views/Editor/Toolbar/ElementStylePanel/LatexStylePanel.vue",
+      "src/views/Editor/Toolbar/ElementStylePanel/LineStylePanel.vue"
+    ],
+    "batch-34": [
+      "src/views/Editor/Toolbar/ElementStylePanel/ShapeStylePanel.vue",
+      "src/views/Editor/Toolbar/ElementStylePanel/TableStylePanel.vue",
+      "src/views/Editor/Toolbar/ElementStylePanel/TextStylePanel.vue"
+    ],
+    "batch-35": [
+      "src/views/Editor/Toolbar/ElementStylePanel/VideoStylePanel.vue",
+      "src/views/Editor/Toolbar/MultiPositionPanel.vue",
+      "src/views/Editor/Toolbar/MultiStylePanel.vue"
+    ],
+    "batch-36": [
+      "src/views/Editor/Toolbar/SlideAnimationPanel.vue",
+      "src/views/Editor/Toolbar/SlideDesignPanel/ThemeColorsSetting.vue",
+      "src/views/Editor/Toolbar/SlideDesignPanel/ThemeStylesExtract.vue"
+    ],
+    "batch-37": [
+      "src/views/Editor/Toolbar/SlideDesignPanel/index.vue",
+      "src/views/Editor/Toolbar/common/ElementColorMask.vue",
+      "src/views/Editor/Toolbar/common/ElementFilter.vue"
+    ],
+    "batch-38": [
+      "src/views/Editor/Toolbar/common/ElementFlip.vue",
+      "src/views/Editor/Toolbar/common/ElementOpacity.vue",
+      "src/views/Editor/Toolbar/common/ElementOutline.vue"
+    ],
+    "batch-39": [
+      "src/views/Editor/Toolbar/common/ElementShadow.vue",
+      "src/views/Editor/Toolbar/common/RichTextBase.vue",
+      "src/views/Editor/Toolbar/index.vue"
+    ],
+    "batch-40": [
+      "src/views/Mobile/MobileEditor/ElementToolbar.vue",
+      "src/views/Mobile/MobileEditor/Header.vue",
+      "src/views/Mobile/MobileEditor/SlideToolbar.vue"
+    ],
+    "batch-41": [
+      "src/views/Mobile/MobilePlayer.vue",
+      "src/views/Mobile/MobilePreview.vue",
+      "src/views/Mobile/MobileThumbnails.vue"
+    ],
+    "batch-42": [
+      "src/views/Screen/AudienceView.vue",
+      "src/views/Screen/BaseView.vue",
+      "src/views/Screen/CountdownTimer.vue"
+    ],
+    "batch-43": [
+      "src/views/Screen/PresenterView.vue",
+      "src/views/Screen/ScreenElement.vue",
+      "src/views/Screen/WritingBoardTool.vue"
+    ],
+    "batch-44": [
+      "src/views/Screen/hooks/useExecPlay.ts",
+      "src/views/Screen/hooks/useFullscreen.ts",
+      "src/views/Screen/hooks/useSlideSize.ts"
+    ],
+    "batch-45": [
+      "src/views/Screen/index.vue",
+      "src/views/components/ThumbnailSlide/index.vue",
+      "src/views/components/element/AudioElement/AudioPlayer.vue"
+    ],
+    "batch-46": [
+      "src/views/components/element/ChartElement/chartOption.ts",
+      "src/views/components/element/ImageElement/ImageClipHandler.vue",
+      "src/views/components/element/ProsemirrorEditor.vue"
+    ],
+    "batch-47": [
+      "src/views/components/element/TableElement/CustomTextarea.vue",
+      "src/views/components/element/TableElement/EditableTable.vue",
+      "src/views/components/element/TableElement/index.vue"
+    ],
+    "batch-48": [
+      "src/views/components/element/TableElement/useHideCells.ts",
+      "src/views/components/element/TableElement/useSubThemeColor.ts",
+      "src/views/components/element/TableElement/utils.ts"
+    ],
+    "batch-49": [
+      "src/views/components/element/TextElement/index.vue",
+      "src/views/components/element/VideoElement/VideoPlayer/index.vue",
+      "src/views/components/element/hooks/useElementFill.ts"
+    ],
+    "batch-50": [
+      "src/views/components/element/hooks/useElementFlip.ts",
+      "src/views/components/element/hooks/useElementOutline.ts",
+      "src/views/components/element/hooks/useElementShadow.ts"
+    ]
+  }
+}

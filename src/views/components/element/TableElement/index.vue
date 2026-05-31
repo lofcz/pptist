@@ -38,7 +38,7 @@
           @mousedown="$event => handleSelectElement($event)"
           @touchstart="$event => handleSelectElement($event)"
         >
-          <div class="mask-tip" v-if="handleElementId === elementInfo.id" :style="{ transform: `scale(${ 1 / canvasScale })` }">双击编辑</div>
+          <div class="mask-tip" v-if="handleElementId === elementInfo.id" :style="{ transform: `scale(${ 1 / canvasScale })` }">{{ LL.canvas.table.doubleClickToEdit() }}</div>
         </div>
       </div>
     </div>
@@ -46,7 +46,7 @@
 </template>
 
 <script lang="ts" setup>
-import { nextTick, onMounted, onUnmounted, ref, watch, useTemplateRef } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMainStore, useSlidesStore } from '@/store'
 import type { PPTTableElement, TableCell } from '@/types/slides'
@@ -54,6 +54,9 @@ import type { ContextmenuItem } from '@/components/Contextmenu/types'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 
 import EditableTable from './EditableTable.vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 const props = defineProps<{
   elementInfo: PPTTableElement
@@ -65,7 +68,7 @@ const mainStore = useMainStore()
 const slidesStore = useSlidesStore()
 const { canvasScale, handleElementId, isScaling } = storeToRefs(mainStore)
 
-const elementRef = useTemplateRef<HTMLElement>('elementRef')
+const elementRef = ref<HTMLElement | null>(null)
 
 const { addHistorySnapshot } = useHistorySnapshot()
 

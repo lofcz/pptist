@@ -5,7 +5,11 @@ import { useSlidesStore } from '@/store'
 import { KEYS } from '@/configs/hotkey'
 import { ANIMATION_CLASS_PREFIX } from '@/configs/animation'
 import message from '@/utils/message'
+import { queryPptist } from '@/utils/portal'
+import { getLL } from '@/i18n/getLL'
 import type { Slide } from '@/types/slides'
+
+const LL = getLL()
 
 const AUDIENCE_SYNC_CHANNEL = 'pptist-audience-sync'
 
@@ -69,7 +73,7 @@ export default () => {
 
     // 依次执行该位置中的全部动画
     for (const animation of animations) {
-      const elRef: HTMLElement | null = document.querySelector(`#screen-element-${animation.elId} [class^=base-element-]`)
+      const elRef = queryPptist<HTMLElement>(`#screen-element-${animation.elId} [class^=base-element-]`)
       if (!elRef) {
         endAnimationCount += 1
         continue
@@ -121,7 +125,7 @@ export default () => {
       const { animations } = formatedAnimations.value[i]
       for (const animation of animations) {
         if (animation.type !== 'out') continue
-        const elRef: HTMLElement | null = document.querySelector(`#screen-element-${animation.elId} [class^=base-element-]`)
+        const elRef = queryPptist<HTMLElement>(`#screen-element-${animation.elId} [class^=base-element-]`)
         if (!elRef) continue
         const animationName = `${ANIMATION_CLASS_PREFIX}${animation.effect}`
         elRef.style.setProperty('--animate-duration', '0ms')
@@ -136,7 +140,7 @@ export default () => {
     const { animations } = formatedAnimations.value[animationIndex.value]
 
     for (const animation of animations) {
-      const elRef: HTMLElement | null = document.querySelector(`#screen-element-${animation.elId} [class^=base-element-]`)
+        const elRef = queryPptist<HTMLElement>(`#screen-element-${animation.elId} [class^=base-element-]`)
       if (!elRef) continue
       
       elRef.style.removeProperty('--animate-duration')
@@ -188,7 +192,7 @@ export default () => {
     }
     else {
       if (loopPlay.value) turnSlideToIndex(slides.value.length - 1)
-      else throttleMassage('已经是第一页了')
+      else throttleMassage(LL.screen.play.alreadyFirstSlide())
     }
     inAnimation.value = false
   }
@@ -205,7 +209,7 @@ export default () => {
     else {
       if (loopPlay.value) turnSlideToIndex(0)
       else {
-        throttleMassage('已经是最后一页了')
+        throttleMassage(LL.screen.play.alreadyLastSlide())
         closeAutoPlay()
       }
       inAnimation.value = false
@@ -216,7 +220,7 @@ export default () => {
   const autoPlayInterval = ref(2500)
   const autoPlay = () => {
     closeAutoPlay()
-    message.success('开始自动放映')
+    message.success(LL.screen.play.autoPlayStarted())
     autoPlayTimer.value = setInterval(execNext, autoPlayInterval.value)
   }
 
@@ -306,7 +310,7 @@ export default () => {
   const laserPen = ref(false)
 
   const handleLaserMove = (e: MouseEvent) => {
-    const slideEl = document.querySelector('.screen-slide-list .slide-item.current .slide-content') as HTMLElement | null
+    const slideEl = queryPptist<HTMLElement>('.screen-slide-list .slide-item.current .slide-content')
     if (!slideEl) return
     const rect = slideEl.getBoundingClientRect()
     const x = (e.clientX - rect.left) / rect.width

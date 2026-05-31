@@ -3,7 +3,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, useTemplateRef, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import tinycolor from 'tinycolor2'
 import type { ChartData, ChartOptions, ChartType } from '@/types/slides'
 import { getChartOption } from './chartOption'
@@ -35,7 +35,7 @@ const props = defineProps<{
 }>()
 
 let chart: echarts.ECharts | null = null
-const chartRef = useTemplateRef<HTMLElement>('chartRef')
+const chartRef = ref<HTMLElement | null>(null)
 
 const themeColors = computed(() => {
   let colors: string[] = []

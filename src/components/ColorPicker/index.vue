@@ -62,7 +62,7 @@
       ></div>
     </div>
 
-    <div class="recent-colors-title" v-if="recentColors.length">最近使用：</div>
+    <div class="recent-colors-title" v-if="recentColors.length">{{ LL.components.colorPicker.recentColors() }}</div>
     <div class="picker-presets">
       <div
         class="picker-presets-color alpha"
@@ -83,12 +83,16 @@ import tinycolor, { type ColorFormats } from 'tinycolor2'
 import { debounce } from 'lodash'
 import { toCanvas } from 'html-to-image'
 import message from '@/utils/message'
+import { useI18nContext } from '@/i18n/useI18nContext'
+import { getPptistPortalTarget, queryPptist } from '@/utils/portal'
 
 import Alpha from './Alpha.vue'
 import Checkboard from './Checkboard.vue'
 import Hue from './Hue.vue'
 import Saturation from './Saturation.vue'
 import EditableInput from './EditableInput.vue'
+
+const { LL } = useI18nContext()
 
 const props = withDefaults(defineProps<{
   modelValue?: string
@@ -217,7 +221,7 @@ const openEyeDropper = () => {
 
 // 原生取色吸管
 const browserEyeDropper = () => {
-  message.success('按 ESC 键关闭取色吸管', { duration: 0 })
+  message.success(LL.value.components.colorPicker.eyeDropperEscHint(), { duration: 0 })
 
   // eslint-disable-next-line
   const eyeDropper = new (window as any).EyeDropper()
@@ -235,12 +239,13 @@ const browserEyeDropper = () => {
 
 // 基于 Canvas 的自定义取色吸管
 const customEyeDropper = () => {
-  const targetRef: HTMLElement | null = document.querySelector('.canvas')
+  const targetRef = queryPptist<HTMLElement>('.canvas')
   if (!targetRef) return
 
+  const portalTarget = getPptistPortalTarget()
   const maskRef = document.createElement('div')
   maskRef.style.cssText = 'position: fixed; top: 0; left: 0; bottom: 0; right: 0; z-index: 9999; cursor: wait;'
-  document.body.appendChild(maskRef)
+  portalTarget.appendChild(maskRef)
 
   const colorBlockRef = document.createElement('div')
   colorBlockRef.style.cssText = 'position: absolute; top: -100px; left: -100px; width: 16px; height: 16px; border: 1px solid #000; z-index: 999'
@@ -291,7 +296,7 @@ const customEyeDropper = () => {
 
         updateRecentColorsCache()
       }
-      document.body.removeChild(maskRef)
+      portalTarget.removeChild(maskRef)
       
       canvasRef.removeEventListener('mousemove', handleMousemove)
       canvasRef.removeEventListener('mouseleave', handleMouseleave)
@@ -302,8 +307,8 @@ const customEyeDropper = () => {
     canvasRef.addEventListener('mouseleave', handleMouseleave)
     window.addEventListener('mousedown', handleMousedown)
   }).catch(() => {
-    message.error('取色吸管初始化失败')
-    document.body.removeChild(maskRef)
+    message.error(LL.value.components.colorPicker.eyeDropperInitFailed())
+    portalTarget.removeChild(maskRef)
   })
 }
 </script>

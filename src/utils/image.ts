@@ -1,18 +1,21 @@
+import { getPptistPortalTarget } from '@/utils/portal'
+
 interface ImageSize {
   width: number
   height: number
 }
 
 /**
- * 获取图片的原始宽高
- * @param src 图片地址
+ * Get the intrinsic width and height of an image.
+ * @param src Image URL
  */
 export const getImageSize = (src: string): Promise<ImageSize> => {
   return new Promise(resolve => {
+    const portalTarget = getPptistPortalTarget()
     const img = document.createElement('img')
     img.src = src
     img.style.opacity = '0'
-    document.body.appendChild(img)
+    portalTarget.appendChild(img)
 
     img.onload = () => {
       const imgWidth = img.clientWidth
@@ -21,7 +24,7 @@ export const getImageSize = (src: string): Promise<ImageSize> => {
       img.onload = null
       img.onerror = null
 
-      document.body.removeChild(img)
+      portalTarget.removeChild(img)
 
       resolve({ width: imgWidth, height: imgHeight })
     }
@@ -34,8 +37,8 @@ export const getImageSize = (src: string): Promise<ImageSize> => {
 }
 
 /**
- * 读取图片文件的dataURL
- * @param file 图片文件
+ * Read an image file as a data URL.
+ * @param file Image file
  */
 export const getImageDataURL = (file: File): Promise<string> => {
   return new Promise(resolve => {
@@ -48,8 +51,8 @@ export const getImageDataURL = (file: File): Promise<string> => {
 }
 
 /**
- * 判断是否为SVG代码字符串
- * @param text 待验证文本
+ * Check whether a string is SVG markup.
+ * @param text Text to validate
  */
 export const isSVGString = (text: string): boolean => {
   const svgRegex = /<svg[\s\S]*?>[\s\S]*?<\/svg>/i
@@ -66,8 +69,8 @@ export const isSVGString = (text: string): boolean => {
 }
 
 /**
- * SVG代码转文件
- * @param svg SVG代码
+ * Convert SVG markup to a File.
+ * @param svg SVG markup
  */
 export const svg2File = (svg: string): File => {
   const blob = new Blob([svg], { type: 'image/svg+xml' })

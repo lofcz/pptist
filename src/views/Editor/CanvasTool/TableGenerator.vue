@@ -1,8 +1,8 @@
 <template>
   <div class="table-generator">
     <div class="title">
-      <div class="lef">表格 {{endCell.length ? `${endCell[0]} x ${endCell[1]}` : ''}}</div>
-      <div class="right" @click="isCustom = !isCustom">{{ isCustom ? '返回' : '自定义'}}</div>
+      <div class="lef">{{ tableTitle }}</div>
+      <div class="right" @click="isCustom = !isCustom">{{ isCustom ? LL.common.back() : LL.editor.canvasTool.tableGenerator.custom() }}</div>
     </div>
     <table 
       @mouseleave="endCell = []" 
@@ -26,7 +26,7 @@
 
     <div class="custom" v-else>
       <div class="row">
-        <div class="label" style="width: 25%;">行数：</div>
+        <div class="label" style="width: 25%;">{{ LL.editor.canvasTool.tableGenerator.rows() }}</div>
         <NumberInput
           :min="1"
           :max="20"
@@ -35,7 +35,7 @@
         />
       </div>
       <div class="row">
-        <div class="label" style="width: 25%;">列数：</div>
+        <div class="label" style="width: 25%;">{{ LL.editor.canvasTool.tableGenerator.cols() }}</div>
         <NumberInput
           :min="1"
           :max="20"
@@ -44,18 +44,21 @@
         />
       </div>
       <div class="btns">
-        <Button class="btn" @click="close()">取消</Button>
-        <Button class="btn" type="primary" @click="insertCustomTable()">确认</Button>
+        <Button class="btn" @click="close()">{{ LL.common.cancel() }}</Button>
+        <Button class="btn" type="primary" @click="insertCustomTable()">{{ LL.common.confirm() }}</Button>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import message from '@/utils/message'
 import Button from '@/components/Button.vue'
 import NumberInput from '@/components/NumberInput.vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 interface InsertData {
   row: number
@@ -72,6 +75,12 @@ const customRow = ref(3)
 const customCol = ref(3)
 const isCustom = ref(false)
 
+const tableTitle = computed(() => {
+  if (!endCell.value.length) return LL.value.editor.canvasTool.tableGenerator.table()
+  const [rows, cols] = endCell.value
+  return LL.value.editor.canvasTool.tableGenerator.tableWithSize({ rows, cols })
+})
+
 const handleClickTable = () => {
   if (!endCell.value.length) return
   const [row, col] = endCell.value
@@ -79,8 +88,8 @@ const handleClickTable = () => {
 }
 
 const insertCustomTable = () => {
-  if (customRow.value < 1 || customRow.value > 20) return message.warning('行数/列数必须在0~20之间！')
-  if (customCol.value < 1 || customCol.value > 20) return message.warning('行数/列数必须在0~20之间！')
+  if (customRow.value < 1 || customRow.value > 20) return message.warning(LL.value.editor.canvasTool.tableGenerator.rowColRangeWarning())
+  if (customCol.value < 1 || customCol.value > 20) return message.warning(LL.value.editor.canvasTool.tableGenerator.rowColRangeWarning())
   emit('insert', { row: customRow.value, col: customCol.value })
   isCustom.value = false
 }

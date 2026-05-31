@@ -13,7 +13,7 @@
     </div>
     <div class="configs">
       <div class="row">
-        <div class="title">导出格式：</div>
+        <div class="title">{{ LL.export.image.formatLabel() }}</div>
         <RadioGroup
           class="config-item"
           v-model:value="format"
@@ -23,18 +23,18 @@
         </RadioGroup>
       </div>
       <div class="row">
-        <div class="title">导出范围：</div>
+        <div class="title">{{ LL.export.dialog.exportRange() }}</div>
         <RadioGroup
           class="config-item"
           v-model:value="rangeType"
         >
-          <RadioButton style="width: 33.33%;" value="all">全部</RadioButton>
-          <RadioButton style="width: 33.33%;" value="current">当前页</RadioButton>
-          <RadioButton style="width: 33.33%;" value="custom">自定义</RadioButton>
+          <RadioButton style="width: 33.33%;" value="all">{{ LL.export.dialog.rangeAll() }}</RadioButton>
+          <RadioButton style="width: 33.33%;" value="current">{{ LL.export.dialog.rangeCurrent() }}</RadioButton>
+          <RadioButton style="width: 33.33%;" value="custom">{{ LL.export.dialog.rangeCustom() }}</RadioButton>
         </RadioGroup>
       </div>
       <div class="row" v-if="rangeType === 'custom'">
-        <div class="title" :data-range="`（${range[0]} ~ ${range[1]}）`">自定义范围：</div>
+        <div class="title" :data-range="customRangeHint">{{ LL.export.dialog.customRange() }}</div>
         <Slider
           class="config-item"
           range
@@ -46,7 +46,7 @@
       </div>
 
       <div class="row">
-        <div class="title">图片质量：</div>
+        <div class="title">{{ LL.export.image.qualityLabel() }}</div>
         <Slider
           class="config-item"
           :min="0"
@@ -57,27 +57,28 @@
       </div>
 
       <div class="row">
-        <div class="title">忽略在线字体：</div>
+        <div class="title">{{ LL.export.image.ignoreWebfontLabel() }}</div>
         <div class="config-item">
-          <Switch v-model:value="ignoreWebfont" v-tooltip="'导出时默认忽略在线字体，若您在幻灯片中使用了在线字体，且希望导出后保留相关样式，可选择关闭「忽略在线字体」选项，但要注意这将会增加导出用时。'" />
+          <Switch v-model:value="ignoreWebfont" v-tooltip="LL.export.image.ignoreWebfontTooltip()" />
         </div>
       </div>
     </div>
 
     <div class="btns">
-      <Button class="btn export" type="primary" @click="expImage()"><i-icon-park-outline:download /> 导出图片</Button>
-      <Button class="btn close" @click="emit('close')">关闭</Button>
+      <Button class="btn export" type="primary" @click="expImage()"><i-icon-park-outline:download /> {{ LL.export.image.exportButton() }}</Button>
+      <Button class="btn close" @click="emit('close')">{{ LL.common.close() }}</Button>
     </div>
 
-    <FullscreenSpin :loading="exporting" tip="正在导出..." />
+    <FullscreenSpin :loading="exporting" :tip="LL.export.dialog.exporting()" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSlidesStore } from '@/store'
 import useExport from '@/hooks/useExport'
+import { useI18nContext } from '@/i18n/useI18nContext'
 
 import ThumbnailSlide from '@/views/components/ThumbnailSlide/index.vue'
 import FullscreenSpin from '@/components/FullscreenSpin.vue'
@@ -87,18 +88,24 @@ import Button from '@/components/Button.vue'
 import RadioButton from '@/components/RadioButton.vue'
 import RadioGroup from '@/components/RadioGroup.vue'
 
+const { LL } = useI18nContext()
+
 const emit = defineEmits<{
   (event: 'close'): void
 }>()
 
 const { slides, currentSlide } = storeToRefs(useSlidesStore())
 
-const imageThumbnailsRef = useTemplateRef<HTMLElement>('imageThumbnailsRef')
+const imageThumbnailsRef = ref<HTMLElement | null>(null)
 const rangeType = ref<'all' | 'current' | 'custom'>('all')
 const range = ref<[number, number]>([1, slides.value.length])
 const format = ref<'jpeg' | 'png'>('jpeg')
 const quality = ref(1)
 const ignoreWebfont = ref(false)
+
+const customRangeHint = computed(() =>
+  LL.value.export.dialog.customRangeHint({ min: range.value[0], max: range.value[1] }),
+)
 
 const renderSlides = computed(() => {
   if (rangeType.value === 'all') return slides.value

@@ -4,6 +4,8 @@
 
 import { ShapePathFormulasKeys } from '@/types/slides'
 
+export type ShapeCategoryKey = 'rectangle' | 'common' | 'arrow' | 'other' | 'line'
+
 export interface ShapePoolItem {
   viewBox: [number, number]
   path: string
@@ -15,8 +17,13 @@ export interface ShapePoolItem {
   withborder?: boolean
 }
 
-interface ShapeListItem {
-  type: string
+export interface ShapeListItem {
+  categoryKey: ShapeCategoryKey
+  children: ShapePoolItem[]
+}
+
+interface ShapeListItemBase {
+  categoryKey: ShapeCategoryKey
   children: ShapePoolItem[]
 }
 
@@ -277,9 +284,9 @@ export const SHAPE_PATH_FORMULAS: Record<string, ShapePathFormula> = {
   },
 }
 
-export const SHAPE_LIST: ShapeListItem[] = [
+const SHAPE_LIST_BASE: ShapeListItemBase[] = [
   {
-    type: '矩形',
+    categoryKey: 'rectangle',
     children: [
       {
         viewBox: [200, 200],
@@ -338,7 +345,7 @@ export const SHAPE_LIST: ShapeListItem[] = [
   },
 
   {
-    type: '常用形状',
+    categoryKey: 'common',
     children: [
       {
         viewBox: [200, 200],
@@ -644,7 +651,7 @@ export const SHAPE_LIST: ShapeListItem[] = [
   },
   
   {
-    type: '箭头',
+    categoryKey: 'arrow',
     children: [
       {
         viewBox: [200, 200],
@@ -746,7 +753,7 @@ export const SHAPE_LIST: ShapeListItem[] = [
   },
 
   {
-    type: '其他形状',
+    categoryKey: 'other',
     children: [
       {
         viewBox: [1024, 1024],
@@ -896,7 +903,7 @@ export const SHAPE_LIST: ShapeListItem[] = [
   },
 
   {
-    type: '线性',
+    categoryKey: 'line',
     children: [
       {
         viewBox: [1024, 1024],
@@ -976,3 +983,6 @@ export const SHAPE_LIST: ShapeListItem[] = [
     ],
   }
 ]
+
+/** Shape categories with paths; resolve labels via `LL.configs.shapes` in UI. */
+export const SHAPE_LIST: ShapeListItem[] = SHAPE_LIST_BASE

@@ -3,10 +3,10 @@
     <div class="container">
       <div class="left">
         <div class="input-area">
-          <TextArea v-model:value="latex" placeholder="输入 LaTeX 公式" ref="textAreaRef" />
+          <TextArea v-model:value="latex" :placeholder="LL.components.latexEditor.inputPlaceholder()" ref="textAreaRef" />
         </div>
         <div class="preview">
-          <div class="placeholder" v-if="!latex">公式预览</div>
+          <div class="placeholder" v-if="!latex">{{ LL.components.latexEditor.previewPlaceholder() }}</div>
           <div class="preview-content" v-else>
             <FormulaContent
               :width="518"
@@ -52,14 +52,14 @@
       </div>
     </div>
     <div class="footer">
-      <Button class="btn" @click="emit('close')">取消</Button>
-      <Button class="btn" type="primary" @click="update()">确定</Button>
+      <Button class="btn" @click="emit('close')">{{ LL.common.cancel() }}</Button>
+      <Button class="btn" type="primary" @click="update()">{{ LL.common.ok() }}</Button>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, useTemplateRef } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { hfmath } from './hfmath'
 import { FORMULA_LIST, SYMBOL_LIST } from '@/configs/latex'
 import message from '@/utils/message'
@@ -69,16 +69,19 @@ import SymbolContent from './SymbolContent.vue'
 import Button from '../Button.vue'
 import TextArea from '../TextArea.vue'
 import Tabs from '../Tabs.vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 interface TabItem {
   key: 'symbol' | 'formula'
   label: string
 }
 
-const tabs: TabItem[] = [
-  { label: '常用符号', key: 'symbol' },
-  { label: '预置公式', key: 'formula' },
-]
+const tabs = computed<TabItem[]>(() => [
+  { label: LL.value.components.latexEditor.tabSymbols(), key: 'symbol' },
+  { label: LL.value.components.latexEditor.tabFormulas(), key: 'formula' },
+])
 
 interface LatexResult {
   latex: string
@@ -100,14 +103,17 @@ const emit = defineEmits<{
 
 const formulaList = FORMULA_LIST
 
-const symbolTabs = SYMBOL_LIST.map(item => ({
-  label: item.label,
-  key: item.type,
-}))
+const symbolTabs = computed(() => {
+  const sc = LL.value.configs.latex.symbolCategories
+  return SYMBOL_LIST.map(item => ({
+    label: sc[item.type as keyof typeof sc](),
+    key: item.type,
+  }))
+})
 
 const latex = ref('')
 const toolbarState = ref<'symbol' | 'formula'>('symbol')
-const textAreaRef = useTemplateRef<InstanceType<typeof TextArea>>('textAreaRef')
+const textAreaRef = ref<InstanceType<typeof TextArea> | null>(null)
 
 const selectedSymbolKey = ref(SYMBOL_LIST[0].type)
 const symbolPool = computed(() => {
@@ -123,7 +129,7 @@ onMounted(() => {
 })
 
 const update = () => {
-  if (!latex.value) return message.error('公式不能为空')
+  if (!latex.value) return message.error(LL.value.components.latexEditor.formulaEmpty())
 
   const eq = new hfmath(latex.value)
   const pathd = eq.pathd({})

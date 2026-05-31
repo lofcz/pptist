@@ -1,7 +1,7 @@
 <template>
   <div class="element-color-mask">
     <div class="row">
-      <div style="width: 40%;">着色（蒙版）：</div>
+      <div style="width: 40%;">{{ LL.editor.elementColorMask.colorMask() }}</div>
       <div class="switch-wrapper" style="width: 60%;">
         <Switch 
           :value="hasColorMask" 
@@ -11,7 +11,7 @@
     </div>
     <template v-if="hasColorMask">
       <div class="row" style="margin-top: 15px;">
-        <div style="width: 40%;">蒙版颜色：</div>
+        <div style="width: 40%;">{{ LL.editor.elementColorMask.maskColor() }}</div>
         <Popover trigger="click" style="width: 60%;">
           <template #content>
             <ColorPicker
@@ -32,11 +32,14 @@ import { storeToRefs } from 'pinia'
 import tinycolor from 'tinycolor2'
 import { useMainStore, useSlidesStore } from '@/store'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
+import { useI18nContext } from '@/i18n/useI18nContext'
 
 import ColorButton from '@/components/ColorButton.vue'
 import ColorPicker from '@/components/ColorPicker/index.vue'
 import Switch from '@/components/Switch.vue'
 import Popover from '@/components/Popover.vue'
+
+const { LL } = useI18nContext()
 
 const slidesStore = useSlidesStore()
 const { handleElement, handleElementId } = storeToRefs(useMainStore())

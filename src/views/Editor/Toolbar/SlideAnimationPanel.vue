@@ -5,14 +5,14 @@
         class="animation-item" 
         :class="{ 'active': currentTurningMode === item.value }" 
         v-for="item in animations" 
-        :key="item.label"
+        :key="item.value"
         @click="updateTurningMode(item.value)"
       >
         <div :class="['animation-block', item.value]">P</div>
         <div class="animation-text">{{item.label}}</div>
       </div>
     </div>
-    <Button style="width: 100%;" @click="applyAllSlide()"><i-icon-park-outline:check /> 应用到全部</Button>
+    <Button style="width: 100%;" @click="applyAllSlide()"><i-icon-park-outline:check /> {{ LL.editor.slideAnimation.applyToAll() }}</Button>
   </div>
 </template>
 
@@ -21,17 +21,35 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSlidesStore } from '@/store'
 import type { TurningMode } from '@/types/slides'
-import { SLIDE_ANIMATIONS } from '@/configs/animation'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 import message from '@/utils/message'
 import Button from '@/components/Button.vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 const slidesStore = useSlidesStore()
 const { slides, currentSlide } = storeToRefs(slidesStore)
 
 const currentTurningMode = computed(() => currentSlide.value.turningMode || 'slideY')
 
-const animations = SLIDE_ANIMATIONS
+const animations = computed(() => {
+  const slide = LL.value.configs.animation.slide
+  return [
+    { label: slide.no(), value: 'no' as TurningMode },
+    { label: slide.random(), value: 'random' as TurningMode },
+    { label: slide.slideX(), value: 'slideX' as TurningMode },
+    { label: slide.slideY(), value: 'slideY' as TurningMode },
+    { label: slide.slideX3D(), value: 'slideX3D' as TurningMode },
+    { label: slide.slideY3D(), value: 'slideY3D' as TurningMode },
+    { label: slide.fade(), value: 'fade' as TurningMode },
+    { label: slide.rotate(), value: 'rotate' as TurningMode },
+    { label: slide.scaleY(), value: 'scaleY' as TurningMode },
+    { label: slide.scaleX(), value: 'scaleX' as TurningMode },
+    { label: slide.scale(), value: 'scale' as TurningMode },
+    { label: slide.scaleReverse(), value: 'scaleReverse' as TurningMode },
+  ]
+})
 
 const { addHistorySnapshot } = useHistorySnapshot()
 
@@ -51,7 +69,7 @@ const applyAllSlide = () => {
     }
   })
   slidesStore.setSlides(newSlides)
-  message.success('已应用到全部')
+  message.success(LL.value.editor.slideAnimation.appliedToAll())
   addHistorySnapshot()
 }
 </script>

@@ -11,7 +11,7 @@
     @click="autoHideController()"
   >
     <div class="video-wrap" @click="toggle()">
-      <div class="load-error" v-if="loadError">视频加载失败</div>
+      <div class="load-error" v-if="loadError">{{ LL.canvas.videoPlayer.loadFailed() }}</div>
 
       <canvas ref="bgCanvasRef" class="bg-canvas"></canvas>
       <video
@@ -77,7 +77,7 @@
       <div class="icons icons-right">
         <div class="speed">
           <div class="icon speed-icon">
-            <span class="icon-content" @click="speedMenuVisible = !speedMenuVisible">{{playbackRate === 1 ? '倍速' : (playbackRate + 'x')}}</span>
+            <span class="icon-content" @click="speedMenuVisible = !speedMenuVisible">{{ playbackRate === 1 ? LL.canvas.videoPlayer.playbackSpeed() : (playbackRate + 'x') }}</span>
             <div class="speed-menu" v-if="speedMenuVisible" @mouseleave="speedMenuVisible = false">
               <div 
                 class="speed-menu-item" 
@@ -91,7 +91,7 @@
         </div>
         <div class="loop" @click="toggleLoop()">
           <div class="icon loop-icon" :class="{ 'active': loop }">
-            <span class="icon-content">循环{{loop ? '开' : '关'}}</span>
+            <span class="icon-content">{{ loop ? LL.canvas.videoPlayer.loopOn() : LL.canvas.videoPlayer.loopOff() }}</span>
           </div>
         </div>
       </div>
@@ -118,8 +118,11 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, useTemplateRef, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
 import useMSE from './useMSE'
+
+const { LL } = useI18nContext()
 
 const props = withDefaults(defineProps<{
   width: number
@@ -148,9 +151,9 @@ const getBoundingClientRectViewLeft = (element: HTMLElement) => {
   return element.getBoundingClientRect().left
 }
 
-const videoRef = useTemplateRef<HTMLVideoElement>('videoRef')
-const playBarWrapRef = useTemplateRef<HTMLElement>('playBarWrapRef')
-const volumeBarRef = useTemplateRef<HTMLElement>('volumeBarRef')
+const videoRef = ref<HTMLVideoElement | null>(null)
+const playBarWrapRef = ref<HTMLElement | null>(null)
+const volumeBarRef = ref<HTMLElement | null>(null)
 
 const volume = ref(0.5)
 const paused = ref(true)
@@ -355,7 +358,7 @@ const autoHideController = () => {
   }, 3000)
 }
 
-const bgCanvasRef = useTemplateRef<HTMLCanvasElement>('bgCanvasRef')
+const bgCanvasRef = ref<HTMLCanvasElement | null>(null)
 onMounted(() => {
   if (!bgCanvasRef.value || !videoRef.value) return
   const ctx = bgCanvasRef.value.getContext('2d')

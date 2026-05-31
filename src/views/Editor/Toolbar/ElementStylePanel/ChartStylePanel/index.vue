@@ -1,7 +1,7 @@
 <template>
   <div class="chart-style-panel">
     <Button class="full-width-btn" @click="openDataEditor()">
-      <i-icon-park-outline:edit /> 编辑图表
+      <i-icon-park-outline:edit /> {{ LL.editor.stylePanel.chart.editChart() }}
     </Button>
 
     <Divider />
@@ -12,20 +12,20 @@
           @update:value="value => updateOptions({ stack: value })" 
           :value="stack"
           style="flex: 2;"
-        >堆叠样式</Checkbox>
+        >{{ LL.editor.stylePanel.chart.stackedStyle() }}</Checkbox>
         <Checkbox 
           v-if="handleChartElement.chartType === 'line'"
           @update:value="value => updateOptions({ lineSmooth: value })" 
           :value="lineSmooth"
           style="flex: 3;"
-        >使用平滑曲线</Checkbox>
+        >{{ LL.editor.stylePanel.chart.useSmoothCurve() }}</Checkbox>
       </div>
   
       <Divider />
     </template>
 
     <div class="row">
-      <div style="width: 40%;">背景填充：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.chart.backgroundFill() }}</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -37,7 +37,7 @@
       </Popover>
     </div>
     <div class="row">
-      <div style="width: 40%;">坐标与文字：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.chart.axisAndText() }}</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -49,7 +49,7 @@
       </Popover>
     </div>
     <div class="row">
-      <div style="width: 40%;">网格颜色：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.chart.gridColor() }}</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -62,11 +62,11 @@
     </div>
 
     <div class="row">
-      <div style="width: 40%;">主题配色：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.chart.themeColors() }}</div>
       <Popover trigger="click" v-model:value="themesVisible" style="width: 60%;">
         <template #content>
           <div class="themes">
-            <div class="label">预置图表主题：</div>
+            <div class="label">{{ LL.editor.stylePanel.chart.presetChartThemes() }}</div>
             <div class="preset-themes">
               <div class="preset-theme" v-for="(item, index) in CHART_PRESET_THEMES" :key="index" @click="setThemeColors(item)">
                 <div 
@@ -77,7 +77,7 @@
                 ></div>
               </div>
             </div>
-            <div class="label">幻灯片主题：</div>
+            <div class="label">{{ LL.editor.stylePanel.chart.slideTheme() }}</div>
             <div class="preset-themes" :style="{ marginBottom: '-10px' }">
               <div class="preset-theme" @click="setThemeColors(theme.themeColors)">
                 <div 
@@ -89,7 +89,7 @@
               </div>
             </div>
             <Divider :margin="10" />
-            <Button class="full-width-btn" @click="themesVisible = false; themeColorsSettingVisible = true">自定义配色</Button>
+            <Button class="full-width-btn" @click="themesVisible = false; themeColorsSettingVisible = true">{{ LL.editor.stylePanel.chart.customColors() }}</Button>
           </div>
         </template>
         <ColorListButton :colors="themeColors" />
@@ -129,6 +129,10 @@ import Divider from '@/components/Divider.vue'
 import Checkbox from '@/components/Checkbox.vue'
 import Button from '@/components/Button.vue'
 import Popover from '@/components/Popover.vue'
+
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 const mainStore = useMainStore()
 const slidesStore = useSlidesStore()

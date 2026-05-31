@@ -8,8 +8,9 @@
 </template>
 
 <script lang="ts" setup>
-import { type CSSProperties, onMounted, onUnmounted, ref, watch, computed, useTemplateRef } from 'vue'
+import { type CSSProperties, onMounted, onUnmounted, ref, watch, computed } from 'vue'
 import tippy, { type Instance, type Placement } from 'tippy.js'
+import { getPptistPortalTarget } from '@/utils/portal'
 
 import 'tippy.js/animations/scale.css'
 
@@ -37,8 +38,8 @@ const emit = defineEmits<{
 
 const instance = ref<Instance>()
 const contentVisible = ref(false)
-const triggerRef = useTemplateRef<HTMLElement>('triggerRef')
-const contentRef = useTemplateRef<HTMLElement>('contentRef')
+const triggerRef = ref<HTMLElement | null>(null)
+const contentRef = ref<HTMLElement | null>(null)
 
 const contentStyle = computed(() => {
   return props.contentStyle || {}
@@ -61,7 +62,7 @@ onMounted(() => {
     trigger: props.trigger,
     placement: props.placement,
     interactive: true,
-    appendTo: props.appendTo || document.body,
+    appendTo: props.appendTo || getPptistPortalTarget(),
     maxWidth: 'none',
     offset: [0, props.offset],
     duration: 200,

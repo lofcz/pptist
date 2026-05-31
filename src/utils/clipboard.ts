@@ -1,5 +1,7 @@
 import Clipboard from 'clipboard'
+import { getLL } from '@/i18n/getLL'
 import { decrypt } from '@/utils/crypto'
+import { getPptistPortalTarget } from '@/utils/portal'
 
 /**
  * 复制文本到剪贴板
@@ -7,11 +9,12 @@ import { decrypt } from '@/utils/crypto'
  */
 export const copyText = (text: string) => {
   return new Promise((resolve, reject) => {
+    const portalTarget = getPptistPortalTarget()
     const fakeElement = document.createElement('button')
     const clipboard = new Clipboard(fakeElement, {
       text: () => text,
       action: () => 'copy',
-      container: document.body,
+      container: portalTarget,
     })
     clipboard.on('success', e => {
       clipboard.destroy()
@@ -21,22 +24,23 @@ export const copyText = (text: string) => {
       clipboard.destroy()
       reject(e)
     })
-    document.body.appendChild(fakeElement)
+    portalTarget.appendChild(fakeElement)
     fakeElement.click()
-    document.body.removeChild(fakeElement)
+    portalTarget.removeChild(fakeElement)
   })
 }
 
 // 读取剪贴板
 export const readClipboard = (): Promise<string> => {
+  const LL = getLL()
   return new Promise((resolve, reject) => {
     if (navigator.clipboard?.readText) {
       navigator.clipboard.readText().then(text => {
-        if (!text) reject('剪贴板为空或者不包含文本')
+        if (!text) reject(LL.common.clipboard.emptyOrNoText())
         return resolve(text)
       })
     }
-    else reject('浏览器不支持或禁止访问剪贴板，请使用快捷键 Ctrl + V')
+    else reject(LL.common.clipboard.unsupportedOrDenied())
   })
 }
 

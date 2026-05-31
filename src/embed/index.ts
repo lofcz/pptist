@@ -1,0 +1,37 @@
+export { mountPptist, unmountPptist } from './mount'
+export type {
+  PptistController,
+  PptistDocument,
+  PptistMountOptions,
+  PptistMountResult,
+} from './types'
+export type * from './agentic/types'
+export type { Locales as PptistLocales } from '@/i18n/locale'
+export type {
+  ChartData,
+  ChartOptions,
+  ChartType,
+  Note,
+  NoteReply,
+  PPTAnimation,
+  PPTAudioElement,
+  PPTChartElement,
+  PPTElement,
+  PPTElementLink,
+  PPTImageElement,
+  PPTLatexElement,
+  PPTLineElement,
+  PPTShapeElement,
+  PPTTableElement,
+  PPTTextElement,
+  PPTVideoElement,
+  ShapeText,
+  Slide,
+  SlideBackground,
+  SlideTemplate,
+  SlideTheme,
+  TableCell,
+  TableCellStyle,
+  TextAlign,
+  TurningMode,
+} from '@/types/slides'

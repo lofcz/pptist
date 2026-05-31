@@ -70,11 +70,15 @@ import { useMainStore } from '@/store'
 import type { PPTElementOutline, TableCell, TableTheme } from '@/types/slides'
 import type { ContextmenuItem } from '@/components/Contextmenu/types'
 import { KEYS } from '@/configs/hotkey'
+import { queryPptist } from '@/utils/portal'
 import { getCellStyle, getTextStyle, formatText } from './utils'
 import useHideCells from './useHideCells'
 import useSubThemeColor from './useSubThemeColor'
 
 import CustomTextarea from './CustomTextarea.vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 const props = withDefaults(defineProps<{
   data: TableCell[][]
@@ -426,7 +430,7 @@ const clearSelectedCellText = () => {
 
 const focusActiveCell = () => {
   nextTick(() => {
-    const textRef = document.querySelector('.cell-text.active') as HTMLInputElement
+    const textRef = queryPptist<HTMLInputElement>('.cell-text.active')
     if (textRef) textRef.focus()
   })
 }
@@ -685,53 +689,54 @@ const contextmenus = (el: HTMLElement): ContextmenuItem[] => {
   const { canMerge, canSplit } = checkCanMergeOrSplit(rowIndex, colIndex)
   const { canDeleteRow, canDeleteCol } = checkCanDeleteRowOrCol()
 
+  const t = LL.value.canvas.table.contextMenu
   return [
     {
-      text: '插入列',
+      text: t.insertColumn(),
       children: [
-        { text: '到左侧', handler: () => insertCol(colIndex) },
-        { text: '到右侧', handler: () => insertCol(colIndex + 1) },
+        { text: t.toLeft(), handler: () => insertCol(colIndex) },
+        { text: t.toRight(), handler: () => insertCol(colIndex + 1) },
       ],
     },
     {
-      text: '插入行',
+      text: t.insertRow(),
       children: [
-        { text: '到上方', handler: () => insertRow(rowIndex) },
-        { text: '到下方', handler: () => insertRow(rowIndex + 1) },
+        { text: t.toAbove(), handler: () => insertRow(rowIndex) },
+        { text: t.toBelow(), handler: () => insertRow(rowIndex + 1) },
       ],
     },
     {
-      text: '删除列',
+      text: t.deleteColumn(),
       disable: !canDeleteCol,
       handler: () => deleteCol(colIndex),
     },
     {
-      text: '删除行',
+      text: t.deleteRow(),
       disable: !canDeleteRow,
       handler: () => deleteRow(rowIndex),
     },
     { divider: true },
     {
-      text: '合并单元格',
+      text: t.mergeCells(),
       disable: !canMerge,
       handler: mergeCells,
     },
     {
-      text: '取消合并单元格',
+      text: t.unmergeCells(),
       disable: !canSplit,
       handler: () => splitCells(rowIndex, colIndex),
     },
     { divider: true },
     {
-      text: '选中当前列',
+      text: t.selectCurrentColumn(),
       handler: () => selectCol(colIndex),
     },
     {
-      text: '选中当前行',
+      text: t.selectCurrentRow(),
       handler: () => selectRow(rowIndex),
     },
     {
-      text: '选中全部单元格',
+      text: t.selectAllCells(),
       handler: selectAll,
     },
   ]

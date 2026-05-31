@@ -26,7 +26,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, useTemplateRef } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMainStore, useKeyboardStore } from '@/store'
 import type { CreateElementSelectionData } from '@/types/edit'
@@ -42,7 +42,7 @@ const { ctrlOrShiftKeyActive } = storeToRefs(useKeyboardStore())
 const start = ref<[number, number]>()
 const end = ref<[number, number]>()
 
-const selectionRef = useTemplateRef<HTMLElement>('selectionRef')
+const selectionRef = ref<HTMLElement | null>(null)
 const offset = ref({
   x: 0,
   y: 0,

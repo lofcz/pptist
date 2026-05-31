@@ -8,7 +8,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, useTemplateRef, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { debounce } from 'lodash'
 import { storeToRefs } from 'pinia'
 import { useKeyboardStore, useMainStore } from '@/store'
@@ -25,6 +25,9 @@ import { replaceText } from '@/utils/prosemirror/commands/replaceText'
 import type { TextFormatPainterKeys } from '@/types/edit'
 import message from '@/utils/message'
 import { KEYS } from '@/configs/hotkey'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 const props = withDefaults(defineProps<{
   elementId: string
@@ -49,7 +52,7 @@ const mainStore = useMainStore()
 const { handleElementId, textFormatPainter, richTextAttrs, activeElementIdList } = storeToRefs(mainStore)
 const { ctrlOrShiftKeyActive } = storeToRefs(useKeyboardStore())
 
-const editorViewRef = useTemplateRef<HTMLElement>('editorViewRef')
+const editorViewRef = ref<HTMLElement | null>(null)
 let editorView: EditorView
 
 // 富文本的各种交互事件监听：
@@ -130,7 +133,7 @@ const execCommand = ({ target, action }: RichTextCommand) => {
       addMark(editorView, mark)
 
       if (item.value && !document.fonts.check(`16px ${item.value}`)) {
-        message.warning('字体需要等待加载下载后生效，请稍等')
+        message.warning(LL.value.editor.richText.fontPendingDownload())
       }
     }
     else if (item.command === 'fontsize' && item.value) {

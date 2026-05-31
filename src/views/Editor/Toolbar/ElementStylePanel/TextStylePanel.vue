@@ -4,10 +4,10 @@
       <div 
         class="preset-style-item"
         v-for="item in presetStyles"
-        :key="item.label"
+        :key="item.key"
         :style="item.style"
         @click="emitBatchRichTextCommand(item.cmd)"
-      >{{item.label}}</div>
+      >{{ item.label }}</div>
     </div>
 
     <Divider />
@@ -15,13 +15,11 @@
     <Divider />
 
     <div class="row">
-      <div style="width: 40%;">行间距：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.shared.lineHeight() }}</div>
       <Select style="width: 60%;"
         :value="lineHeight || 1"
         @update:value="value => updateText({ lineHeight: value as number })"
-        :options="lineHeightOptions.map(item => ({
-          label: item + '倍', value: item
-        }))"
+        :options="lineHeightSelectOptions"
       >
         <template #icon>
           <i-icon-park-outline:row-height />
@@ -29,13 +27,11 @@
       </Select>
     </div>
     <div class="row">
-      <div style="width: 40%;">段间距：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.shared.paragraphSpace() }}</div>
       <Select style="width: 60%;"
         :value="paragraphSpace || 0"
         @update:value="value => updateText({ paragraphSpace: value as number })"
-        :options="paragraphSpaceOptions.map(item => ({
-          label: item + 'px', value: item
-        }))"
+        :options="paragraphSpaceSelectOptions"
       >
         <template #icon>
           <i-icon-park-outline:vertical-spacing-between-items />
@@ -43,13 +39,11 @@
       </Select>
     </div>
     <div class="row">
-      <div style="width: 40%;">字间距：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.shared.wordSpace() }}</div>
       <Select style="width: 60%;"
         :value="wordSpace || 0"
         @update:value="value => updateText({ wordSpace: value as number })"
-        :options="wordSpaceOptions.map(item => ({
-          label: item + 'px', value: item
-        }))"
+        :options="wordSpaceSelectOptions"
       >
         <template #icon>
           <i-icon-park-outline:fullwidth />
@@ -57,7 +51,7 @@
       </Select>
     </div>
     <div class="row">
-      <div style="width: 40%;">文本框填充：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.text.textBoxFill() }}</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -79,7 +73,7 @@
         @update:value="value => updateInset(0, value)"
         style="width: 45%;"
       >
-        <template #prefix>上边距：</template>
+        <template #prefix>{{ LL.editor.stylePanel.shared.paddingTop() }}</template>
       </NumberInput>
       <div style="width: 10%;"></div>
       <NumberInput
@@ -89,7 +83,7 @@
         @update:value="value => updateInset(2, value)"
         style="width: 45%;"
       >
-        <template #prefix>下边距：</template>
+        <template #prefix>{{ LL.editor.stylePanel.shared.paddingBottom() }}</template>
       </NumberInput>
     </div>
     <div class="row">
@@ -100,7 +94,7 @@
         @update:value="value => updateInset(3, value)"
         style="width: 45%;"
       >
-        <template #prefix>左边距：</template>
+        <template #prefix>{{ LL.editor.stylePanel.shared.paddingLeft() }}</template>
       </NumberInput>
       <div style="width: 10%;"></div>
       <NumberInput
@@ -110,7 +104,7 @@
         @update:value="value => updateInset(1, value)"
         style="width: 45%;"
       >
-        <template #prefix>右边距：</template>
+        <template #prefix>{{ LL.editor.stylePanel.shared.paddingRight() }}</template>
       </NumberInput>
     </div>
 
@@ -124,7 +118,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
 import { storeToRefs } from 'pinia'
 import { useMainStore, useSlidesStore } from '@/store'
 import type { PPTTextElement, TextInset } from '@/types/slides'
@@ -142,11 +137,13 @@ import NumberInput from '@/components/NumberInput.vue'
 import Select from '@/components/Select.vue'
 import Popover from '@/components/Popover.vue'
 
+const { LL } = useI18nContext()
+
 // 注意，存在一个未知原因的BUG，如果文本加粗后文本框高度增加，画布的可视区域定位会出现错误
 // 因此在执行预置样式命令时，将加粗命令放在尽可能靠前的位置，避免字号增大后再加粗
-const presetStyles = [
+const presetStyleDefs = [
   {
-    label: '大标题',
+    key: 'largeTitle',
     style: {
       fontSize: '26px',
       fontWeight: 700,
@@ -159,7 +156,7 @@ const presetStyles = [
     ],
   },
   {
-    label: '小标题',
+    key: 'smallTitle',
     style: {
       fontSize: '22px',
       fontWeight: 700,
@@ -172,7 +169,7 @@ const presetStyles = [
     ],
   },
   {
-    label: '正文',
+    key: 'body',
     style: {
       fontSize: '20px',
     },
@@ -182,7 +179,7 @@ const presetStyles = [
     ],
   },
   {
-    label: '正文[小]',
+    key: 'bodySmall',
     style: {
       fontSize: '18px',
     },
@@ -192,7 +189,7 @@ const presetStyles = [
     ],
   },
   {
-    label: '注释 1',
+    key: 'note1',
     style: {
       fontSize: '16px',
       fontStyle: 'italic',
@@ -204,7 +201,7 @@ const presetStyles = [
     ],
   },
   {
-    label: '注释 2',
+    key: 'note2',
     style: {
       fontSize: '16px',
       textDecoration: 'underline',
@@ -216,6 +213,23 @@ const presetStyles = [
     ],
   },
 ]
+
+const presetStyles = computed(() => {
+  const labels: Record<(typeof presetStyleDefs)[number]['key'], string> = {
+    largeTitle: LL.value.editor.stylePanel.text.presetLargeTitle(),
+    smallTitle: LL.value.editor.stylePanel.text.presetSmallTitle(),
+    body: LL.value.editor.stylePanel.text.presetBody(),
+    bodySmall: LL.value.editor.stylePanel.text.presetBodySmall(),
+    note1: LL.value.editor.stylePanel.text.presetNote1(),
+    note2: LL.value.editor.stylePanel.text.presetNote2(),
+  }
+  return presetStyleDefs.map(item => ({
+    key: item.key,
+    label: labels[item.key],
+    style: item.style,
+    cmd: item.cmd as RichTextAction[],
+  }))
+})
 
 const mainStore = useMainStore()
 const slidesStore = useSlidesStore()
@@ -248,6 +262,25 @@ watch(handleElement, () => {
 const lineHeightOptions = [0.9, 1.0, 1.15, 1.2, 1.4, 1.5, 1.8, 2.0, 2.5, 3.0]
 const wordSpaceOptions = [0, 1, 2, 3, 4, 5, 6, 8, 10]
 const paragraphSpaceOptions = [0, 5, 10, 15, 20, 25, 30, 40, 50, 80]
+
+const lineHeightSelectOptions = computed(() =>
+  lineHeightOptions.map(item => ({
+    label: LL.value.editor.stylePanel.shared.lineHeightOption({ value: item }),
+    value: item,
+  })),
+)
+const paragraphSpaceSelectOptions = computed(() =>
+  paragraphSpaceOptions.map(item => ({
+    label: LL.value.editor.stylePanel.shared.pixelValue({ value: item }),
+    value: item,
+  })),
+)
+const wordSpaceSelectOptions = computed(() =>
+  wordSpaceOptions.map(item => ({
+    label: LL.value.editor.stylePanel.shared.pixelValue({ value: item }),
+    value: item,
+  })),
+)
 
 // 发送富文本设置命令（批量）
 const emitBatchRichTextCommand = (action: RichTextAction[]) => {

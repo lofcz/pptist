@@ -1,10 +1,10 @@
 <template>
   <div class="mobile-editor-header">
     <div class="history">
-      <div class="history-item" :class="{ 'disable': !canUndo }" @click.stop="undo()"><i-icon-park-outline:back /> 撤销</div>
-      <div class="history-item" :class="{ 'disable': !canRedo }" @click.stop="redo()"><i-icon-park-outline:next /> 重做</div>
+      <div class="history-item" :class="{ 'disable': !canUndo }" @click.stop="undo()"><i-icon-park-outline:back /> {{ LL.mobile.editorHeader.undo() }}</div>
+      <div class="history-item" :class="{ 'disable': !canRedo }" @click.stop="redo()"><i-icon-park-outline:next /> {{ LL.mobile.editorHeader.redo() }}</div>
     </div>
-    <div class="back" @click="changeMode('preview')"><i-icon-park-outline:logout /> 退出编辑</div>
+    <div class="back" @click="changeMode('preview')"><i-icon-park-outline:logout /> {{ LL.mobile.editorHeader.exitEdit() }}</div>
   </div>
 </template>
 
@@ -13,6 +13,9 @@ import { storeToRefs } from 'pinia'
 import { useSnapshotStore } from '@/store'
 import type { Mode } from '@/types/mobile'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 defineProps<{
   changeMode: (mode: Mode) => void

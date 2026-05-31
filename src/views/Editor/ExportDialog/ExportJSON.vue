@@ -5,8 +5,8 @@
     </div>
 
     <div class="btns">
-      <Button class="btn export" type="primary" @click="exportJSON()"><i-icon-park-outline:download /> 导出 JSON</Button>
-      <Button class="btn close" @click="emit('close')">关闭</Button>
+      <Button class="btn export" type="primary" @click="exportJSON()"><i-icon-park-outline:download /> {{ LL.export.json.exportButton() }}</Button>
+      <Button class="btn close" @click="emit('close')">{{ LL.common.close() }}</Button>
     </div>
   </div>
 </template>
@@ -17,6 +17,9 @@ import { storeToRefs } from 'pinia'
 import { useSlidesStore } from '@/store'
 import useExport from '@/hooks/useExport'
 import Button from '@/components/Button.vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 const emit = defineEmits<{
   (event: 'close'): void

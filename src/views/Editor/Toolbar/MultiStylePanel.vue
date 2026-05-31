@@ -1,7 +1,7 @@
 <template>
   <div class="multi-style-panel">
     <div class="row">
-      <div style="width: 40%;">填充颜色：</div>
+      <div style="width: 40%;">{{ LL.editor.multiStyle.fillColor() }}</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -16,7 +16,7 @@
     <Divider />
 
     <div class="row">
-      <div style="width: 40%;">边框样式：</div>
+      <div style="width: 40%;">{{ LL.editor.multiStyle.borderStyle() }}</div>
       <SelectCustom style="width: 60%;">
         <template #options>
           <div class="option" v-for="item in lineStyleOptions" :key="item" @click="updateOutline({ style: item })">
@@ -29,7 +29,7 @@
       </SelectCustom>
     </div>
     <div class="row">
-      <div style="width: 40%;">边框颜色：</div>
+      <div style="width: 40%;">{{ LL.editor.multiStyle.borderColor() }}</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -41,7 +41,7 @@
       </Popover>
     </div>
     <div class="row">
-      <div style="width: 40%;">边框粗细：</div>
+      <div style="width: 40%;">{{ LL.editor.multiStyle.borderWidth() }}</div>
       <NumberInput 
         :value="outline.width || 0"
         @update:value="value => updateOutline({ width: value })" 
@@ -56,7 +56,7 @@
         style="width: 60%;;"
         :value="richTextAttrs.fontname"
         search
-        searchLabel="搜索字体"
+        :searchLabel="LL.editor.multiStyle.searchFont()"
         autofocus
         @update:value="value => updateFontStyle('fontname', value as string)"
         :options="FONTS"
@@ -69,7 +69,7 @@
         style="width: 40%;"
         :value="richTextAttrs.fontsize"
         search
-        searchLabel="搜索字号"
+        :searchLabel="LL.editor.multiStyle.searchFontSize()"
         autofocus
         @update:value="value => updateFontStyle('fontsize', value as string)"
         :options="fontSizeOptions.map(item => ({
@@ -89,7 +89,7 @@
             @update:modelValue="value => updateFontStyle('color', value)"
           />
         </template>
-        <TextColorButton first :color="richTextAttrs.color" v-tooltip="'文字颜色'">
+        <TextColorButton first :color="richTextAttrs.color" v-tooltip="LL.editor.multiStyle.textColor()">
           <i-icon-park-outline:text />
         </TextColorButton>
       </Popover>
@@ -100,21 +100,21 @@
             @update:modelValue="value => updateFontStyle('backcolor', value)"
           />
         </template>
-        <TextColorButton :color="richTextAttrs.backcolor" v-tooltip="'文字高亮'">
+        <TextColorButton :color="richTextAttrs.backcolor" v-tooltip="LL.editor.multiStyle.textHighlight()">
           <i-icon-park-outline:high-light />
         </TextColorButton>
       </Popover>
       <Button 
         class="font-size-btn"
         style="width: 20%;"
-        v-tooltip="'增大字号'"
+        v-tooltip="LL.editor.multiStyle.increaseFontSize()"
         @click="updateFontStyle('fontsize-add', '2')"
       ><i-icon-park-outline:font-size />+</Button>
       <Button
         last
         class="font-size-btn"
         style="width: 20%;"
-        v-tooltip="'减小字号'"
+        v-tooltip="LL.editor.multiStyle.decreaseFontSize()"
         @click="updateFontStyle('fontsize-reduce', '2')"
       ><i-icon-park-outline:font-size />-</Button>
     </ButtonGroup>
@@ -124,10 +124,10 @@
       :value="richTextAttrs.align"
       @update:value="value => updateFontStyle('align', value)"
     >
-      <RadioButton value="left" style="flex: 1;" v-tooltip="'左对齐'"><i-icon-park-outline:align-text-left /></RadioButton>
-      <RadioButton value="center" style="flex: 1;" v-tooltip="'居中'"><i-icon-park-outline:align-text-center /></RadioButton>
-      <RadioButton value="right" style="flex: 1;" v-tooltip="'右对齐'"><i-icon-park-outline:align-text-right /></RadioButton>
-      <RadioButton value="justify" style="flex: 1;" v-tooltip="'两端对齐'"><i-icon-park-outline:align-text-both /></RadioButton>
+      <RadioButton value="left" style="flex: 1;" v-tooltip="LL.editor.multiStyle.alignLeft()"><i-icon-park-outline:align-text-left /></RadioButton>
+      <RadioButton value="center" style="flex: 1;" v-tooltip="LL.editor.multiStyle.alignCenter()"><i-icon-park-outline:align-text-center /></RadioButton>
+      <RadioButton value="right" style="flex: 1;" v-tooltip="LL.editor.multiStyle.alignRight()"><i-icon-park-outline:align-text-right /></RadioButton>
+      <RadioButton value="justify" style="flex: 1;" v-tooltip="LL.editor.multiStyle.justify()"><i-icon-park-outline:align-text-both /></RadioButton>
     </RadioGroup>
   </div>
 </template>
@@ -155,6 +155,10 @@ import Select from '@/components/Select.vue'
 import SelectGroup from '@/components/SelectGroup.vue'
 import SelectCustom from '@/components/SelectCustom.vue'
 import Popover from '@/components/Popover.vue'
+
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 const slidesStore = useSlidesStore()
 const { richTextAttrs, activeElementList } = storeToRefs(useMainStore())

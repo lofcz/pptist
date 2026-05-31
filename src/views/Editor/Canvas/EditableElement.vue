@@ -30,6 +30,7 @@ import useCopyAndPasteElement from '@/hooks/useCopyAndPasteElement'
 import useSelectElement from '@/hooks/useSelectElement'
 
 import { ElementOrderCommands, ElementAlignCommands } from '@/types/edit'
+import { useI18nContext } from '@/i18n/useI18nContext'
 
 import ImageElement from '@/views/components/element/ImageElement/index.vue'
 import TextElement from '@/views/components/element/TextElement/index.vue'
@@ -40,6 +41,8 @@ import TableElement from '@/views/components/element/TableElement/index.vue'
 import LatexElement from '@/views/components/element/LatexElement/index.vue'
 import VideoElement from '@/views/components/element/VideoElement/index.vue'
 import AudioElement from '@/views/components/element/AudioElement/index.vue'
+
+const { LL } = useI18nContext()
 
 const props = defineProps<{
   elementInfo: PPTElement
@@ -73,92 +76,95 @@ const { copyElement, pasteElement, cutElement } = useCopyAndPasteElement()
 const { selectAllElements } = useSelectElement()
 
 const contextmenus = (): ContextmenuItem[] => {
+  const canvasMenu = LL.value.canvas.contextMenu
+  const alignMenu = LL.value.editor.multiPosition
+
   if (props.elementInfo.lock) {
     return [{
-      text: '解锁', 
+      text: canvasMenu.unlock(),
       handler: () => unlockElement(props.elementInfo),
     }]
   }
 
   return [
     {
-      text: '剪切',
+      text: canvasMenu.cut(),
       subText: 'Ctrl + X',
       handler: cutElement,
     },
     {
-      text: '复制',
+      text: canvasMenu.copy(),
       subText: 'Ctrl + C',
       handler: copyElement,
     },
     {
-      text: '粘贴',
+      text: canvasMenu.paste(),
       subText: 'Ctrl + V',
       handler: pasteElement,
     },
     { divider: true },
     {
-      text: '水平居中',
+      text: alignMenu.alignHorizontalCenter(),
       handler: () => alignElementToCanvas(ElementAlignCommands.HORIZONTAL),
       children: [
-        { text: '水平垂直居中', handler: () => alignElementToCanvas(ElementAlignCommands.CENTER), },
-        { text: '水平居中', handler: () => alignElementToCanvas(ElementAlignCommands.HORIZONTAL) },
-        { text: '左对齐', handler: () => alignElementToCanvas(ElementAlignCommands.LEFT) },
-        { text: '右对齐', handler: () => alignElementToCanvas(ElementAlignCommands.RIGHT) },
+        { text: canvasMenu.alignCenter(), handler: () => alignElementToCanvas(ElementAlignCommands.CENTER) },
+        { text: alignMenu.alignHorizontalCenter(), handler: () => alignElementToCanvas(ElementAlignCommands.HORIZONTAL) },
+        { text: alignMenu.alignLeft(), handler: () => alignElementToCanvas(ElementAlignCommands.LEFT) },
+        { text: alignMenu.alignRight(), handler: () => alignElementToCanvas(ElementAlignCommands.RIGHT) },
       ],
     },
     {
-      text: '垂直居中',
+      text: alignMenu.alignVerticalCenter(),
       handler: () => alignElementToCanvas(ElementAlignCommands.VERTICAL),
       children: [
-        { text: '水平垂直居中', handler: () => alignElementToCanvas(ElementAlignCommands.CENTER) },
-        { text: '垂直居中', handler: () => alignElementToCanvas(ElementAlignCommands.VERTICAL) },
-        { text: '顶部对齐', handler: () => alignElementToCanvas(ElementAlignCommands.TOP) },
-        { text: '底部对齐', handler: () => alignElementToCanvas(ElementAlignCommands.BOTTOM) },
+        { text: canvasMenu.alignCenter(), handler: () => alignElementToCanvas(ElementAlignCommands.CENTER) },
+        { text: alignMenu.alignVerticalCenter(), handler: () => alignElementToCanvas(ElementAlignCommands.VERTICAL) },
+        { text: alignMenu.alignTop(), handler: () => alignElementToCanvas(ElementAlignCommands.TOP) },
+        { text: alignMenu.alignBottom(), handler: () => alignElementToCanvas(ElementAlignCommands.BOTTOM) },
       ],
     },
     { divider: true },
     {
-      text: '置于顶层',
+      text: canvasMenu.bringToFront(),
       disable: props.isMultiSelect && !props.elementInfo.groupId,
       handler: () => orderElement(props.elementInfo, ElementOrderCommands.TOP),
       children: [
-        { text: '置于顶层', handler: () => orderElement(props.elementInfo, ElementOrderCommands.TOP) },
-        { text: '上移一层', handler: () => orderElement(props.elementInfo, ElementOrderCommands.UP) },
+        { text: canvasMenu.bringToFront(), handler: () => orderElement(props.elementInfo, ElementOrderCommands.TOP) },
+        { text: canvasMenu.bringForward(), handler: () => orderElement(props.elementInfo, ElementOrderCommands.UP) },
       ],
     },
     {
-      text: '置于底层',
+      text: canvasMenu.sendToBack(),
       disable: props.isMultiSelect && !props.elementInfo.groupId,
       handler: () => orderElement(props.elementInfo, ElementOrderCommands.BOTTOM),
       children: [
-        { text: '置于底层', handler: () => orderElement(props.elementInfo, ElementOrderCommands.BOTTOM) },
-        { text: '下移一层', handler: () => orderElement(props.elementInfo, ElementOrderCommands.DOWN) },
+        { text: canvasMenu.sendToBack(), handler: () => orderElement(props.elementInfo, ElementOrderCommands.BOTTOM) },
+        { text: canvasMenu.sendBackward(), handler: () => orderElement(props.elementInfo, ElementOrderCommands.DOWN) },
       ],
     },
     { divider: true },
     {
-      text: '设置链接',
+      text: canvasMenu.setLink(),
       handler: props.openLinkDialog,
     },
     {
-      text: props.elementInfo.groupId ? '取消组合' : '组合',
+      text: props.elementInfo.groupId ? alignMenu.ungroup() : alignMenu.group(),
       subText: 'Ctrl + G',
       handler: props.elementInfo.groupId ? uncombineElements : combineElements,
       hide: !props.isMultiSelect,
     },
     {
-      text: '全选',
+      text: canvasMenu.selectAll(),
       subText: 'Ctrl + A',
       handler: selectAllElements,
     },
     {
-      text: '锁定',
+      text: canvasMenu.lock(),
       subText: 'Ctrl + L',
       handler: lockElement,
     },
     {
-      text: '删除',
+      text: LL.value.common.delete(),
       subText: 'Delete',
       handler: deleteElement,
     },

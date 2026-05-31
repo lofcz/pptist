@@ -1,5 +1,5 @@
 <template>
-  <Teleport to="body">
+  <Teleport :to="teleportTarget">
     <Transition :name="`drawer-slide-${placement}`"
       @afterLeave="contentVisible = false"
       @before-enter="contentVisible = true"
@@ -19,6 +19,7 @@
 
 <script lang="ts" setup>
 import { computed, ref, type CSSProperties } from 'vue'
+import { getPptistPortalTarget } from '@/utils/portal'
 
 const props = withDefaults(defineProps<{
   visible: boolean
@@ -35,6 +36,7 @@ const emit = defineEmits<{
 }>()
 
 const contentVisible = ref(false)
+const teleportTarget = getPptistPortalTarget()
 
 const contentStyle = computed(() => {
   return {

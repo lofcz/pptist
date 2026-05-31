@@ -1,5 +1,6 @@
 import { type Directive, type DirectiveBinding, createVNode, render } from 'vue'
 import ContextmenuComponent from '@/components/Contextmenu/index.vue'
+import { getPptistPortalTarget } from '@/utils/portal'
 
 const CTX_CONTEXTMENU_HANDLER = 'CTX_CONTEXTMENU_HANDLER'
 
@@ -15,19 +16,20 @@ const contextmenuListener = (el: HTMLElement, event: MouseEvent, binding: Direct
   if (!menus) return
 
   let container: HTMLDivElement | null = null
+  const portalTarget = getPptistPortalTarget()
 
-  // 移除右键菜单并取消相关的事件监听
+  // Remove context menu and detach listeners
   const removeContextmenu = () => {
     if (container) {
-      document.body.removeChild(container)
+      portalTarget.removeChild(container)
       container = null
     }
     el.classList.remove('contextmenu-active')
-    document.body.removeEventListener('scroll', removeContextmenu)  
+    portalTarget.removeEventListener('scroll', removeContextmenu)
     window.removeEventListener('resize', removeContextmenu)
   }
 
-  // 创建自定义菜单
+  // Create context menu overlay
   const options = {
     axis: { x: event.x, y: event.y },
     el,
@@ -37,13 +39,13 @@ const contextmenuListener = (el: HTMLElement, event: MouseEvent, binding: Direct
   container = document.createElement('div')
   const vm = createVNode(ContextmenuComponent, options, null)
   render(vm, container)
-  document.body.appendChild(container)
+  portalTarget.appendChild(container)
 
-  // 为目标节点添加菜单激活状态的className
+  // Mark target as context-menu active
   el.classList.add('contextmenu-active')
 
-  // 页面变化时移除菜单
-  document.body.addEventListener('scroll', removeContextmenu)
+  // Dismiss menu on scroll or resize
+  portalTarget.addEventListener('scroll', removeContextmenu)
   window.addEventListener('resize', removeContextmenu)
 }
 

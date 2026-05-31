@@ -3,6 +3,10 @@ import { storeToRefs } from 'pinia'
 import { useMainStore, useSlidesStore } from '@/store'
 import type { PPTTableElement } from '@/types/slides'
 import message from '@/utils/message'
+import { queryPptist, queryPptistAll } from '@/utils/portal'
+import { getLL } from '@/i18n/getLL'
+
+const LL = getLL()
 
 interface SearchTextResult {
   elType: 'text' | 'shape'
@@ -83,7 +87,7 @@ export default () => {
       highlightCurrentSlide()
     }
     else {
-      message.warning('未查找到匹配项')
+      message.warning(LL.editor.search.noMatchesFound())
       clearMarks()
     }
   }
@@ -165,7 +169,7 @@ export default () => {
   }
   
   const clearMarks = () => {
-    const markNodes = document.querySelectorAll('.editable-element mark')
+    const markNodes = queryPptistAll('.editable-element mark')
     for (const mark of markNodes) {
       setTimeout(() => {
         const parentNode = mark.parentNode!
@@ -185,7 +189,7 @@ export default () => {
         if (target.slideId !== currentSlide.value.id) continue
         if (lastTarget && lastTarget.elId === target.elId) continue
   
-        const node = document.querySelector(`#editable-element-${target.elId}`)
+        const node = queryPptist(`#editable-element-${target.elId}`)
         if (node) {
           if (target.elType === 'table') {
             const cells = node.querySelectorAll('.cell-text')
@@ -204,7 +208,7 @@ export default () => {
   }
   
   const setActiveMark = () => {
-    const markNodes = document.querySelectorAll('mark[data-index]')
+    const markNodes = queryPptistAll('mark[data-index]')
     for (const node of markNodes) {
       setTimeout(() => {
         const index = (node as HTMLElement).dataset.index
@@ -229,7 +233,7 @@ export default () => {
   }
   
   const searchNext = () => {
-    if (!searchWord.value) return message.warning('请先输入查找内容')
+    if (!searchWord.value) return message.warning(LL.editor.search.enterSearchTerm())
     mainStore.setActiveElementIdList([])
     if (searchIndex.value === -1) search()
     else if (searchIndex.value < searchResults.value.length - 1) searchIndex.value += 1
@@ -238,7 +242,7 @@ export default () => {
   }
   
   const searchPrev = () => {
-    if (!searchWord.value) return message.warning('请先输入查找内容')
+    if (!searchWord.value) return message.warning(LL.editor.search.enterSearchTerm())
     mainStore.setActiveElementIdList([])
     if (searchIndex.value === -1) search()
     else if (searchIndex.value > 0) searchIndex.value -= 1
@@ -257,9 +261,9 @@ export default () => {
     let targetElement = null
     if (target.elType === 'table') {
       const [i, j] = target.cellIndex
-      targetElement = document.querySelector(`#editable-element-${target.elId} .cell[data-cell-index="${i}_${j}"] .cell-text`)
+      targetElement = queryPptist(`#editable-element-${target.elId} .cell[data-cell-index="${i}_${j}"] .cell-text`)
     }
-    else targetElement = document.querySelector(`#editable-element-${target.elId} .ProseMirror`)
+    else targetElement = queryPptist(`#editable-element-${target.elId} .ProseMirror`)
     if (!targetElement) return
   
     const fakeElement = document.createElement('div')

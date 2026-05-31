@@ -5,12 +5,12 @@
         style="flex: 1;"
         :checked="flipV"
         @click="updateFlip({ flipV: !flipV })"
-      ><i-icon-park-outline:flip-vertically /> 垂直翻转</CheckboxButton>
+      ><i-icon-park-outline:flip-vertically /> {{ LL.editor.elementCommon.flipVertical() }}</CheckboxButton>
       <CheckboxButton 
         style="flex: 1;"
         :checked="flipH"
         @click="updateFlip({ flipH: !flipH })"
-      ><i-icon-park-outline:flip-horizontally /> 水平翻转</CheckboxButton>
+      ><i-icon-park-outline:flip-horizontally /> {{ LL.editor.elementCommon.flipHorizontal() }}</CheckboxButton>
     </ButtonGroup>
   </div>
 </template>
@@ -24,6 +24,10 @@ import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 
 import CheckboxButton from '@/components/CheckboxButton.vue'
 import ButtonGroup from '@/components/ButtonGroup.vue'
+
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 const slidesStore = useSlidesStore()
 const { handleElement } = storeToRefs(useMainStore())

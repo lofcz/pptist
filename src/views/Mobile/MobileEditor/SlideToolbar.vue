@@ -3,25 +3,25 @@
     <div class="remark">
       <textarea
         :value="remark"
-        placeholder="点击输入演讲者备注"
+        :placeholder="LL.mobile.slideToolbar.remarkPlaceholder()"
         @input="$event => handleInputMark($event)"
       ></textarea>
     </div>
     <div class="toolbar">
       <ButtonGroup class="row">
-        <Button style="flex: 1;" @click="createSlide()"><i-icon-park-outline:plus class="icon" /> 新幻灯片</Button>
-        <Button style="flex: 1;" @click="copyAndPasteSlide()"><i-icon-park-outline:copy class="icon" /> 复制</Button>
-        <Button style="flex: 1;" @click="deleteSlide()"><i-icon-park-outline:delete class="icon" /> 删除</Button>
+        <Button style="flex: 1;" @click="createSlide()"><i-icon-park-outline:plus class="icon" /> {{ LL.mobile.slideToolbar.newSlide() }}</Button>
+        <Button style="flex: 1;" @click="copyAndPasteSlide()"><i-icon-park-outline:copy class="icon" /> {{ LL.common.copy() }}</Button>
+        <Button style="flex: 1;" @click="deleteSlide()"><i-icon-park-outline:delete class="icon" /> {{ LL.common.delete() }}</Button>
       </ButtonGroup>
       <ButtonGroup class="row">
-        <Button style="flex: 1;" @click="insertTextElement()"><i-icon-park-outline:font-size class="icon" /> 文字</Button>
+        <Button style="flex: 1;" @click="insertTextElement()"><i-icon-park-outline:font-size class="icon" /> {{ LL.mobile.slideToolbar.text() }}</Button>
         <Button style="flex: 1;">
           <FileInput @change="files => insertImageElement(files)">
-            <i-icon-park-outline:picture class="icon" /> 图片
+            <i-icon-park-outline:picture class="icon" /> {{ LL.mobile.slideToolbar.image() }}
           </FileInput>
         </Button>
-        <Button style="flex: 1;" @click="insertShapeElement('square')"><i-icon-park-outline:square class="icon" /> 矩形</Button>
-        <Button style="flex: 1;" @click="insertShapeElement('round')"><i-icon-park-outline:round class="icon" /> 圆形</Button>
+        <Button style="flex: 1;" @click="insertShapeElement('square')"><i-icon-park-outline:square class="icon" /> {{ LL.mobile.slideToolbar.rectangle() }}</Button>
+        <Button style="flex: 1;" @click="insertShapeElement('round')"><i-icon-park-outline:round class="icon" /> {{ LL.mobile.slideToolbar.circle() }}</Button>
       </ButtonGroup>
     </div>
 
@@ -42,6 +42,9 @@ import MobileThumbnails from '../MobileThumbnails.vue'
 import FileInput from '@/components/FileInput.vue'
 import Button from '@/components/Button.vue'
 import ButtonGroup from '@/components/ButtonGroup.vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 const slidesStore = useSlidesStore()
 const { viewportRatio, currentSlide, viewportSize } = storeToRefs(slidesStore)
@@ -58,7 +61,7 @@ const insertTextElement = () => {
     top: (viewportSize.value * viewportRatio.value - height) / 2,
     width,
     height,
-  }, { content: '<p>新添加文本</p>' })
+  }, { content: LL.value.mobile.slideToolbar.defaultTextHtml() })
 }
 
 const insertImageElement = (files: FileList) => {

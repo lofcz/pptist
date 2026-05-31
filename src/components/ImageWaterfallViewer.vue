@@ -27,7 +27,7 @@
 </template>
 
 <script lang="ts" setup>
-import { nextTick, onMounted, onUnmounted, ref, watch, useTemplateRef, type CSSProperties } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch, type CSSProperties } from 'vue'
 import throttle from 'lodash/throttle'
 import debounce from 'lodash/debounce'
 import findIndex from 'lodash/findIndex'
@@ -65,8 +65,8 @@ const columnWidthInUse = ref(0)
 const columnCount = ref(0)
 const localList = ref<WaterfallItem[]>([])
 const lastRowBottomPosition = ref<number[]>([])
-const waterfallWrapRef = useTemplateRef<HTMLDivElement>('waterfallWrapRef')
-const waterfallRef = useTemplateRef<HTMLDivElement>('waterfallRef')
+const waterfallWrapRef = ref<HTMLDivElement | null>(null)
+const waterfallRef = ref<HTMLDivElement | null>(null)
 const resizeObserver = ref<ResizeObserver>()
 
 const loadImage = (src: string, callback: () => void) => {

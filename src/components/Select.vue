@@ -22,7 +22,7 @@
   >
     <template #content>
       <template v-if="search">
-        <Input ref="searchInputRef" simple :placeholder="searchLabel" v-model:value="searchKey" :style="{ width: width + 2 + 'px' }" />
+        <Input ref="searchInputRef" simple :placeholder="effectiveSearchLabel" v-model:value="searchKey" :style="{ width: width + 2 + 'px' }" />
         <Divider :margin="0" />
       </template>
       <div class="options" ref="optionsRef" :style="{ width: width + 2 + 'px' }">
@@ -49,10 +49,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref, watch, nextTick, onBeforeUnmount, useTemplateRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch, nextTick, onBeforeUnmount } from 'vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
 import Popover from './Popover.vue'
 import Input from './Input.vue'
 import Divider from './Divider.vue'
+
+const { LL } = useI18nContext()
 
 interface SelectOption {
   label: string
@@ -73,8 +76,9 @@ const props = withDefaults(defineProps<{
   autofocus: false,
   defaultLabel: '',
   search: false,
-  searchLabel: '搜索',
 })
+
+const effectiveSearchLabel = computed(() => props.searchLabel ?? LL.value.common.search())
 
 const emit = defineEmits<{
   (event: 'update:value', payload: string | number): void
@@ -83,9 +87,9 @@ const emit = defineEmits<{
 const popoverVisible = ref(false)
 const width = ref(0)
 const searchKey = ref('')
-const selectRef = useTemplateRef<HTMLElement>('selectRef')
-const optionsRef = useTemplateRef<HTMLElement>('optionsRef')
-const searchInputRef = useTemplateRef<InstanceType<typeof Input>>('searchInputRef')
+const selectRef = ref<HTMLElement | null>(null)
+const optionsRef = ref<HTMLElement | null>(null)
+const searchInputRef = ref<InstanceType<typeof Input> | null>(null)
 
 const showLabel = computed(() => {
   return props.options.find(item => item.value === props.value)?.label || props.defaultLabel || props.value

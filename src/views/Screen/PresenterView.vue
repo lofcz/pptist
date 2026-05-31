@@ -1,18 +1,18 @@
 <template>
   <div class="presenter-view">
     <div class="toolbar">
-      <div class="tool-btn" @click="changeViewMode('base')"><i-icon-park-outline:list-view class="tool-icon" /><span>普通视图</span></div>
-      <div class="tool-btn" @click="openAudienceView()"><i-icon-park-outline:peoples-two class="tool-icon" /><span>观众视图</span></div>
-      <div class="tool-btn" :class="{ 'active': writingBoardToolVisible }" @click="writingBoardToolVisible = !writingBoardToolVisible"><i-icon-park-outline:write class="tool-icon" /><span>画笔</span></div>
-      <div class="tool-btn" :class="{ 'active': laserPen }" @click="laserPen = !laserPen"><i-icon-park-outline:magic class="tool-icon" /><span>激光笔</span></div>
-      <div class="tool-btn" :class="{ 'active': timerlVisible }" @click="timerlVisible = !timerlVisible"><i-icon-park-outline:stopwatch-start class="tool-icon" /><span>计时器</span></div>
+      <div class="tool-btn" @click="changeViewMode('base')"><i-icon-park-outline:list-view class="tool-icon" /><span>{{ LL.screen.presenter.standardView() }}</span></div>
+      <div class="tool-btn" @click="openAudienceView()"><i-icon-park-outline:peoples-two class="tool-icon" /><span>{{ LL.screen.presenter.audienceView() }}</span></div>
+      <div class="tool-btn" :class="{ 'active': writingBoardToolVisible }" @click="writingBoardToolVisible = !writingBoardToolVisible"><i-icon-park-outline:write class="tool-icon" /><span>{{ LL.screen.presenter.pen() }}</span></div>
+      <div class="tool-btn" :class="{ 'active': laserPen }" @click="laserPen = !laserPen"><i-icon-park-outline:magic class="tool-icon" /><span>{{ LL.screen.presenter.laserPen() }}</span></div>
+      <div class="tool-btn" :class="{ 'active': timerlVisible }" @click="timerlVisible = !timerlVisible"><i-icon-park-outline:stopwatch-start class="tool-icon" /><span>{{ LL.screen.presenter.timer() }}</span></div>
       <div class="tool-btn" @click="() => fullscreenState ? manualExitFullscreen() : enterFullscreen()">
         <i-icon-park-outline:off-screen-one class="tool-icon" v-if="fullscreenState" />
         <i-icon-park-outline:full-screen-one class="tool-icon" v-else />
-        <span>{{ fullscreenState ? '退出全屏' : '全屏' }}</span>
+        <span>{{ fullscreenState ? LL.screen.presenter.exitFullscreen() : LL.screen.presenter.fullscreen() }}</span>
       </div>
       <Divider class="divider" />
-      <div class="tool-btn" @click="exitScreening()"><i-icon-park-outline:power class="tool-icon" /><span>结束放映</span></div>
+      <div class="tool-btn" @click="exitScreening()"><i-icon-park-outline:power class="tool-icon" /><span>{{ LL.screen.presenter.endSlideshow() }}</span></div>
     </div>
 
     <div class="content">
@@ -65,10 +65,10 @@
 
     <div class="remark">
       <div class="header">
-        <span>演讲者备注</span>
-        <span>P {{slideIndex + 1}} / {{slides.length}}</span>
+        <span>{{ LL.screen.presenter.speakerNotes() }}</span>
+        <span>{{ LL.screen.presenter.slideProgress({ current: slideIndex + 1, total: slides.length }) }}</span>
       </div>
-      <div class="remark-content ProseMirror-static" :class="{ 'empty': !currentSlideRemark }" :style="{ fontSize: remarkFontSize + 'px' }" v-html="currentSlideRemark || '无备注'"></div>
+      <div class="remark-content ProseMirror-static" :class="{ 'empty': !currentSlideRemark }" :style="{ fontSize: remarkFontSize + 'px' }" v-html="currentSlideRemark || LL.screen.presenter.noNotes()"></div>
       <div class="remark-scale">
         <div :class="['scale-btn', { 'disable': remarkFontSize === 12 }]" @click="setRemarkFontSize(remarkFontSize - 2)"><i-icon-park-outline:minus class="icon" /></div>
         <div :class="['scale-btn', { 'disable': remarkFontSize === 40 }]" @click="setRemarkFontSize(remarkFontSize + 2)"><i-icon-park-outline:plus class="icon" /></div>
@@ -78,7 +78,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, ref, watch, useTemplateRef } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSlidesStore } from '@/store'
 import type { ContextmenuItem } from '@/components/Contextmenu/types'
@@ -96,14 +96,18 @@ import WritingBoardTool from './WritingBoardTool.vue'
 import CountdownTimer from './CountdownTimer.vue'
 import Divider from '@/components/Divider.vue'
 
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
+
 const props = defineProps<{
   changeViewMode: (mode: 'base' | 'presenter') => void
 }>()
 
 const { slides, slideIndex, viewportRatio, currentSlide } = storeToRefs(useSlidesStore())
 
-const slideListWrapRef = useTemplateRef<HTMLElement>('slideListWrapRef')
-const thumbnailsRef = useTemplateRef<HTMLElement>('thumbnailsRef')
+const slideListWrapRef = ref<HTMLElement | null>(null)
+const thumbnailsRef = ref<HTMLElement | null>(null)
 const writingBoardToolVisible = ref(false)
 const timerlVisible = ref(false)
 
@@ -165,41 +169,42 @@ watch(slideIndex, () => {
 })
 
 const contextmenus = (): ContextmenuItem[] => {
+  const t = LL.value.screen.contextmenu
   return [
     {
-      text: '上一页',
+      text: t.previousSlide(),
       subText: '↑ ←',
       disable: slideIndex.value <= 0,
       handler: () => turnPrevSlide(),
     },
     {
-      text: '下一页',
+      text: t.nextSlide(),
       subText: '↓ →',
       disable: slideIndex.value >= slides.value.length - 1,
       handler: () => turnNextSlide(),
     },
     {
-      text: '第一页',
+      text: t.firstSlide(),
       disable: slideIndex.value === 0,
       handler: () => turnSlideToIndex(0),
     },
     {
-      text: '最后一页',
+      text: t.lastSlide(),
       disable: slideIndex.value === slides.value.length - 1,
       handler: () => turnSlideToIndex(slides.value.length - 1),
     },
     { divider: true },
     {
-      text: '画笔工具',
+      text: t.penTool(),
       handler: () => writingBoardToolVisible.value = true,
     },
     {
-      text: '普通视图',
+      text: t.standardView(),
       handler: () => props.changeViewMode('base'),
     },
     { divider: true },
     {
-      text: '结束放映',
+      text: t.endSlideshow(),
       subText: 'ESC',
       handler: exitScreening,
     },

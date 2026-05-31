@@ -1,5 +1,6 @@
 import { createVNode, render, type AppContext } from 'vue'
 import MessageComponent from '@/components/Message.vue'
+import { getPptistPortalTarget } from '@/utils/portal'
 
 export interface MessageOptions {
   type?: 'info' | 'success' | 'warning' | 'error' | 'loading'
@@ -45,6 +46,7 @@ const message: Message = (options: MessageOptions) => {
   }
 
   if (!wrap) {
+    const portalTarget = getPptistPortalTarget()
     wrap = document.createElement('div')
     wrap.className = 'message-wrap'
     wrap.style.cssText = `
@@ -62,7 +64,7 @@ const message: Message = (options: MessageOptions) => {
       transition: all 1s ease-in-out;
       align-items: center;
     `
-    document.body.appendChild(wrap)
+    portalTarget.appendChild(wrap)
   }
 
   const vm = createVNode(MessageComponent, props, null)

@@ -1,7 +1,7 @@
 <template>
   <div class="audio-style-panel">
     <div class="row">
-      <div style="width: 40%;">图标颜色：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.audio.iconColor() }}</div>
       <Popover trigger="click" style="width: 60%;">
         <template #content>
           <ColorPicker
@@ -14,7 +14,7 @@
     </div>
 
     <div class="row switch-row">
-      <div style="width: 40%;">自动播放：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.audio.autoplay() }}</div>
       <div class="switch-wrapper" style="width: 60%;">
         <Switch 
           :value="handleAudioElement.autoplay" 
@@ -24,7 +24,7 @@
     </div>
 
     <div class="row switch-row">
-      <div style="width: 40%;">循环播放：</div>
+      <div style="width: 40%;">{{ LL.editor.stylePanel.audio.loopPlayback() }}</div>
       <div class="switch-wrapper" style="width: 60%;">
         <Switch 
           :value="handleAudioElement.loop" 
@@ -46,6 +46,10 @@ import ColorButton from '@/components/ColorButton.vue'
 import ColorPicker from '@/components/ColorPicker/index.vue'
 import Switch from '@/components/Switch.vue'
 import Popover from '@/components/Popover.vue'
+
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 const slidesStore = useSlidesStore()
 const { handleElement } = storeToRefs(useMainStore())

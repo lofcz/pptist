@@ -6,7 +6,7 @@
       </template>
       <button class="toolbar-btn">
         <i-icon-park-outline:fill class="icon" />
-        <span>填充</span>
+        <span>{{ LL.canvas.floatingToolbar.fill() }}</span>
       </button>
     </Popover>
     <BorderPanel />
@@ -23,6 +23,10 @@ import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 import BorderPanel from './BorderPanel.vue'
 import Popover from '@/components/Popover.vue'
 import ColorPicker from '@/components/ColorPicker/index.vue'
+
+import { useI18nContext } from '@/i18n/useI18nContext'
+
+const { LL } = useI18nContext()
 
 defineProps<{
   elementInfo: PPTTableElement

@@ -1,11 +1,11 @@
 <template>
   <div class="shape-style-panel">
     <div class="title">
-      <span>点击替换形状</span>
+      <span>{{ LL.editor.stylePanel.shape.clickToReplaceShape() }}</span>
       <i-icon-park-outline:down />
     </div>
     <div class="shape-pool">
-      <div class="category" v-for="item in SHAPE_LIST" :key="item.type">
+      <div class="category" v-for="item in SHAPE_LIST" :key="item.categoryKey">
         <div class="shape-list">
           <ShapeItemThumbnail 
             class="shape-item"
@@ -23,11 +23,7 @@
         style="flex: 1;" 
         :value="fillType" 
         @update:value="value => updateFillType(value as 'fill' | 'gradient' | 'pattern')"
-        :options="[
-          { label: '纯色填充', value: 'fill' },
-          { label: '渐变填充', value: 'gradient' },
-          { label: '图片填充', value: 'pattern' },
-        ]"
+        :options="fillTypeOptions"
       />
       <div style="width: 10px;" v-if="fillType !== 'pattern'"></div>
       <Popover trigger="click" v-if="fillType === 'fill'" style="flex: 1;">
@@ -44,10 +40,7 @@
         :value="gradient.type" 
         @update:value="value => updateGradient({ type: value as GradientType })"
         v-else-if="fillType === 'gradient'"
-        :options="[
-          { label: '线性渐变', value: 'linear' },
-          { label: '径向渐变', value: 'radial' },
-        ]"
+        :options="gradientTypeOptions"
       />
     </div>
     
@@ -61,7 +54,7 @@
         />
       </div>
       <div class="row">
-        <div style="width: 40%;">当前色块：</div>
+        <div style="width: 40%;">{{ LL.editor.slideDesign.currentColorStop() }}</div>
         <Popover trigger="click" style="width: 60%;">
           <template #content>
             <ColorPicker
@@ -73,7 +66,7 @@
         </Popover>
       </div>
       <div class="row" v-if="gradient.type === 'linear'">
-        <div style="width: 40%;">渐变角度：</div>
+        <div style="width: 40%;">{{ LL.editor.slideDesign.gradientAngle() }}</div>
         <Slider
           style="width: 60%;"
           :min="0"
@@ -106,13 +99,11 @@
       <Divider />
 
       <div class="row">
-        <div style="width: 40%;">行间距：</div>
+        <div style="width: 40%;">{{ LL.editor.stylePanel.shared.lineHeight() }}</div>
         <Select style="width: 60%;"
           :value="lineHeight || 1"
           @update:value="value => updateTextProps({ lineHeight: value as number })"
-          :options="lineHeightOptions.map(item => ({
-            label: item + '倍', value: item
-          }))"
+          :options="lineHeightSelectOptions"
         >
           <template #icon>
             <i-icon-park-outline:row-height />
@@ -120,13 +111,11 @@
         </Select>
       </div>
       <div class="row">
-        <div style="width: 40%;">段间距：</div>
+        <div style="width: 40%;">{{ LL.editor.stylePanel.shared.paragraphSpace() }}</div>
         <Select style="width: 60%;"
           :value="paragraphSpace || 0"
           @update:value="value => updateTextProps({ paragraphSpace: value as number })"
-          :options="paragraphSpaceOptions.map(item => ({
-            label: item + 'px', value: item
-          }))"
+          :options="paragraphSpaceSelectOptions"
         >
           <template #icon>
             <i-icon-park-outline:vertical-spacing-between-items />
@@ -134,13 +123,11 @@
         </Select>
       </div>
       <div class="row">
-        <div style="width: 40%;">字间距：</div>
+        <div style="width: 40%;">{{ LL.editor.stylePanel.shared.wordSpace() }}</div>
         <Select style="width: 60%;"
           :value="wordSpace || 0"
           @update:value="value => updateTextProps({ wordSpace: value as number })"
-          :options="wordSpaceOptions.map(item => ({
-            label: item + 'px', value: item
-          }))"
+          :options="wordSpaceSelectOptions"
         >
           <template #icon>
             <i-icon-park-outline:fullwidth />
@@ -158,7 +145,7 @@
           @update:value="value => updateInset(0, value)"
           style="width: 45%;"
         >
-          <template #prefix>上边距：</template>
+          <template #prefix>{{ LL.editor.stylePanel.shared.paddingTop() }}</template>
         </NumberInput>
         <div style="width: 10%;"></div>
         <NumberInput
@@ -168,7 +155,7 @@
           @update:value="value => updateInset(2, value)"
           style="width: 45%;"
         >
-          <template #prefix>下边距：</template>
+          <template #prefix>{{ LL.editor.stylePanel.shared.paddingBottom() }}</template>
         </NumberInput>
       </div>
       <div class="row">
@@ -179,7 +166,7 @@
           @update:value="value => updateInset(3, value)"
           style="width: 45%;"
         >
-          <template #prefix>左边距：</template>
+          <template #prefix>{{ LL.editor.stylePanel.shared.paddingLeft() }}</template>
         </NumberInput>
         <div style="width: 10%;"></div>
         <NumberInput
@@ -189,7 +176,7 @@
           @update:value="value => updateInset(1, value)"
           style="width: 45%;"
         >
-          <template #prefix>右边距：</template>
+          <template #prefix>{{ LL.editor.stylePanel.shared.paddingRight() }}</template>
         </NumberInput>
       </div>
 
@@ -201,9 +188,9 @@
         :value="textAlign"
         @update:value="value => updateTextProps({ align: value as 'top' | 'middle' | 'bottom' })"
       >
-        <RadioButton value="top" v-tooltip="'顶对齐'" style="flex: 1;"><i-icon-park-outline:align-text-top-one /></RadioButton>
-        <RadioButton value="middle" v-tooltip="'居中'" style="flex: 1;"><i-icon-park-outline:align-text-middle-one /></RadioButton>
-        <RadioButton value="bottom" v-tooltip="'底对齐'" style="flex: 1;"><i-icon-park-outline:align-text-bottom-one /></RadioButton>
+        <RadioButton value="top" v-tooltip="LL.editor.stylePanel.shared.textAlignTop()" style="flex: 1;"><i-icon-park-outline:align-text-top-one /></RadioButton>
+        <RadioButton value="middle" v-tooltip="LL.editor.stylePanel.shared.textAlignMiddle()" style="flex: 1;"><i-icon-park-outline:align-text-middle-one /></RadioButton>
+        <RadioButton value="bottom" v-tooltip="LL.editor.stylePanel.shared.textAlignBottom()" style="flex: 1;"><i-icon-park-outline:align-text-bottom-one /></RadioButton>
       </RadioGroup>
 
       <Divider />
@@ -218,18 +205,19 @@
 
     <div class="row">
       <CheckboxButton
-        v-tooltip="'双击连续使用'"
+        v-tooltip="LL.editor.stylePanel.shape.doubleClickContinuousUse()"
         style="flex: 1;"
         :checked="!!shapeFormatPainter"
         @click="toggleShapeFormatPainter()"
         @dblclick="toggleShapeFormatPainter(true)"
-      ><i-icon-park-outline:format-brush /> 形状格式刷</CheckboxButton>
+      ><i-icon-park-outline:format-brush /> {{ LL.editor.stylePanel.shape.shapeFormatPainter() }}</CheckboxButton>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { type Ref, ref, watch } from 'vue'
+import { computed, type Ref, ref, watch } from 'vue'
+import { useI18nContext } from '@/i18n/useI18nContext'
 import { storeToRefs } from 'pinia'
 import { useMainStore, useSlidesStore } from '@/store'
 import type { GradientType, PPTShapeElement, Gradient, ShapeText, TextInset } from '@/types/slides'
@@ -258,6 +246,8 @@ import Popover from '@/components/Popover.vue'
 import GradientBar from '@/components/GradientBar.vue'
 import FileInput from '@/components/FileInput.vue'
 
+const { LL } = useI18nContext()
+
 const mainStore = useMainStore()
 const slidesStore = useSlidesStore()
 const { handleElement, handleElementId, shapeFormatPainter } = storeToRefs(mainStore)
@@ -284,6 +274,34 @@ const currentGradientIndex = ref(0)
 const lineHeightOptions = [0.9, 1.0, 1.15, 1.2, 1.4, 1.5, 1.8, 2.0, 2.5, 3.0]
 const wordSpaceOptions = [0, 1, 2, 3, 4, 5, 6, 8, 10]
 const paragraphSpaceOptions = [0, 5, 10, 15, 20, 25, 30, 40, 50, 80]
+
+const fillTypeOptions = computed(() => [
+  { label: LL.value.editor.slideDesign.solidFill(), value: 'fill' },
+  { label: LL.value.editor.slideDesign.gradientFill(), value: 'gradient' },
+  { label: LL.value.editor.slideDesign.imageFill(), value: 'pattern' },
+])
+const gradientTypeOptions = computed(() => [
+  { label: LL.value.editor.slideDesign.linearGradient(), value: 'linear' },
+  { label: LL.value.editor.slideDesign.radialGradient(), value: 'radial' },
+])
+const lineHeightSelectOptions = computed(() =>
+  lineHeightOptions.map(item => ({
+    label: LL.value.editor.stylePanel.shared.lineHeightOption({ value: item }),
+    value: item,
+  })),
+)
+const paragraphSpaceSelectOptions = computed(() =>
+  paragraphSpaceOptions.map(item => ({
+    label: LL.value.editor.stylePanel.shared.pixelValue({ value: item }),
+    value: item,
+  })),
+)
+const wordSpaceSelectOptions = computed(() =>
+  wordSpaceOptions.map(item => ({
+    label: LL.value.editor.stylePanel.shared.pixelValue({ value: item }),
+    value: item,
+  })),
+)
 
 watch(handleElement, () => {
   if (!handleElement.value || handleElement.value.type !== 'shape') return

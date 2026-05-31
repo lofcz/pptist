@@ -2,10 +2,9 @@
   <div class="editor" v-click-outside="hideMenuInstance">
     <div 
       class="prosemirror-editor"
-      ref="editorViewRef"
     ></div>
   
-    <div class="menu" ref="menuRef">
+    <div class="menu">
       <button :class="{ 'active': attr?.bold }" @click="execCommand('bold')"><i-icon-park-outline:text-bold /></button>
       <button :class="{ 'active': attr?.em }" @click="execCommand('em')"><i-icon-park-outline:text-italic /></button>
       <button :class="{ 'active': attr?.underline }" @click="execCommand('underline')"><i-icon-park-outline:text-underline /></button>
@@ -30,13 +29,15 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { debounce } from 'lodash'
 import { useMainStore } from '@/store'
+import { useI18nContext } from '@/i18n/useI18nContext'
 import type { EditorView } from 'prosemirror-view'
 import { initProsemirrorEditor, createDocument } from '@/utils/prosemirror'
 import { addMark, autoSelectAll, getTextAttrs, type TextAttrs } from '@/utils/prosemirror/utils'
 import { toggleList } from '@/utils/prosemirror/commands/toggleList'
+import { getPptistPortalTarget, queryPptist } from '@/utils/portal'
 import tippy, { type Instance } from 'tippy.js'
 
 import ColorPicker from '@/components/ColorPicker/index.vue'
@@ -52,14 +53,14 @@ const emit = defineEmits<{
 }>()
 
 const mainStore = useMainStore()
-
-const editorViewRef = useTemplateRef<HTMLElement>('editorViewRef')
+const { LL } = useI18nContext()
 let editorView: EditorView
+let initTimer: ReturnType<typeof setTimeout> | undefined
+let initAttempts = 0
 
 const attr = ref<TextAttrs>()
 
 const menuInstance = ref<Instance>()
-const menuRef = useTemplateRef<HTMLElement>('menuRef')
 
 const hideMenuInstance = () => {
   if (menuInstance.value) menuInstance.value.hide()
@@ -82,8 +83,6 @@ const updateTextContent = () => {
   const { doc, tr } = editorView.state
   editorView.dispatch(tr.replaceRangeWith(0, doc.content.size, createDocument(props.value)))
 }
-
-defineExpose({ updateTextContent })
 
 const handleMouseup = () => {
   const selection = window.getSelection()
@@ -163,35 +162,63 @@ const execCommand = (command: string, value?: string) => {
   attr.value = getTextAttrs(editorView)
 }
 
-onMounted(() => {
-  editorView = initProsemirrorEditor((editorViewRef.value as Element), props.value, {
-    handleDOMEvents: {
-      focus: handleFocus,
-      blur: handleBlur,
-      mouseup: handleMouseup,
-      mousedown: () => {
-        window.getSelection()?.removeAllRanges()
-        hideMenuInstance()
-      },
-      keydown: hideMenuInstance,
-      input: handleInput,
-    },
-  }, {
-    placeholder: '点击输入演讲者备注',
-  })
+const initEditor = () => {
+  if (editorView) return
+  const editorViewEl = queryPptist<HTMLElement>('.remark .prosemirror-editor')
+  const menuEl = queryPptist<HTMLElement>('.remark .menu')
+  if (!editorViewEl || !menuEl) {
+    if (initAttempts < 30) {
+      initAttempts++
+      initTimer = setTimeout(initEditor, 16)
+    }
+    return
+  }
 
-  menuInstance.value = tippy(editorViewRef.value!, {
-    duration: 0,
-    content: menuRef.value!,
-    interactive: true,
-    trigger: 'manual',
-    placement: 'top-start',
-    hideOnClick: 'toggle',
-    offset: [0, 6],
+  try {
+    editorView = initProsemirrorEditor(editorViewEl, props.value, {
+      handleDOMEvents: {
+        focus: handleFocus,
+        blur: handleBlur,
+        mouseup: handleMouseup,
+        mousedown: () => {
+          window.getSelection()?.removeAllRanges()
+          hideMenuInstance()
+        },
+        keydown: hideMenuInstance,
+        input: handleInput,
+      },
+    }, {
+      placeholder: LL.value.editor.remark.clickToEnterSpeakerNotes(),
+    })
+
+    menuInstance.value = tippy(editorViewEl, {
+      duration: 0,
+      content: menuEl,
+      interactive: true,
+      trigger: 'manual',
+      placement: 'top-start',
+      appendTo: getPptistPortalTarget(),
+      hideOnClick: 'toggle',
+      offset: [0, 6],
+    })
+  }
+  catch (error) {
+    throw error
+  }
+}
+
+onMounted(() => {
+  nextTick(() => {
+    initTimer = setTimeout(initEditor, 0)
   })
 })
 
+watch(() => props.value, () => {
+  nextTick(updateTextContent)
+})
+
 onUnmounted(() => {
+  if (initTimer) clearTimeout(initTimer)
   editorView && editorView.destroy()
 })
 </script>
