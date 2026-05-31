@@ -28,6 +28,7 @@
       "import": "./dist/embed/pptist-embed.css",
       "default": "./dist/embed/pptist-embed.css"
     },
+    "./agentic-manifest.json": "./dist/embed/agentic-manifest.json",
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -40,7 +41,8 @@
   "scripts": {
     "dev": "vp dev",
     "build": "run-p type-check \"build-only {@}\" --",
-    "build:embed": "npm run i18n:build && npm run build:types && vp build --config vite.config.embed.ts && node scripts/scope-embed-css.mjs && node scripts/extract-embed-fonts.mjs && node scripts/copy-embed-public.mjs",
+    "build:embed": "npm run i18n:build && npm run build:types && vp build --config vite.config.embed.ts && node scripts/scope-embed-css.mjs && node scripts/extract-embed-fonts.mjs && node scripts/copy-embed-public.mjs && node scripts/generate-agentic-manifest.mjs",
+    "agentic:manifest": "node scripts/generate-agentic-manifest.mjs",
     "build:types": "node -e \"require('node:fs').rmSync('dist/types',{recursive:true,force:true})\" && vue-tsc -p tsconfig.types.json && node scripts/rewrite-embed-types.mjs",
     "preview": "vp preview",
     "build-only": "vp build",
