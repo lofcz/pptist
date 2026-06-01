@@ -2,23 +2,23 @@
   <div class="element-positopn-panel">
     <div class="title">{{ LL.editor.positionPanel.layer() }}</div>
     <ButtonGroup class="row">
-      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.TOP)">
+      <Button class="layer-button" style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.TOP)">
         <i-icon-park-outline:send-to-back />
-        <FitText :text="LL.editor.positionPanel.bringToTop()" :max-font-size="13" :min-font-size="9" :letter-spacing="1" />
+        <FitText :text="LL.editor.positionPanel.bringToTop()" :max-font-size="12" :min-font-size="8" />
       </Button>
-      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.BOTTOM)">
+      <Button class="layer-button" style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.BOTTOM)">
         <i-icon-park-outline:bring-to-front-one />
-        <FitText :text="LL.editor.positionPanel.sendToBack()" :max-font-size="13" :min-font-size="9" :letter-spacing="1" />
+        <FitText :text="LL.editor.positionPanel.sendToBack()" :max-font-size="12" :min-font-size="8" />
       </Button>
     </ButtonGroup>
     <ButtonGroup class="row">
-      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.UP)">
+      <Button class="layer-button" style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.UP)">
         <i-icon-park-outline:BringToFront />
-        <FitText :text="LL.editor.positionPanel.moveUp()" :max-font-size="13" :min-font-size="9" :letter-spacing="1" />
+        <FitText :text="LL.editor.positionPanel.moveUp()" :max-font-size="12" :min-font-size="8" />
       </Button>
-      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.DOWN)">
+      <Button class="layer-button" style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.DOWN)">
         <i-icon-park-outline:SentToBack />
-        <FitText :text="LL.editor.positionPanel.moveDown()" :max-font-size="13" :min-font-size="9" :letter-spacing="1" />
+        <FitText :text="LL.editor.positionPanel.moveDown()" :max-font-size="12" :min-font-size="8" />
       </Button>
     </ButtonGroup>
 
@@ -296,6 +296,21 @@ const updateRotate45 = (command: '+' | '-') => {
   addHistorySnapshot()
 }
 </script>
+
+<style lang="scss" scoped>
+.layer-button {
+  padding: 0 8px;
+
+  > svg {
+    flex: 0 0 auto;
+  }
+
+  :deep(.fit-text) {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+</style>
 
 <style lang="scss" scoped>
 .row {

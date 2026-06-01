@@ -3512,6 +3512,18 @@ export type NamespaceEditorTranslation = {
 		 * U​n​t​i​t​l​e​d​ ​p​r​e​s​e​n​t​a​t​i​o​n
 		 */
 		untitled: string
+		/**
+		 * C​l​i​c​k​ ​t​o​ ​a​d​d​ ​t​i​t​l​e
+		 */
+		clickToAddTitle: string
+		/**
+		 * C​l​i​c​k​ ​t​o​ ​a​d​d​ ​s​u​b​t​i​t​l​e
+		 */
+		clickToAddSubtitle: string
+		/**
+		 * C​l​i​c​k​ ​t​o​ ​a​d​d​ ​t​e​x​t
+		 */
+		clickToAddText: string
 	}
 	templates: {
 		/**
@@ -3606,13 +3618,62 @@ export type NamespaceEditorTranslation = {
 			 */
 			coverSubtitle: string
 			/**
+			 * B​r​i​e​f​ ​p​r​e​s​e​n​t​a​t​i​o​n​ ​s​u​m​m​a​r​y
+			 */
+			coverDescription: string
+			/**
+			 * P​r​e​s​e​n​t​e​r​:​ ​X​X​X
+			 */
+			presenter: string
+			/**
+			 * D​a​t​e​:​ ​X​X​X
+			 */
+			date: string
+			/**
+			 * T​i​m​e​:​ ​X​X​X
+			 */
+			time: string
+			/**
+			 * B​u​s​i​n​e​s​s​ ​r​e​p​o​r​t​ ​|​ ​W​o​r​k​ ​s​u​m​m​a​r​y​ ​|​ ​W​o​r​k​ ​p​l​a​n
+			 */
+			businessReport: string
+			/**
 			 * C​o​n​t​e​n​t​s
 			 */
 			contentsTitle: string
 			/**
+			 * S​e​c​t​i​o​n​ ​{​i​n​d​e​x​}
+			 * @param {unknown} index
+			 */
+			contentsItem: RequiredParams<'index'>
+			/**
 			 * S​e​c​t​i​o​n​ ​t​i​t​l​e
 			 */
 			sectionTitle: string
+			/**
+			 * B​r​i​e​f​ ​s​e​c​t​i​o​n​ ​i​n​t​r​o​d​u​c​t​i​o​n
+			 */
+			sectionBody: string
+			/**
+			 * C​o​n​t​e​n​t​ ​p​a​g​e​ ​t​i​t​l​e
+			 */
+			contentTitle: string
+			/**
+			 * K​e​y​ ​p​o​i​n​t
+			 */
+			itemTitle: string
+			/**
+			 * S​u​p​p​o​r​t​i​n​g​ ​d​e​t​a​i​l
+			 */
+			itemBody: string
+			/**
+			 * T​h​a​n​k​ ​y​o​u
+			 */
+			thankYou: string
+			/**
+			 * W​e​l​c​o​m​e
+			 */
+			welcome: string
 			/**
 			 * T​i​t​l​e​ ​1
 			 */
@@ -7990,6 +8051,18 @@ export type TranslationFunctions = {
 			 * Untitled presentation
 			 */
 			untitled: () => LocalizedString
+			/**
+			 * Click to add title
+			 */
+			clickToAddTitle: () => LocalizedString
+			/**
+			 * Click to add subtitle
+			 */
+			clickToAddSubtitle: () => LocalizedString
+			/**
+			 * Click to add text
+			 */
+			clickToAddText: () => LocalizedString
 		}
 		templates: {
 			/**
@@ -8084,13 +8157,61 @@ export type TranslationFunctions = {
 				 */
 				coverSubtitle: () => LocalizedString
 				/**
+				 * Brief presentation summary
+				 */
+				coverDescription: () => LocalizedString
+				/**
+				 * Presenter: XXX
+				 */
+				presenter: () => LocalizedString
+				/**
+				 * Date: XXX
+				 */
+				date: () => LocalizedString
+				/**
+				 * Time: XXX
+				 */
+				time: () => LocalizedString
+				/**
+				 * Business report | Work summary | Work plan
+				 */
+				businessReport: () => LocalizedString
+				/**
 				 * Contents
 				 */
 				contentsTitle: () => LocalizedString
 				/**
+				 * Section {index}
+				 */
+				contentsItem: (arg: { index: unknown }) => LocalizedString
+				/**
 				 * Section title
 				 */
 				sectionTitle: () => LocalizedString
+				/**
+				 * Brief section introduction
+				 */
+				sectionBody: () => LocalizedString
+				/**
+				 * Content page title
+				 */
+				contentTitle: () => LocalizedString
+				/**
+				 * Key point
+				 */
+				itemTitle: () => LocalizedString
+				/**
+				 * Supporting detail
+				 */
+				itemBody: () => LocalizedString
+				/**
+				 * Thank you
+				 */
+				thankYou: () => LocalizedString
+				/**
+				 * Welcome
+				 */
+				welcome: () => LocalizedString
 				/**
 				 * Title 1
 				 */

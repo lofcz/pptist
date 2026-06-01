@@ -3,6 +3,9 @@ import type { NamespaceEditorTranslation } from '../../i18n-types'
 const pl_editor: NamespaceEditorTranslation = {
   presentation: {
     untitled: 'Prezentacja bez tytułu',
+    clickToAddTitle: 'Kliknij, aby dodać tytuł',
+    clickToAddSubtitle: 'Kliknij, aby dodać podtytuł',
+    clickToAddText: 'Kliknij, aby dodać tekst',
   },
   templates: {
     originOfficial: 'Oficjalny',
@@ -26,8 +29,20 @@ const pl_editor: NamespaceEditorTranslation = {
     placeholderText: {
       coverTitle: 'Tytuł okładki szablonu',
       coverSubtitle: 'Podtytuł okładki szablonu',
+      coverDescription: 'Krótkie podsumowanie prezentacji',
+      presenter: 'Prezentujący: XXX',
+      date: 'Data: XXX',
+      time: 'Czas: XXX',
+      businessReport: 'Raport biznesowy | Podsumowanie pracy | Plan pracy',
       contentsTitle: 'Spis treści',
+      contentsItem: 'Sekcja {index}',
       sectionTitle: 'Tytuł sekcji',
+      sectionBody: 'Krótki wstęp do sekcji',
+      contentTitle: 'Tytuł slajdu z treścią',
+      itemTitle: 'Kluczowy punkt',
+      itemBody: 'Dodatkowy szczegół',
+      thankYou: 'Dziękujemy',
+      welcome: 'Witamy',
       title1: 'Tytuł 1',
       title2: 'Tytuł 2',
       title3: 'Tytuł 3',

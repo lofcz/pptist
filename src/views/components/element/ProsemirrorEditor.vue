@@ -46,6 +46,7 @@ const emit = defineEmits<{
   (event: 'focus'): void
   (event: 'blur'): void
   (event: 'mousedown', payload: MouseEvent): void
+  (event: 'emptyChange', empty: boolean): void
 }>()
 
 const mainStore = useMainStore()
@@ -54,6 +55,12 @@ const { ctrlOrShiftKeyActive } = storeToRefs(useKeyboardStore())
 
 const editorViewRef = ref<HTMLElement | null>(null)
 let editorView: EditorView
+
+// 立即（非防抖）同步编辑器是否为空的状态，供占位符精确控制显隐，避免与正文同时渲染
+const emitEmptyState = () => {
+  if (!editorView) return
+  emit('emptyChange', editorView.state.doc.textContent.trim().length === 0)
+}
 
 // 富文本的各种交互事件监听：
 // 聚焦时取消全局快捷键事件
@@ -77,6 +84,23 @@ const handleFocus = () => {
 
 const handleBlur = () => {
   mainStore.setDisableHotkeysState(false)
+
+  if (editorView.state.doc.textContent.trim().length === 0) {
+    // 失焦且不含任何文字：丢弃待提交的输入，清除可能残留的空列表/空段落标记
+    //（例如点进内容占位符触发了项目符号但未输入），重置为真正的空内容，避免残留项目符号与占位浮层叠加出现“重影”
+    handleInput.cancel()
+    const { doc, tr } = editorView.state
+    if (doc.content.size > 0) {
+      editorView.dispatch(tr.replaceRangeWith(0, doc.content.size, createDocument('')))
+    }
+    emit('update', { value: '', ignore: true })
+  }
+  else {
+    // 失焦且含文字：立即“排空”待提交的防抖输入，确保切换幻灯片/元素时刚输入的内容不会丢失
+    handleInput.flush()
+  }
+
+  emitEmptyState()
   emit('blur')
 }
 
@@ -299,11 +323,21 @@ onMounted(() => {
       mouseup: handleMouseup,
     },
     editable: () => props.editable,
+    dispatchTransaction(tr) {
+      const newState = editorView.state.apply(tr)
+      editorView.updateState(newState)
+      emitEmptyState()
+    },
   })
   if (props.autoFocus) editorView.focus()
+  emitEmptyState()
 })
 onUnmounted(() => {
-  editorView && editorView.destroy()
+  // 卸载前（如切换幻灯片导致元素卸载）排空待提交的防抖输入，避免刚输入的内容丢失
+  if (editorView) {
+    if (editorView.state.doc.textContent.trim().length !== 0) handleInput.flush()
+    editorView.destroy()
+  }
 })
 
 const syncAttrsToStore = () => {

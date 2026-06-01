@@ -18,8 +18,9 @@ import Screen from '@/views/Screen/index.vue'
 import Mobile from '@/views/Mobile/index.vue'
 import FullscreenSpin from '@/components/FullscreenSpin.vue'
 import { useI18nContext } from '@/i18n/useI18nContext'
+import { buildStarterPresentation } from '@/configs/starterPresentation'
 import { registerVueLocaleSync, unregisterVueLocaleSync } from './localeBridge'
-import type { PptistMountOptions } from './types'
+import type { PptistDocument, PptistMountOptions } from './types'
 
 const props = defineProps<{
   init: PptistMountOptions
@@ -35,24 +36,34 @@ const screenStore = useScreenStore()
 const { slides } = storeToRefs(slidesStore)
 const { screening } = storeToRefs(screenStore)
 
+function applyDocument(document: PptistDocument) {
+  slidesStore.setTitle(document.title)
+  slidesStore.setSlides(document.slides, document.theme)
+}
+
 async function resolveInitialDocument() {
   if (props.init.document) {
-    slidesStore.setTitle(props.init.document.title)
-    slidesStore.setSlides(props.init.document.slides, props.init.document.theme)
+    applyDocument(props.init.document)
     return
   }
 
-  if (props.init.loadMockOnEmpty === false) {
-    slidesStore.setSlides([{ id: 'empty', elements: [] }])
+  const loadedDocument = await props.init.loadDocument?.()
+  if (loadedDocument) {
+    applyDocument(loadedDocument)
     return
   }
 
-  const base = (props.init.assetBaseUrl ?? '').replace(/\/$/, '')
-  const url = `${base}/mocks/slides.json`
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`Failed to load mock slides from ${url}`)
-  const slides = await res.json()
-  slidesStore.setSlides(slides)
+  if (props.init.loadMockOnEmpty === true) {
+    const base = (props.init.assetBaseUrl ?? '').replace(/\/$/, '')
+    const url = `${base}/mocks/slides.json`
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`Failed to load mock slides from ${url}`)
+    const slides = await res.json()
+    slidesStore.setSlides(slides)
+    return
+  }
+
+  applyDocument(buildStarterPresentation(LL.value, props.init.starterPresentation))
 }
 
 onMounted(async () => {

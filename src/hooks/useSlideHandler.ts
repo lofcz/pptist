@@ -11,10 +11,13 @@ import message from '@/utils/message'
 import usePasteTextClipboardData from '@/hooks/usePasteTextClipboardData'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 import useAddSlidesOrElements from '@/hooks/useAddSlidesOrElements'
+import { buildContentSlide, buildTitleSlide } from '@/configs/starterPresentation'
+import { useI18nContext } from '@/i18n/useI18nContext'
 
 export default () => {
   const mainStore = useMainStore()
   const slidesStore = useSlidesStore()
+  const { LL } = useI18nContext()
   const { selectedSlidesIndex: _selectedSlidesIndex, activeElementIdList } = storeToRefs(mainStore)
   const { currentSlide, slides, theme, slideIndex } = storeToRefs(slidesStore)
 
@@ -28,14 +31,11 @@ export default () => {
 
   // 重置幻灯片
   const resetSlides = () => {
-    const emptySlide: Slide = {
-      id: nanoid(10),
-      elements: [],
-      background: {
-        type: 'solid',
-        color: theme.value.backgroundColor,
-      },
-    }
+    const emptySlide = buildTitleSlide(LL.value, {
+      backgroundColor: theme.value.backgroundColor,
+      fontColor: theme.value.fontColor,
+      fontName: theme.value.fontName,
+    })
     slidesStore.updateSlideIndex(0)
     mainStore.setActiveElementIdList([])
     slidesStore.setSlides([emptySlide])
@@ -77,14 +77,11 @@ export default () => {
 
   // 创建一页空白页并添加到下一页
   const createSlide = () => {
-    const emptySlide: Slide = {
-      id: nanoid(10),
-      elements: [],
-      background: {
-        type: 'solid',
-        color: theme.value.backgroundColor,
-      },
-    }
+    const emptySlide = buildContentSlide(LL.value, {
+      backgroundColor: theme.value.backgroundColor,
+      fontColor: theme.value.fontColor,
+      fontName: theme.value.fontName,
+    })
     mainStore.setActiveElementIdList([])
     slidesStore.addSlide(emptySlide)
     addHistorySnapshot()

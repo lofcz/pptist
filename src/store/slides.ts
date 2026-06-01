@@ -142,6 +142,7 @@ export const useSlidesStore = defineStore('slides', {
   
     setSlides(slides: Slide[], themeProps?: Partial<SlideTheme>) {
       this.slides = clonePlain(slides)
+      this.slideIndex = 0
       if (themeProps) this.setTheme(themeProps)
     },
   

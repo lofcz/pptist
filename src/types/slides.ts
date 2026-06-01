@@ -184,6 +184,10 @@ export interface PPTTextElement extends PPTBaseElement {
   content: string
   defaultFontName: string
   defaultColor: string
+  placeholder?: string
+  placeholderFontSize?: number
+  placeholderColor?: string
+  placeholderAlign?: TextAlign
   outline?: PPTElementOutline
   fill?: string
   lineHeight?: number

@@ -15,7 +15,7 @@
     <Tabs 
       :tabs="tabs" 
       v-model:value="selectedSymbolKey" 
-      :tabsStyle="{ marginBottom: '8px' }" 
+      :tabsStyle="{ marginBottom: '8px', width: 'calc(100% - 32px)' }" 
     />
 
     <div class="emoji-types" v-if="selectedSymbolKey === 'emoji'">

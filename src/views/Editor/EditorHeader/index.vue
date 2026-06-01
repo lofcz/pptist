@@ -34,7 +34,7 @@
                 <span class="label">JSON</span>
                 <span class="sub-label" v-if="EXTRAS_ENABLED">{{ LL.editor.header.forTestingOnly() }}</span>
               </FileInput>
-              <FileInput class="import-block" accept=".pptist" @change="files => {
+              <FileInput v-if="EXTRAS_ENABLED" class="import-block" accept=".pptist" @change="files => {
                 importSpecificFile(files)
                 mainMenuVisible = false
               }">

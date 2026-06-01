@@ -15,6 +15,7 @@
     >
       <div 
         class="element-content"
+        :class="{ 'placeholder-element': elementInfo.placeholder, 'show-placeholder': showPlaceholder }"
         ref="elementRef"
         :style="{
           width: elementInfo.vertical ? 'auto' : elementInfo.width + 'px',
@@ -26,8 +27,11 @@
           letterSpacing: (elementInfo.wordSpace || 0) + 'px',
           color: elementInfo.defaultColor,
           fontFamily: elementInfo.defaultFontName,
+          fontSize: editorFontSize,
+          textAlign: elementInfo.placeholder ? (elementInfo.placeholderAlign ?? 'center') : undefined,
           writingMode: elementInfo.vertical ? 'vertical-rl' : 'horizontal-tb',
           padding: `${inset[0]}px ${inset[1]}px ${inset[2]}px ${inset[3]}px`,
+          minHeight: isEmptyPlaceholder ? elementInfo.height + 'px' : undefined,
           '--paragraphSpace': `${elementInfo.paragraphSpace === undefined ? 5 : elementInfo.paragraphSpace}px`,
         }"
         v-contextmenu="contextmenus"
@@ -46,8 +50,21 @@
           :defaultFontName="elementInfo.defaultFontName"
           :editable="!elementInfo.lock"
           :value="elementInfo.content"
+          ref="prosemirrorEditorRef"
           @update="({ value, ignore }) => updateContent(value, ignore)"
           @mousedown="$event => handleSelectElement($event, false)"
+          @focus="editorFocused = true"
+          @blur="editorFocused = false"
+          @emptyChange="empty => editorEmpty = empty"
+        />
+        <TextPlaceholder
+          v-if="showPlaceholder"
+          :label="elementInfo.placeholder!"
+          :contentType="elementInfo.textType ?? 'content'"
+          :fontSize="elementInfo.placeholderFontSize ?? 20"
+          :color="elementInfo.placeholderColor ?? '#9aa3ad'"
+          :align="elementInfo.placeholderAlign ?? 'center'"
+          @activate="activatePlaceholder"
         />
 
         <!-- 当字号过大且行高较小时，会出现文字高度溢出的情况，导致拖拽区域无法被选中，因此添加了以下节点避免该情况 -->
@@ -67,9 +84,11 @@ import type { PPTTextElement } from '@/types/slides'
 import type { ContextmenuItem } from '@/components/Contextmenu/types'
 import useElementShadow from '@/views/components/element/hooks/useElementShadow'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
+import emitter, { EmitterEvents } from '@/utils/emitter'
 
 import ElementOutline from '@/views/components/element/ElementOutline.vue'
 import ProsemirrorEditor from '@/views/components/element/ProsemirrorEditor.vue'
+import TextPlaceholder from './TextPlaceholder.vue'
 
 const props = defineProps<{
   elementInfo: PPTTextElement
@@ -84,16 +103,50 @@ const { handleElementId, isScaling } = storeToRefs(mainStore)
 const { addHistorySnapshot } = useHistorySnapshot()
 
 const elementRef = ref<HTMLElement | null>(null)
+const prosemirrorEditorRef = ref<InstanceType<typeof ProsemirrorEditor> | null>(null)
+const editorFocused = ref(false)
 
 const shadow = computed(() => props.elementInfo.shadow)
 const { shadowStyle } = useElementShadow(shadow)
 const inset = computed(() => props.elementInfo.inset || [10, 10, 10, 10])
+const computeEmpty = (html: string) => {
+  return !html.replace(/<br\s*\/?>/gi, '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim()
+}
+// 由 ProsemirrorEditor 实时（非防抖）回传，确保占位符显隐与正文严格互斥，避免聚焦/失焦时两者同时渲染
+const editorEmpty = ref(computeEmpty(props.elementInfo.content))
+watch(() => props.elementInfo.content, content => {
+  if (editorFocused.value) return
+  editorEmpty.value = computeEmpty(content)
+})
+// 是否为“空占位”元素：仅用于布局（保持设计高度、跳过自动测高），与聚焦状态无关
+const isEmptyPlaceholder = computed(() => !!props.elementInfo.placeholder && editorEmpty.value)
+// 占位浮层是否可见：聚焦时隐藏，避免与编辑器光标/正文重叠
+const showPlaceholder = computed(() => isEmptyPlaceholder.value && !editorFocused.value)
+const editorFontSize = computed(() => {
+  if (props.elementInfo.placeholder) return `${props.elementInfo.placeholderFontSize ?? 20}px`
+  return undefined
+})
 
 const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = true) => {
   if (props.elementInfo.lock) return
   e.stopPropagation()
 
   props.selectElement(e, props.elementInfo, canMove)
+}
+
+const activatePlaceholder = (e: MouseEvent) => {
+  handleSelectElement(e, false)
+  editorFocused.value = true
+  nextTick(() => {
+    prosemirrorEditorRef.value?.focus()
+    // 与 PowerPoint 一致：点进内容占位符立即进入无序列表（光标停在首个项目符号处）
+    if (props.elementInfo.textType === 'content') {
+      emitter.emit(EmitterEvents.RICH_TEXT_COMMAND, {
+        target: props.elementInfo.id,
+        action: { command: 'bulletList' },
+      })
+    }
+  })
 }
 
 // 监听文本元素的尺寸变化，当高度变化时，更新高度到vuex
@@ -127,12 +180,14 @@ watch(() => props.elementInfo.inset, () => {
     if (!elementRef.value) return
 
     if (!props.elementInfo.vertical && props.elementInfo.height !== elementRef.value.offsetHeight) {
+      if (isEmptyPlaceholder.value) return
       slidesStore.updateElement({
         id: props.elementInfo.id,
         props: { height: elementRef.value.offsetHeight },
       })
     }
     if (props.elementInfo.vertical && props.elementInfo.width !== elementRef.value.offsetWidth) {
+      if (isEmptyPlaceholder.value) return
       slidesStore.updateElement({
         id: props.elementInfo.id,
         props: { width: elementRef.value.offsetWidth },
@@ -147,6 +202,7 @@ const updateTextElementHeight = (entries: ResizeObserverEntry[]) => {
 
   const realHeight = contentRect.height + inset.value[0] + inset.value[2]
   const realWidth = contentRect.width + inset.value[1] + inset.value[3]
+  if (isEmptyPlaceholder.value) return
 
   if (!props.elementInfo.vertical && props.elementInfo.height !== realHeight) {
     if (!isScaling.value) {
@@ -186,6 +242,7 @@ const updateContent = (content: string, ignore = false) => {
 }
 
 const checkEmptyText = debounce(function() {
+  if (props.elementInfo.placeholder) return
   const pureText = props.elementInfo.content.replace(/<[^>]+>/g, '')
   if (!pureText) slidesStore.deleteElement(props.elementInfo.id)
 }, 300, { trailing: true })
@@ -217,6 +274,28 @@ watch(isHandleElement, () => {
 
   .text {
     position: relative;
+  }
+
+  &.placeholder-element {
+    .text {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      min-height: 100%;
+    }
+
+    ::v-deep(.ProseMirror) {
+      width: 100%;
+      min-height: 1.2em;
+      font-size: inherit;
+      caret-color: currentColor;
+    }
+  }
+
+  // 占位提示浮层显示时（未聚焦且为空），隐藏富文本编辑器本体，
+  // 确保任何残留的空列表/段落标记都不会与占位浮层叠加出现“重影”
+  &.show-placeholder .text {
+    visibility: hidden;
   }
 
   ::v-deep(a) {

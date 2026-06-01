@@ -2,6 +2,32 @@ import type { Locales } from '@/i18n/locale'
 import type { Slide, SlideTheme, SlideTemplate } from '@/types/slides'
 import type { PptistAgentApi, PptistSlideReference } from './agentic/types'
 
+export interface PptistTemplatePayload {
+  title?: string
+  width?: number
+  height?: number
+  slides: Slide[]
+  theme?: Partial<SlideTheme>
+}
+
+export type PptistTemplateLoader = () => Promise<PptistTemplatePayload | Slide[]>
+export type PptistDocumentLoader = () => Promise<PptistDocument | null | undefined>
+
+export interface PptistStarterPresentationOptions {
+  title?: string
+  titlePlaceholder?: string
+  subtitlePlaceholder?: string
+  bodyPlaceholder?: string
+  titleFontSize?: number
+  subtitleFontSize?: number
+  contentTitleFontSize?: number
+  bodyFontSize?: number
+  placeholderColor?: string
+  fontName?: string
+  fontColor?: string
+  backgroundColor?: string
+}
+
 /** Serializable deck passed between sciobot-next and PPTist. */
 export interface PptistDocument {
   title: string
@@ -12,21 +38,24 @@ export interface PptistDocument {
 export interface PptistMountOptions {
   /** UI locale — same union as sciobot-next (`cs` | `en` | `sk` | `pl`). */
   locale?: Locales
-  /** Initial deck; when omitted, mock slides are loaded if `loadMockOnEmpty` is true. */
+  /** Initial deck; takes precedence over `loadDocument` and the starter slide. */
   document?: PptistDocument
-  /** When no `document`, fetch `mocks/slides.json` from `assetBaseUrl` (default: `/`). */
+  /** Optional async document loader for hosts that resolve a deck from the current URL/session. */
+  loadDocument?: PptistDocumentLoader
+  /** Legacy demo behavior: when explicitly true, load `mocks/slides.json` instead of the starter slide. */
   loadMockOnEmpty?: boolean
-  /**
-   * Base URL for runtime assets (template covers, mocks).
-   * Dev: `http://127.0.0.1:5173` while PPTist dev server runs, or sciobot proxy path.
-   */
+  /** Customize the default one-slide starter deck used when no existing document is loaded. */
+  starterPresentation?: PptistStarterPresentationOptions
+  /** Base URL for runtime image/font assets and fallback mock decks. */
   assetBaseUrl?: string
   /**
-   * Style/template catalog shown in the design picker. Each entry's `id` maps to
-   * a `mocks/<id>.json` payload resolved against `assetBaseUrl`. Omit to use the
-   * bundled defaults (which fall back to the demo deck when a file is missing).
+   * Style/template catalog shown in the design picker. Built-in template ids are
+   * loaded from lazy bundled JSON chunks. Custom ids can be resolved with
+   * `templateLoaders`, or as a fallback from `mocks/<id>.json` at `assetBaseUrl`.
    */
   templates?: SlideTemplate[]
+  /** Optional custom template payload loaders keyed by `templates[].id`. */
+  templateLoaders?: Record<string, PptistTemplateLoader>
   /** Fired when title, slides, or theme change (debounced). */
   onChange?: (document: PptistDocument) => void
   onChangeDebounceMs?: number

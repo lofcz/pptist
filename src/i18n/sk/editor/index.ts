@@ -3,6 +3,9 @@ import type { NamespaceEditorTranslation } from '../../i18n-types'
 const sk_editor: NamespaceEditorTranslation = {
   presentation: {
     untitled: 'Prezentácia bez názvu',
+    clickToAddTitle: 'Kliknutím pridajte názov',
+    clickToAddSubtitle: 'Kliknutím pridajte podnadpis',
+    clickToAddText: 'Kliknutím pridajte text',
   },
   templates: {
     originOfficial: 'Oficiálna',
@@ -26,8 +29,20 @@ const sk_editor: NamespaceEditorTranslation = {
     placeholderText: {
       coverTitle: 'Názov úvodnej snímky',
       coverSubtitle: 'Podnadpis úvodnej snímky',
+      coverDescription: 'Stručné zhrnutie prezentácie',
+      presenter: 'Prezentujúci: XXX',
+      date: 'Dátum: XXX',
+      time: 'Čas: XXX',
+      businessReport: 'Obchodný report | Zhrnutie práce | Pracovný plán',
       contentsTitle: 'Obsah',
+      contentsItem: 'Sekcia {index}',
       sectionTitle: 'Názov sekcie',
+      sectionBody: 'Stručný úvod do sekcie',
+      contentTitle: 'Názov obsahovej snímky',
+      itemTitle: 'Kľúčový bod',
+      itemBody: 'Doplňujúci detail',
+      thankYou: 'Ďakujeme',
+      welcome: 'Vitajte',
       title1: 'Nadpis 1',
       title2: 'Nadpis 2',
       title3: 'Nadpis 3',

@@ -15,8 +15,15 @@
           }" 
           v-if="!menu.divider"
         >
-          <span class="text">{{menu.text}}</span>
-          <span class="sub-text" v-if="menu.subText && !menu.children">{{menu.subText}}</span>
+          <span
+            class="text"
+            v-tooltip="htmlTooltip(menu.text)"
+          >{{menu.text}}</span>
+          <span
+            class="sub-text"
+            v-if="menu.subText && !menu.children"
+            v-tooltip="htmlTooltip(menu.subText)"
+          >{{menu.subText}}</span>
 
           <menu-content 
             class="sub-menu"
@@ -31,12 +38,30 @@
 </template>
 
 <script lang="ts" setup>
+import Tooltip from '@/directive/tooltip'
 import type { ContextmenuItem } from './types'
+
+const vTooltip = Tooltip
 
 defineProps<{
   menus: ContextmenuItem[]
   handleClickMenuItem: (item: ContextmenuItem) => void
 }>()
+
+const escapeHtml = (value: string) => {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+const htmlTooltip = (value?: string) => ({
+  content: value ? `<span class="contextmenu-tooltip">${escapeHtml(value)}</span>` : '',
+  placement: 'right' as const,
+  delay: [400, 0] as [number, number],
+})
 </script>
 
 <style lang="scss" scoped>
@@ -61,9 +86,9 @@ $subMenuWidth: 120px;
   transition: all $transitionDelayFast;
   white-space: nowrap;
   height: $menuHeight;
-  line-height: $menuHeight;
   background-color: #fff;
   cursor: pointer;
+  overflow: hidden;
 
   &:not(.disable):hover > .menu-item-content > .sub-menu {
     display: block;
@@ -96,6 +121,10 @@ $subMenuWidth: 120px;
   align-items: center;
   justify-content: space-between;
   position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  gap: 12px;
 
   &.has-children::before {
     content: '';
@@ -124,6 +153,10 @@ $subMenuWidth: 120px;
   }
 
   .sub-text {
+    flex: 0 0 auto;
+    max-width: 72px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: #666;
     opacity: 0.6;
   }
@@ -134,5 +167,21 @@ $subMenuWidth: 120px;
     left: 112%;
     top: -6px;
   }
+}
+.text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.has-children {
+  padding-right: 14px;
+}
+
+:global(.contextmenu-tooltip) {
+  display: block;
+  max-width: 280px;
+  overflow-wrap: anywhere;
 }
 </style>

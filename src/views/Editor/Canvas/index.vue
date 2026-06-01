@@ -256,7 +256,12 @@ const removeEditorAreaFocus = () => {
 // 滚动鼠标
 const { scaleCanvas } = useScaleCanvas()
 const throttleScaleCanvas = throttle(scaleCanvas, 100, { leading: true, trailing: false })
-const throttleUpdateSlideIndex = throttle(updateSlideIndex, 300, { leading: true, trailing: false })
+
+// 滚轮翻页：累计滚动位移，每累计约一个滚轮档位就翻一页。
+// 这样连续滚动多个档位时可以连续翻页（而不是整段手势只翻一页、必须停下再滚才能继续）。
+const WHEEL_PAGE_STEP = 100
+let wheelPageAccum = 0
+let wheelResetTimer: ReturnType<typeof setTimeout> | null = null
 
 const handleMousewheelCanvas = (e: WheelEvent) => {
   e.preventDefault()
@@ -265,12 +270,26 @@ const handleMousewheelCanvas = (e: WheelEvent) => {
   if (ctrlKeyState.value) {
     if (e.deltaY > 0) throttleScaleCanvas('-')
     else if (e.deltaY < 0) throttleScaleCanvas('+')
+    return
   }
-  // 上下翻页
-  else {
-    if (e.deltaY > 0) throttleUpdateSlideIndex(KEYS.DOWN)
-    else if (e.deltaY < 0) throttleUpdateSlideIndex(KEYS.UP)
+
+  // 上下翻页（按位移累计，逐页连续翻动）
+  const lineHeight = 33
+  const deltaPx = e.deltaMode === 1 ? e.deltaY * lineHeight : e.deltaY
+  wheelPageAccum += deltaPx
+
+  while (wheelPageAccum >= WHEEL_PAGE_STEP) {
+    wheelPageAccum -= WHEEL_PAGE_STEP
+    updateSlideIndex(KEYS.DOWN)
   }
+  while (wheelPageAccum <= -WHEEL_PAGE_STEP) {
+    wheelPageAccum += WHEEL_PAGE_STEP
+    updateSlideIndex(KEYS.UP)
+  }
+
+  // 停止滚动一小段时间后清空累计，避免方向切换时残留影响手感
+  if (wheelResetTimer) clearTimeout(wheelResetTimer)
+  wheelResetTimer = setTimeout(() => { wheelPageAccum = 0 }, 200)
 }
 
 // 开关标尺

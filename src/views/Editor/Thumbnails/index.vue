@@ -295,6 +295,11 @@ const contextmenusThumbnails = (): ContextmenuItem[] => {
 
   return [
     {
+      text: menu.newSlide(),
+      subText: 'Enter',
+      handler: createSlide,
+    },
+    {
       text: menu.paste(),
       subText: 'Ctrl + V',
       handler: pasteSlide,
@@ -303,11 +308,6 @@ const contextmenusThumbnails = (): ContextmenuItem[] => {
       text: menu.selectAll(),
       subText: 'Ctrl + A',
       handler: selectAllSlide,
-    },
-    {
-      text: menu.newSlide(),
-      subText: 'Enter',
-      handler: createSlide,
     },
     {
       text: menu.slideShow(),

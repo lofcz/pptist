@@ -21,7 +21,7 @@ withDefaults(defineProps<{
     border-radius: 0;
     border-left-width: 1px;
     border-right-width: 0;
-    display: inline-block;
+    display: inline-flex;
   }
 
   &:not(.passive) {

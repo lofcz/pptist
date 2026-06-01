@@ -24,8 +24,11 @@
           letterSpacing: (elementInfo.wordSpace || 0) + 'px',
           color: elementInfo.defaultColor,
           fontFamily: elementInfo.defaultFontName,
+          fontSize: elementInfo.placeholder ? `${elementInfo.placeholderFontSize ?? 20}px` : undefined,
+          textAlign: elementInfo.placeholder ? (elementInfo.placeholderAlign ?? 'center') : undefined,
           writingMode: elementInfo.vertical ? 'vertical-rl' : 'horizontal-tb',
           padding: `${inset[0]}px ${inset[1]}px ${inset[2]}px ${inset[3]}px`,
+          minHeight: elementInfo.placeholder ? elementInfo.height + 'px' : undefined,
           '--paragraphSpace': `${elementInfo.paragraphSpace === undefined ? 5 : elementInfo.paragraphSpace}px`,
         }"
       >
@@ -34,8 +37,9 @@
           :height="elementInfo.height"
           :outline="elementInfo.outline"
         />
-        <div 
-          class="text ProseMirror-static" 
+        <!-- 占位提示仅是编辑态的交互辅助，缩略图/放映视图永远不渲染占位文字（空占位元素正文为空，自然不显示） -->
+        <div
+          class="text ProseMirror-static"
           :class="{ 'thumbnail': target === 'thumbnail' }"
           v-html="elementInfo.content"
         ></div>
@@ -81,6 +85,10 @@ const inset = computed(() => props.elementInfo.inset || [10, 10, 10, 10])
     &.thumbnail {
       pointer-events: none;
     }
+  }
+
+  ::v-deep(.ProseMirror-static) {
+    font-size: inherit;
   }
 }
 </style>

@@ -15,7 +15,7 @@ import { useScreenStore, useMainStore, useSnapshotStore, useSlidesStore } from '
 import { LOCALSTORAGE_KEY_DISCARDED_DB } from '@/configs/storage'
 import { deleteDiscardedDB } from '@/utils/database'
 import { isPC } from '@/utils/common'
-import api from '@/services'
+import { buildStarterPresentation } from '@/configs/starterPresentation'
 
 import Editor from './views/Editor/index.vue'
 import Screen from './views/Screen/index.vue'
@@ -50,8 +50,9 @@ onMounted(async () => {
     screenStore.setScreening(true)
   }
   else {
-    const slides = await api.getMockData('slides')
-    slidesStore.setSlides(slides)
+    const starter = buildStarterPresentation(LL.value)
+    slidesStore.setTitle(starter.title)
+    slidesStore.setSlides(starter.slides, starter.theme)
 
     await deleteDiscardedDB()
     snapshotStore.initSnapshotDatabase()

@@ -1,28 +1,10 @@
 import { getLL } from '@/i18n/getLL'
+import { EXTRAS_ENABLED } from '@/configs/featureFlags'
 
 const f = getLL().configs.fonts
 
-export const FONTS = [
+const WESTERN_FONTS = [
   { label: f.defaultFont(), value: '' },
-  { label: f.sourceHanSans(), value: 'SourceHanSans' },
-  { label: f.sourceHanSerif(), value: 'SourceHanSerif' },
-  { label: f.wenDingPLKaiTi(), value: 'WenDingPLKaiTi' },
-  { label: f.wenDingPLSongTi(), value: 'WenDingPLSongTi' },
-  { label: f.zhuqueFangSong(), value: 'ZhuqueFangSong' },
-  { label: f.lxgwwenKai(), value: 'LXGWWenKai' },
-  { label: f.alibabaPuHuiTi(), value: 'AlibabaPuHuiTi' },
-  { label: f.miSans(), value: 'MiSans' },
-  { label: f.deYiHei(), value: 'DeYiHei' },
-  { label: f.cangerXiaowanzi(), value: 'CangerXiaowanzi' },
-  { label: f.yousheTitleBlack(), value: 'YousheTitleBlack' },
-  { label: f.fengguangMingrui(), value: 'FengguangMingrui' },
-  { label: f.shetuModernSquare(), value: 'ShetuModernSquare' },
-  { label: f.zcoolHappy(), value: 'ZcoolHappy' },
-  { label: f.zizhiQuXiMai(), value: 'ZizhiQuXiMai' },
-  { label: f.sucaiJishiKangkang(), value: 'SucaiJishiKangkang' },
-  { label: f.sucaiJishiCoolSquare(), value: 'SucaiJishiCoolSquare' },
-  { label: f.tuniuRounded(), value: 'TuniuRounded' },
-  { label: f.ruiziZhenyan(), value: 'RuiziZhenyan' },
   { label: f.sourceSerif4(), value: 'SourceSerif4' },
   { label: f.jetBrainsMono(), value: 'JetBrainsMono' },
   { label: f.literata(), value: 'Literata' },
@@ -33,3 +15,51 @@ export const FONTS = [
   { label: f.sourceSansPro(), value: 'SourceSansPro' },
   { label: f.merriweather(), value: 'Merriweather' },
 ]
+
+export const EASTERN_EXTRAS_FONT_VALUES = [
+  'SourceHanSans',
+  'SourceHanSerif',
+  'WenDingPLKaiTi',
+  'WenDingPLSongTi',
+  'ZhuqueFangSong',
+  'LXGWWenKai',
+  'AlibabaPuHuiTi',
+  'MiSans',
+  'DeYiHei',
+  'CangerXiaowanzi',
+  'YousheTitleBlack',
+  'FengguangMingrui',
+  'ShetuModernSquare',
+  'ZcoolHappy',
+  'ZizhiQuXiMai',
+  'SucaiJishiKangkang',
+  'SucaiJishiCoolSquare',
+  'TuniuRounded',
+  'RuiziZhenyan',
+]
+
+const EASTERN_EXTRAS_FONTS = [
+  { label: f.sourceHanSans(), value: EASTERN_EXTRAS_FONT_VALUES[0] },
+  { label: f.sourceHanSerif(), value: EASTERN_EXTRAS_FONT_VALUES[1] },
+  { label: f.wenDingPLKaiTi(), value: EASTERN_EXTRAS_FONT_VALUES[2] },
+  { label: f.wenDingPLSongTi(), value: EASTERN_EXTRAS_FONT_VALUES[3] },
+  { label: f.zhuqueFangSong(), value: EASTERN_EXTRAS_FONT_VALUES[4] },
+  { label: f.lxgwwenKai(), value: EASTERN_EXTRAS_FONT_VALUES[5] },
+  { label: f.alibabaPuHuiTi(), value: EASTERN_EXTRAS_FONT_VALUES[6] },
+  { label: f.miSans(), value: EASTERN_EXTRAS_FONT_VALUES[7] },
+  { label: f.deYiHei(), value: EASTERN_EXTRAS_FONT_VALUES[8] },
+  { label: f.cangerXiaowanzi(), value: EASTERN_EXTRAS_FONT_VALUES[9] },
+  { label: f.yousheTitleBlack(), value: EASTERN_EXTRAS_FONT_VALUES[10] },
+  { label: f.fengguangMingrui(), value: EASTERN_EXTRAS_FONT_VALUES[11] },
+  { label: f.shetuModernSquare(), value: EASTERN_EXTRAS_FONT_VALUES[12] },
+  { label: f.zcoolHappy(), value: EASTERN_EXTRAS_FONT_VALUES[13] },
+  { label: f.zizhiQuXiMai(), value: EASTERN_EXTRAS_FONT_VALUES[14] },
+  { label: f.sucaiJishiKangkang(), value: EASTERN_EXTRAS_FONT_VALUES[15] },
+  { label: f.sucaiJishiCoolSquare(), value: EASTERN_EXTRAS_FONT_VALUES[16] },
+  { label: f.tuniuRounded(), value: EASTERN_EXTRAS_FONT_VALUES[17] },
+  { label: f.ruiziZhenyan(), value: EASTERN_EXTRAS_FONT_VALUES[18] },
+]
+
+export const FONTS = EXTRAS_ENABLED
+  ? [...WESTERN_FONTS, ...EASTERN_EXTRAS_FONTS]
+  : WESTERN_FONTS

@@ -43,6 +43,7 @@ import { useSlidesStore } from '@/store'
 import type { Slide, SlideTheme } from '@/types/slides'
 import api from '@/services'
 import { useI18nContext } from '@/i18n/useI18nContext'
+import { loadConfiguredTemplate, normalizeTemplatePayload, type TemplatePayload } from '@/configs/templates'
 
 import ThumbnailSlide from '@/views/components/ThumbnailSlide/index.vue'
 import Button from '@/components/Button.vue'
@@ -103,49 +104,53 @@ const insertTemplates = ({ slides, theme }: { slides: Slide[], theme: Partial<Sl
   emit('selectAll', { slides, theme })
 }
 
-const localizeTemplateString = (value: string) => {
-  const placeholders = LL.value.editor.templates.placeholderText
-  const replacements: [RegExp, string][] = [
-    [/模板封面标题/g, placeholders.coverTitle()],
-    [/模板封面副标题|模板副标题/g, placeholders.coverSubtitle()],
-    [/目录/g, placeholders.contentsTitle()],
-    [/章节标题/g, placeholders.sectionTitle()],
-    [/标题一|标题 1/g, placeholders.title1()],
-    [/标题二|标题 2/g, placeholders.title2()],
-    [/标题三|标题 3/g, placeholders.title3()],
-    [/标题四|标题 4/g, placeholders.title4()],
-    [/正文内容|正文|内容文本/g, placeholders.bodyText()],
-  ]
-  return replacements.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), value)
+type CatalogPayload = TemplatePayload | Slide[]
+
+const catalogCache = new Map<string, Promise<CatalogPayload>>()
+
+const applyCatalogData = (ret: CatalogPayload) => {
+  const data = normalizeTemplatePayload(ret, LL.value)
+  slides.value = data.slides
+  theme.value = data.theme ?? {}
 }
 
-const localizeTemplateSlides = (source: Slide[]) => {
-  return JSON.parse(JSON.stringify(source), (_key, value) => {
-    return typeof value === 'string' ? localizeTemplateString(value) : value
-  }) as Slide[]
+const fetchCatalogData = async (id: string): Promise<CatalogPayload> => {
+  const configuredTemplate = await loadConfiguredTemplate(id)
+  if (configuredTemplate) return configuredTemplate
+
+  return api.getMockData(id)
+    // Fall back to the always-bundled demo deck when a host-provided custom
+    // template file is missing, so the picker is never empty.
+    .catch(() => (id === 'slides' ? Promise.reject() : api.getMockData('slides')))
 }
 
-// Mock data ships in two shapes: a bare `Slide[]` (e.g. `slides.json`) or a
-// `{ slides, theme }` template payload. Normalize both.
-const applyCatalogData = (ret: any) => {
-  const data = Array.isArray(ret) ? { slides: ret as Slide[] } : (ret ?? {})
-  slides.value = Array.isArray(data.slides) ? localizeTemplateSlides(data.slides) : []
-  if (data.theme) theme.value = data.theme
+const loadCatalogData = (id: string) => {
+  const cached = catalogCache.get(id)
+  if (cached) return cached
+
+  const request = fetchCatalogData(id).catch(error => {
+    catalogCache.delete(id)
+    throw error
+  })
+  catalogCache.set(id, request)
+  return request
 }
+
+let catalogRequestId = 0
 
 const changeCatalog = (id: string) => {
+  const requestId = ++catalogRequestId
   loading.value = true
   activeCatalog.value = id
-  api.getMockData(id)
-    // Fall back to the always-bundled demo deck when a per-style template file
-    // hasn't been provisioned at the host asset base, so the picker is never empty.
-    .catch(() => (id === 'slides' ? Promise.reject() : api.getMockData('slides')))
+  loadCatalogData(id)
     .then(ret => {
+      if (requestId !== catalogRequestId) return
       applyCatalogData(ret)
       loading.value = false
       if (listRef.value) listRef.value.scrollTo(0, 0)
     })
     .catch(() => {
+      if (requestId !== catalogRequestId) return
       slides.value = []
       loading.value = false
     })

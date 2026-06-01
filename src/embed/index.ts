@@ -4,6 +4,10 @@ export type {
   PptistDocument,
   PptistMountOptions,
   PptistMountResult,
+  PptistDocumentLoader,
+  PptistStarterPresentationOptions,
+  PptistTemplateLoader,
+  PptistTemplatePayload,
 } from './types'
 export type * from './agentic/types'
 export type { Locales as PptistLocales } from '@/i18n/locale'
