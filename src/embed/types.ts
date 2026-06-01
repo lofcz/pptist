@@ -30,6 +30,8 @@ export interface PptistMountOptions {
   /** Fired when title, slides, or theme change (debounced). */
   onChange?: (document: PptistDocument) => void
   onChangeDebounceMs?: number
+  /** Fired when PPTist enters or exits slideshow/presentation mode. */
+  onPresentationModeChange?: (screening: boolean) => void
 }
 
 /** Public embed controller: legacy host methods plus the generic command and domain APIs. */

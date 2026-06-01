@@ -5,9 +5,19 @@
         class="preset-style-item"
         v-for="item in presetStyles"
         :key="item.key"
-        :style="item.style"
         @click="emitBatchRichTextCommand(item.cmd)"
-      >{{ item.label }}</div>
+      >
+        <FitText
+          :text="item.label"
+          :max-font-size="item.preview.maxFontSize"
+          :min-font-size="11"
+          :font-weight="item.preview.fontWeight"
+          :font-style="item.preview.fontStyle"
+          :text-decoration="item.preview.textDecoration"
+          :max-lines="2"
+          :line-height="1.15"
+        />
+      </div>
     </div>
 
     <Divider />
@@ -136,6 +146,7 @@ import Divider from '@/components/Divider.vue'
 import NumberInput from '@/components/NumberInput.vue'
 import Select from '@/components/Select.vue'
 import Popover from '@/components/Popover.vue'
+import FitText from '@/components/FitText.vue'
 
 const { LL } = useI18nContext()
 
@@ -144,9 +155,11 @@ const { LL } = useI18nContext()
 const presetStyleDefs = [
   {
     key: 'largeTitle',
-    style: {
-      fontSize: '26px',
+    preview: {
+      maxFontSize: 26,
       fontWeight: 700,
+      fontStyle: 'normal',
+      textDecoration: 'none',
     },
     cmd: [
       { command: 'clear' },
@@ -157,9 +170,11 @@ const presetStyleDefs = [
   },
   {
     key: 'smallTitle',
-    style: {
-      fontSize: '22px',
+    preview: {
+      maxFontSize: 22,
       fontWeight: 700,
+      fontStyle: 'normal',
+      textDecoration: 'none',
     },
     cmd: [
       { command: 'clear' },
@@ -170,8 +185,11 @@ const presetStyleDefs = [
   },
   {
     key: 'body',
-    style: {
-      fontSize: '20px',
+    preview: {
+      maxFontSize: 20,
+      fontWeight: 400,
+      fontStyle: 'normal',
+      textDecoration: 'none',
     },
     cmd: [
       { command: 'clear' },
@@ -180,8 +198,11 @@ const presetStyleDefs = [
   },
   {
     key: 'bodySmall',
-    style: {
-      fontSize: '18px',
+    preview: {
+      maxFontSize: 18,
+      fontWeight: 400,
+      fontStyle: 'normal',
+      textDecoration: 'none',
     },
     cmd: [
       { command: 'clear' },
@@ -190,9 +211,11 @@ const presetStyleDefs = [
   },
   {
     key: 'note1',
-    style: {
-      fontSize: '16px',
+    preview: {
+      maxFontSize: 16,
+      fontWeight: 400,
       fontStyle: 'italic',
+      textDecoration: 'none',
     },
     cmd: [
       { command: 'clear' },
@@ -202,8 +225,10 @@ const presetStyleDefs = [
   },
   {
     key: 'note2',
-    style: {
-      fontSize: '16px',
+    preview: {
+      maxFontSize: 16,
+      fontWeight: 400,
+      fontStyle: 'normal',
       textDecoration: 'underline',
     },
     cmd: [
@@ -226,7 +251,7 @@ const presetStyles = computed(() => {
   return presetStyleDefs.map(item => ({
     key: item.key,
     label: labels[item.key],
-    style: item.style,
+    preview: item.preview,
     cmd: item.cmd as RichTextAction[],
   }))
 })

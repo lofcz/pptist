@@ -1,7 +1,9 @@
 <template>
   <div class="select-wrap" v-if="disabled">
     <div class="select disabled" ref="selectRef">
-      <div class="selector">{{ value }}</div>
+      <div class="selector">
+        <FitText :text="String(value)" :max-font-size="13" :min-font-size="10" />
+      </div>
       <div class="icon">
         <slot name="icon">
           <i-icon-park-outline:down />
@@ -34,11 +36,15 @@
           v-for="option in showOptions" 
           :key="option.value"
           @click="handleSelect(option)"
-        >{{ option.label }}</div>
+        >
+          <FitText :text="option.label" :max-font-size="13" :min-font-size="10" />
+        </div>
       </div>
     </template>
     <div class="select" ref="selectRef">
-      <div class="selector">{{ showLabel }}</div>
+      <div class="selector">
+        <FitText :text="String(showLabel)" :max-font-size="13" :min-font-size="10" />
+      </div>
       <div class="icon">
         <slot name="icon">
           <i-icon-park-outline:down />
@@ -54,6 +60,7 @@ import { useI18nContext } from '@/i18n/useI18nContext'
 import Popover from './Popover.vue'
 import Input from './Input.vue'
 import Divider from './Divider.vue'
+import FitText from './FitText.vue'
 
 const { LL } = useI18nContext()
 
@@ -169,9 +176,10 @@ const handleSelect = (option: SelectOption) => {
   .selector {
     min-width: 50px;
     height: 30px;
-    line-height: 30px;
     padding-left: 10px;
-    @include ellipsis-oneline();
+    padding-right: 2px;
+    display: flex;
+    align-items: center;
   }
 }
 .options {
@@ -184,10 +192,10 @@ const handleSelect = (option: SelectOption) => {
 }
 .option {
   height: 32px;
-  line-height: 32px;
   padding: 0 5px;
   border-radius: $borderRadius;
-  @include ellipsis-oneline();
+  display: flex;
+  align-items: center;
 
   &.disabled {
     color: #b7b7b7;

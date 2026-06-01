@@ -48,7 +48,6 @@ const handleClick = () => {
 <style lang="scss" scoped>
 .button {
   height: 32px;
-  line-height: 32px;
   outline: 0;
   font-size: 13px;
   padding: 0 15px;
@@ -58,13 +57,23 @@ const handleClick = () => {
   user-select: none;
   letter-spacing: 1px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  line-height: normal;
 
   &.small {
     height: 24px;
-    line-height: 24px;
     padding: 0 7px;
     letter-spacing: 0;
     font-size: 12px;
+  }
+
+  :deep(.fit-text) {
+    flex: 1 1 auto;
   }
 
   &.default {

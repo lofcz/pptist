@@ -2,6 +2,7 @@ import { watch } from 'vue'
 import type { Pinia } from 'pinia'
 import type { App } from 'vue'
 import { buildDefaultTemplates, useSlidesStore } from '@/store/slides'
+import { useScreenStore } from '@/store/screen'
 import type { PptistController, PptistDocument } from './types'
 import { applyLocale } from './localeBridge'
 import type { Locales } from '@/i18n/locale'
@@ -33,9 +34,11 @@ export function createController(
   options: {
     onChange?: (document: PptistDocument) => void
     onChangeDebounceMs?: number
+    onPresentationModeChange?: (screening: boolean) => void
   },
 ): PptistController {
   const slidesStore = useSlidesStore(pinia)
+  const screenStore = useScreenStore(pinia)
   const agentic = createAgenticApi(pinia, app, {
     async setLocale(locale) {
       await applyLocale(locale)
@@ -58,6 +61,13 @@ export function createController(
         () => [slidesStore.title, slidesStore.slides, slidesStore.theme] as const,
         () => emitChange(),
         { deep: true },
+      )
+    : null
+
+  const stopPresentationModeWatch = options.onPresentationModeChange
+    ? watch(
+        () => screenStore.screening,
+        screening => options.onPresentationModeChange?.(screening),
       )
     : null
 
@@ -133,6 +143,7 @@ export function createController(
       if (destroyed) return
       destroyed = true
       stopChangeWatch?.()
+      stopPresentationModeWatch?.()
       ;(emitChange as (typeof emitChange & { cancel?: () => void }))?.cancel?.()
       agentic.stop()
     },

@@ -93,9 +93,11 @@ onUnmounted(() => {
   .selector {
     min-width: 50px;
     height: 30px;
-    line-height: 30px;
     padding-left: 10px;
-    @include ellipsis-oneline();
+    padding-right: 2px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
   }
 }
 .options {

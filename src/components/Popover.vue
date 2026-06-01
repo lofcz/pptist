@@ -68,6 +68,7 @@ onMounted(() => {
     duration: 200,
     animation: 'scale',
     theme: 'popover',
+    arrow: false,
     onShow() {
       contentVisible.value = true
     },
@@ -108,5 +109,11 @@ onMounted(() => {
 .tippy-box[data-theme~='popover'] {
   border: 0;
   outline: 0;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+}
+.tippy-box[data-theme~='popover'] > .tippy-content {
+  padding: 0;
 }
 </style>

@@ -82,7 +82,10 @@
     </div>
 
     <div class="row">
-      <Button style="flex: 1;" @click="applyBackgroundAllSlide()"><i-icon-park-outline:check /> {{ LL.editor.slideDesign.applyBackgroundToAll() }}</Button>
+      <Button class="full-width-btn" style="flex: 1;" @click="applyBackgroundAllSlide()">
+        <i-icon-park-outline:check />
+        <FitText :text="LL.editor.slideDesign.applyBackgroundToAll()" :max-font-size="13" :min-font-size="10" :letter-spacing="1" />
+      </Button>
     </div>
 
     <Divider />
@@ -234,15 +237,24 @@
     </template>
 
     <div class="row">
-      <Button style="flex: 1;" @click="applyThemeToAllSlides(moreThemeConfigsVisible)"><i-icon-park-outline:check /> {{ LL.editor.slideDesign.applyThemeToAll() }}</Button>
+      <Button class="full-width-btn" style="flex: 1;" @click="applyThemeToAllSlides(moreThemeConfigsVisible)">
+        <i-icon-park-outline:check />
+        <FitText :text="LL.editor.slideDesign.applyThemeToAll()" :max-font-size="13" :min-font-size="10" :letter-spacing="1" />
+      </Button>
     </div>
 
     <div class="row">
-      <Button style="flex: 1;" @click="applyFontToAllSlides(theme.fontName)"><i-icon-park-outline:check /> {{ LL.editor.slideDesign.unifyFontGlobally() }}</Button>
+      <Button class="full-width-btn" style="flex: 1;" @click="applyFontToAllSlides(theme.fontName)">
+        <i-icon-park-outline:check />
+        <FitText :text="LL.editor.slideDesign.unifyFontGlobally()" :max-font-size="13" :min-font-size="10" :letter-spacing="1" />
+      </Button>
     </div>
 
     <div class="row">
-      <Button style="flex: 1;" @click="themeStylesExtractVisible = true"><i-icon-park-outline:platte /> {{ LL.editor.slideDesign.extractThemeFromSlide() }}</Button>
+      <Button class="full-width-btn" style="flex: 1;" @click="themeStylesExtractVisible = true">
+        <i-icon-park-outline:platte />
+        <FitText :text="LL.editor.slideDesign.extractThemeFromSlide()" :max-font-size="13" :min-font-size="10" :letter-spacing="1" />
+      </Button>
     </div>
 
     <Divider />
@@ -326,6 +338,7 @@ import SelectCustom from '@/components/SelectCustom.vue'
 import NumberInput from '@/components/NumberInput.vue'
 import Modal from '@/components/Modal.vue'
 import GradientBar from '@/components/GradientBar.vue'
+import FitText from '@/components/FitText.vue'
 import { useI18nContext } from '@/i18n/useI18nContext'
 
 const { LL } = useI18nContext()

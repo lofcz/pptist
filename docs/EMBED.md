@@ -49,6 +49,7 @@ export function PptistEditor({ locale }: { locale: 'cs' | 'en' | 'sk' | 'pl' }) 
       loadMockOnEmpty: true,
       assetBaseUrl: import.meta.env.VITE_PPTIST_ASSET_BASE ?? '/pptist-assets',
       onChange: (doc) => console.log('deck changed', doc.title),
+      onPresentationModeChange: (active) => console.log('presentation mode', active),
     }).then(({ controller }) => {
       if (cancelled) {
         controller.destroy()

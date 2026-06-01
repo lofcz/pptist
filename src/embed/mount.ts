@@ -81,6 +81,7 @@ export async function mountPptist(
     const controller: PptistController = createController(pinia, app, {
       onChange: options.onChange,
       onChangeDebounceMs: options.onChangeDebounceMs,
+      onPresentationModeChange: options.onPresentationModeChange,
     })
 
     let destroyed = false
