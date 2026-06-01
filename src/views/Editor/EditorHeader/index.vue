@@ -3,16 +3,18 @@
     <div class="left">
       <Popover trigger="click" placement="bottom-start" v-model:value="mainMenuVisible">
         <template #content>
-          <div class="main-menu">
-            <div class="ai-menu" @click="openAIPPTDialog(); mainMenuVisible = false">
-              <div class="icon"><i-custom:click /></div>
-              <div class="aippt-content">
-                <div class="aippt"><span>AIPPT</span></div>
-                <div class="aippt-subtitle">{{ LL.editor.header.aipptSubtitle() }}</div>
+          <template v-if="EXTRAS_ENABLED">
+            <div class="main-menu">
+              <div class="ai-menu" @click="openAIPPTDialog(); mainMenuVisible = false">
+                <div class="icon"><i-custom:click /></div>
+                <div class="aippt-content">
+                  <div class="aippt"><span>AIPPT</span></div>
+                  <div class="aippt-subtitle">{{ LL.editor.header.aipptSubtitle() }}</div>
+                </div>
               </div>
             </div>
-          </div>
-          <Divider :margin="10" />
+            <Divider :margin="10" />
+          </template>
           <div class="import-section">
             <div class="import-label">{{ LL.editor.header.importFiles() }}</div>
             <div class="import-grid">
@@ -22,7 +24,7 @@
               }">
                 <span class="icon"><i-custom:file-ppt /></span>
                 <span class="label">PPTX</span>
-                <span class="sub-label">{{ LL.editor.header.forTestingOnly() }}</span>
+                <span class="sub-label" v-if="EXTRAS_ENABLED">{{ LL.editor.header.forTestingOnly() }}</span>
               </FileInput>
               <FileInput class="import-block" accept=".json" @change="files => {
                 importJSON(files)
@@ -30,7 +32,7 @@
               }">
                 <span class="icon"><i-custom:file-jpg /></span>
                 <span class="label">JSON</span>
-                <span class="sub-label">{{ LL.editor.header.forTestingOnly() }}</span>
+                <span class="sub-label" v-if="EXTRAS_ENABLED">{{ LL.editor.header.forTestingOnly() }}</span>
               </FileInput>
               <FileInput class="import-block" accept=".pptist" @change="files => {
                 importSpecificFile(files)
@@ -48,10 +50,12 @@
           <PopoverMenuItem class="popover-menu-item" @click="resetSlides(); mainMenuVisible = false"><i-icon-park-outline:refresh class="icon" /> {{ LL.editor.header.resetSlides() }}</PopoverMenuItem>
           <PopoverMenuItem class="popover-menu-item" @click="openMarkupPanel(); mainMenuVisible = false"><i-icon-park-outline:mark class="icon" /> {{ LL.editor.header.markupSlides() }}</PopoverMenuItem>
           <PopoverMenuItem class="popover-menu-item" @click="mainMenuVisible = false; hotkeyDrawerVisible = true"><i-icon-park-outline:command class="icon" /> {{ LL.editor.header.hotkeys() }}</PopoverMenuItem>
-          <PopoverMenuItem class="popover-menu-item" @click="goLink('https://github.com/pipipi-pikachu/PPTist/issues')"><i-icon-park-outline:comment class="icon" /> {{ LL.editor.header.feedback() }}</PopoverMenuItem>
-          <PopoverMenuItem class="popover-menu-item" @click="goLink('https://github.com/pipipi-pikachu/PPTist/blob/master/doc/Q&A.md')"><i-icon-park-outline:helpcenter class="icon" /> {{ LL.editor.header.faq() }}</PopoverMenuItem>
-          <Divider :margin="10" />
-          <div class="statement">{{ LL.editor.header.demoDisclaimer() }}</div>
+          <template v-if="EXTRAS_ENABLED">
+            <PopoverMenuItem class="popover-menu-item" @click="goLink('https://github.com/pipipi-pikachu/PPTist/issues')"><i-icon-park-outline:comment class="icon" /> {{ LL.editor.header.feedback() }}</PopoverMenuItem>
+            <PopoverMenuItem class="popover-menu-item" @click="goLink('https://github.com/pipipi-pikachu/PPTist/blob/master/doc/Q&A.md')"><i-icon-park-outline:helpcenter class="icon" /> {{ LL.editor.header.faq() }}</PopoverMenuItem>
+            <Divider :margin="10" />
+            <div class="statement">{{ LL.editor.header.demoDisclaimer() }}</div>
+          </template>
         </template>
         <div class="menu-item"><i-icon-park-outline:hamburger-button class="icon" /></div>
       </Popover>
@@ -86,13 +90,13 @@
           <div class="arrow-btn"><i-icon-park-outline:down class="arrow" /></div>
         </Popover>
       </div>
-      <div class="menu-item" v-tooltip="LL.editor.header.aiGenerateTooltip()" @click="openAIPPTDialog(); mainMenuVisible = false">
+      <div class="menu-item" v-if="EXTRAS_ENABLED" v-tooltip="LL.editor.header.aiGenerateTooltip()" @click="openAIPPTDialog(); mainMenuVisible = false">
         <span class="text ai">AI</span>
       </div>
       <div class="menu-item" v-tooltip="LL.editor.header.exportTooltip()" @click="setDialogForExport('pptx')">
         <i-icon-park-outline:download class="icon" />
       </div>
-      <a class="github-link" v-tooltip="'Copyright © 2020-PRESENT pipipi-pikachu'" href="https://github.com/pipipi-pikachu/PPTist" target="_blank">
+      <a class="github-link" v-if="EXTRAS_ENABLED" v-tooltip="'Copyright © 2020-PRESENT pipipi-pikachu'" href="https://github.com/pipipi-pikachu/PPTist" target="_blank">
         <div class="menu-item"><i-icon-park-outline:github class="icon" /></div>
       </a>
     </div>
@@ -128,6 +132,7 @@ import Popover from '@/components/Popover.vue'
 import PopoverMenuItem from '@/components/PopoverMenuItem.vue'
 import Divider from '@/components/Divider.vue'
 import { useI18nContext } from '@/i18n/useI18nContext'
+import { EXTRAS_ENABLED } from '@/configs/featureFlags'
 
 const { LL } = useI18nContext()
 

@@ -34,6 +34,7 @@
   </Modal>
 
   <Modal
+    v-if="EXTRAS_ENABLED"
     :visible="!!showAIPPTDialog" 
     :width="720"
     :closeOnClickMask="false"
@@ -70,6 +71,7 @@ import MarkupPanel from './MarkupPanel.vue'
 import ImageLibPanel from './ImageLibPanel.vue'
 import AIPPTDialog from './AIPPTDialog.vue'
 import Modal from '@/components/Modal.vue'
+import { EXTRAS_ENABLED } from '@/configs/featureFlags'
 
 const mainStore = useMainStore()
 const {

@@ -92,6 +92,25 @@ mark.active {
   background-color: #ff9632;
 }
 
+eq {
+  display: inline-block;
+}
+
+eqn {
+  display: block;
+  text-align: center;
+}
+
+section.eqno {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+section.eqno > eqn {
+  flex: 1;
+}
+
 input,
 button,
 select,

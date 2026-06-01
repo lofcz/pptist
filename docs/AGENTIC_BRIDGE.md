@@ -26,6 +26,11 @@ controller.execute({ id: 'cmd_1', type: 'slides.create', payload: { slide } })
 controller.executeBatch(commands, { atomic: true })
 controller.canExecute(command)
 controller.subscribe(event => {})
+await controller.markdownToHtml(markdown)
+controller.docs()
+controller.domains()
+controller.describe(commandType)
+controller.guides(guideId?)
 
 controller.deck.*
 controller.slides.*
@@ -168,6 +173,8 @@ Content rules:
 - Element create payloads must include `element.type`.
 - Whole-document writes (`deck.set`, `deck.patch`, `import.json`, `import.pptist`, and `import.pptxSafe`) require a JSON-serializable payload with a string `title` and a `slides` array before store state is touched.
 - Text-like content is stored as HTML where the model already expects HTML, for example text element `content`, shape `text.content`, slide `remark`, and note `content`.
+- Markdown flavor: `markdown-it` + `markdown-it-texmath` (KaTeX).
+- Use `content` / `text.setContent` for trusted HTML; use `markdown` / `text.setMarkdown` for Markdown.
 - Slide links should be validated against `slides.list()` before use.
 - DOM-dependent import/export paths remain outside the JSON bridge until they have been converted to a serializable document payload.
 

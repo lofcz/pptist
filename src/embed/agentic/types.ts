@@ -35,6 +35,23 @@ import type {
   TurningMode,
 } from '@/types/slides'
 import type { PptistDocument } from '../types'
+import type {
+  PptistAgenticDocs,
+  PptistCommandDescription,
+  PptistDesignGuide,
+  PptistDomainSummary,
+} from './manifestDocs'
+
+export type {
+  PptistAgenticDocs,
+  PptistCommandDescription,
+  PptistCommandDoc,
+  PptistDesignGuide,
+  PptistDesignSystem,
+  PptistDocParam,
+  PptistDomainDoc,
+  PptistDomainSummary,
+} from './manifestDocs'
 
 export type PptistKnownCommandType = keyof PptistCommandPayloadMap
 export type PptistCommandType = PptistKnownCommandType | (string & {})
@@ -407,7 +424,10 @@ export interface PptistLineStyleInput {
 export interface PptistCreateTextInput {
   slideId?: string
   index?: number
+  /** HTML content (wins over `markdown` when both are supplied). */
   content?: string
+  /** Markdown content; converted to HTML by the bridge. */
+  markdown?: string
   element?: Partial<PPTTextElement>
   select?: boolean
 }
@@ -687,6 +707,8 @@ export interface PptistAgentTextApi {
   delete(elementId: string | string[], meta?: PptistCommandMeta & { slideId?: string }): Promise<PptistCommandResult<{ deleted: string[] }>>
   getContent(elementId: string, slideId?: string): string | null
   setContent(elementId: string, content: string, meta?: PptistCommandMeta & { slideId?: string }): Promise<PptistCommandResult<PPTTextElement>>
+  /** Replace content from a Markdown string (converted to HTML). */
+  setMarkdown(elementId: string, markdown: string, meta?: PptistCommandMeta & { slideId?: string }): Promise<PptistCommandResult<PPTTextElement>>
   updateContent(elementId: string, update: PptistTextContentUpdateInput, meta?: PptistCommandMeta & { slideId?: string }): Promise<PptistCommandResult<PPTTextElement>>
   clearContent(elementId: string, meta?: PptistCommandMeta & { slideId?: string }): Promise<PptistCommandResult<PPTTextElement>>
   setStyle(elementId: string, style: PptistTextStylePatch, meta?: PptistCommandMeta & { slideId?: string }): Promise<PptistCommandResult<PPTTextElement>>
@@ -954,6 +976,16 @@ export interface PptistAgentApi {
   executeBatch(commands: PptistAgentCommand[], options?: PptistBatchOptions): Promise<PptistCommandResult[]>
   canExecute(command: PptistAgentCommand): PptistAgentCapability
   subscribe(listener: PptistBridgeListener): PptistUnsubscribe
+  /** Convert a Markdown string to the HTML PPTist stores. Math support is loaded on demand. */
+  markdownToHtml(markdown: string): Promise<string>
+  /** Full authoring docs: design system, domain/command notes, and guides. */
+  docs(): PptistAgenticDocs
+  /** Domains with their live command lists, for hierarchical discovery. */
+  domains(): PptistDomainSummary[]
+  /** Drill into one command: its doc annotation merged with live registry facts. */
+  describe(commandType: string): PptistCommandDescription | null
+  /** Slide composition recipes; pass a guide id to fetch a single guide. */
+  guides(guideId?: string): PptistDesignGuide[] | PptistDesignGuide | null
   deck: PptistAgentDeckApi
   slides: PptistAgentSlidesApi
   elements: PptistAgentElementsApi
@@ -1047,6 +1079,7 @@ export interface PptistCommandPayloadMap {
   'text.delete': { elementId: string | string[]; slideId?: string }
   'text.getContent': { elementId: string; slideId?: string }
   'text.setContent': { elementId: string; slideId?: string; content: string }
+  'text.setMarkdown': { elementId: string; slideId?: string; markdown: string }
   'text.updateContent': { elementId: string; slideId?: string; update: PptistTextContentUpdateInput }
   'text.clearContent': { elementId: string; slideId?: string }
   'text.setStyle': { elementId: string; slideId?: string; style: PptistTextStylePatch }
@@ -1207,6 +1240,7 @@ export interface PptistCommandResultDataMap {
   'text.delete': { deleted: string[] }
   'text.getContent': string | null
   'text.setContent': PPTTextElement
+  'text.setMarkdown': PPTTextElement
   'text.updateContent': PPTTextElement
   'text.clearContent': PPTTextElement
   'text.setStyle': PPTTextElement

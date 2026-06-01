@@ -36,6 +36,12 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      - name: Bump package version
+        id: version
+        run: |
+          npm version "${{ github.event.inputs.release_type }}" --no-git-tag-version
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
       - name: Verify agentic bridge
         run: npm run test:agentic-bridge
 
@@ -48,11 +54,8 @@ jobs:
       - name: Verify package contents
         run: npm pack --dry-run
 
-      - name: Bump package version
-        id: version
-        run: |
-          npm version "${{ github.event.inputs.release_type }}" --no-git-tag-version
-          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Publish to npm
+        run: npm publish --provenance --access public
 
       - name: Commit release version and create tag
         run: |
@@ -61,9 +64,6 @@ jobs:
           git add package.json package-lock.json
           git commit -m "chore: release v${{ steps.version.outputs.version }}"
           git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
-
-      - name: Publish to npm
-        run: npm publish --provenance --access public
 
       - name: Push release commit and tag
         run: git push --follow-tags

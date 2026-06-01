@@ -1,5 +1,6 @@
 import axios from './axios'
 import fetchRequest from './fetch'
+import { resolvePptistAsset } from '@/utils/assetBase'
 
 // export const SERVER_URL = 'http://localhost:5000'
 export const SERVER_URL = (import.meta.env.MODE === 'development') ? '/api' : 'https://server.pptist.cn'
@@ -35,7 +36,7 @@ interface AIWritingPayload {
 
 export default {
   getMockData(filename: string): Promise<any> {
-    return axios.get(`./mocks/${filename}.json`)
+    return axios.get(resolvePptistAsset(`mocks/${filename}.json`))
   },
 
   searchImage(body: ImageSearchPayload): Promise<any> {

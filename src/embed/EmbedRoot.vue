@@ -57,6 +57,7 @@ async function resolveInitialDocument() {
 
 onMounted(async () => {
   registerVueLocaleSync(setLocale)
+  if (props.init.templates?.length) slidesStore.setTemplates(props.init.templates)
   await resolveInitialDocument()
   await deleteDiscardedDB()
   snapshotStore.initSnapshotDatabase()

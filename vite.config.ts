@@ -6,9 +6,17 @@ import { FileSystemIconLoader } from 'unplugin-icons/loaders'
 import IconsResolver from 'unplugin-icons/resolver'
 import Components from 'unplugin-vue-components/vite'
 
+// Demo / upstream-only chrome (AI, AIPPT, GitHub, feedback, FAQ, disclaimer) is
+// gated behind a compile-time constant so it is dead-code-eliminated unless the
+// build explicitly opts in with `PPTIST_EXTRAS_ENABLED=true`.
+const EXTRAS_ENABLED = process.env.PPTIST_EXTRAS_ENABLED === 'true'
+
 // https://vitejs.dev/config/
 export default defineConfig({
   base: '',
+  define: {
+    __PPTIST_EXTRAS_ENABLED__: JSON.stringify(EXTRAS_ENABLED),
+  },
   plugins: [
     vue(),
     Components({

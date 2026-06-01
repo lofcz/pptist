@@ -41,12 +41,20 @@ function dropUnusedVueDefaultImport() {
   }
 }
 
+// Demo / upstream-only chrome (AI, AIPPT, GitHub, feedback, FAQ, disclaimer) is
+// gated behind a compile-time constant. Embedded consumer builds default to
+// `false` so the bundler strips that chrome out cleanly.
+const EXTRAS_ENABLED = process.env.PPTIST_EXTRAS_ENABLED === 'true'
+
 /**
  * Library build: Vue app as ESM bundle for sciobot-next (React host).
  * Output: dist/embed/pptist-embed.js + pptist-embed.css.
  * Vue and Pinia stay external so host bundlers can place them in shared vendor chunks.
  */
 export default defineConfig({
+  define: {
+    __PPTIST_EXTRAS_ENABLED__: JSON.stringify(EXTRAS_ENABLED),
+  },
   plugins: [
     vue(),
     dropUnusedVueDefaultImport(),

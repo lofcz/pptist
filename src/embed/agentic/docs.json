@@ -1,0 +1,356 @@
+{
+  "version": 1,
+  "summary": "Authoring guidance for the PPTist agentic bridge: the coordinate system, a default design system, per-domain and per-command notes, and reusable slide composition recipes. Pair this with the machine schema (command payload/return types) in the same manifest.",
+  "designSystem": {
+    "summary": "PPTist lays elements out in a fixed pixel coordinate space, not inches. Design against these tokens for clean, readable decks.",
+    "coordinateSystem": {
+      "summary": "The default 16:9 canvas is 1000 x 562.5 px (viewport.size = 1000, viewport.ratio = 0.5625). Origin (0,0) is the top-left corner. Every element has left, top, width, height in px and rotate in degrees.",
+      "notes": [
+        "Canvas width = viewport.size; canvas height = viewport.size * viewport.ratio. For the default 16:9 deck that is 1000 x 562.5 px.",
+        "Keep a 40px safe margin from every edge (left/top >= 40, and left+width <= 960, top+height <= 522 on the default canvas).",
+        "Coordinates are absolute px, NOT inches/points. To port an inches-based layout, multiply inches by 100 (10in wide deck -> 1000px).",
+        "rotate is clockwise degrees about the element center. Lines use start/end points instead of width/height/rotate.",
+        "Text size is controlled by inline styles inside the element's HTML content (e.g. <span style=\"font-size:40px\">), not by a top-level fontSize field. defaultColor/defaultFontName are only fallbacks."
+      ]
+    },
+    "tokens": {
+      "summary": "A neutral, presentation-safe default palette and type scale (px). Override per deck via deck.setTheme.",
+      "colors": {
+        "background": "#FFFFFF",
+        "primary": "#1F4E79",
+        "accent": "#2E75B6",
+        "body": "#2D2D2D",
+        "muted": "#777777",
+        "rule": "#CCCCCC",
+        "highlight": "#FFF2CC"
+      },
+      "fontFamily": "Arial",
+      "fontSizePx": {
+        "display": 64,
+        "title": 40,
+        "sectionHeader": 30,
+        "body": 24,
+        "label": 18,
+        "caption": 14
+      },
+      "spacingPx": {
+        "margin": 40,
+        "gutter": 24,
+        "ruleThickness": 3
+      }
+    }
+  },
+  "domains": {
+    "deck": { "title": "Deck", "summary": "Whole-document state: title, theme, viewport, templates, plus full get/set/patch.", "whenToUse": "Set the deck theme and viewport once up front; use whole-document import/export at persistence boundaries." },
+    "slides": { "title": "Slides", "summary": "Create, read, update, delete, duplicate, move, select slides; set background, transition and speaker remark.", "whenToUse": "Add one slide per idea; capture the returned slide id and reuse it for every element you place on that slide." },
+    "elements": { "title": "Elements", "summary": "Generic element CRUD plus transform, ordering, grouping, lock/hide, and shared styling (outline, shadow, fill, link).", "whenToUse": "Use the generic create/update when you want one call across element types, or the typed sub-domains (text/shapes/charts/...) for richer helpers." },
+    "text": { "title": "Text", "summary": "Text element create/update plus content helpers. Accepts Markdown via text.create({ markdown }) and text.setMarkdown.", "whenToUse": "Place titles, body copy and captions. Author content as HTML, or pass Markdown and let the bridge convert it." },
+    "richText": { "title": "Rich text", "summary": "Document-model edits to a text element's prose: set content, run styles and paragraph attributes.", "whenToUse": "Use when you need paragraph alignment / inline run styling beyond raw HTML replacement." },
+    "shapes": { "title": "Shapes", "summary": "Vector shapes from the preset catalog (shapes.presets) or raw SVG path; fill, gradient, outline, and inner text.", "whenToUse": "Build dividers, callout boxes, accent bars, and backgrounds. Start from a preset, then set fill/outline/text." },
+    "lines": { "title": "Lines", "summary": "Straight/curved connectors with arrowheads and direction.", "whenToUse": "Draw rules, arrows, and connectors. Lines use start/end points, not width/height." },
+    "images": { "title": "Images", "summary": "Image element styling: source, clip/crop, radius, filters, flip, shadow, color mask, set-as-background.", "whenToUse": "Place and style raster art. Resolve media to a URL/data URL before calling the bridge." },
+    "charts": { "title": "Charts", "summary": "Chart element create plus type/data/labels/legends/series/options.", "whenToUse": "Show one quantitative finding per slide. Set data with labels + series, then annotate the takeaway in text." },
+    "tables": { "title": "Tables", "summary": "Table create and cell/row/column edits, styling, merge/split.", "whenToUse": "Comparison grids and small data tables. Keep them small enough to read at body size." },
+    "latex": { "title": "LaTeX", "summary": "Formula elements rendered from LaTeX.", "whenToUse": "Equations and math notation." },
+    "media": { "title": "Media", "summary": "JSON-safe image/video/audio source assignment with mime/ext inference.", "whenToUse": "Attach already-resolved media URLs to elements." },
+    "videos": { "title": "Videos", "summary": "Video element source, poster, playback, autoplay, size, position.", "whenToUse": "Embed a video clip with a poster frame." },
+    "audio": { "title": "Audio", "summary": "Audio element create plus source, playback, icon, transform.", "whenToUse": "Add narration or sound; style the speaker icon." },
+    "animations": { "title": "Animations", "summary": "Per-slide entrance/emphasis/exit animations; list, catalog, create, reorder, trigger and duration.", "whenToUse": "Reveal content progressively. Read animations.catalog for valid effect keys first." },
+    "notes": { "title": "Notes", "summary": "Slide comment threads: notes and replies.", "whenToUse": "Author review comments; not the same as the speaker remark (slides.setRemark)." },
+    "sections": { "title": "Sections", "summary": "Group slides into named sections for long decks.", "whenToUse": "Add a section per major part of a long talk." },
+    "search": { "title": "Search", "summary": "Find/replace across text, shape text and table cells.", "whenToUse": "Bulk rename or correct terminology across the deck." },
+    "history": { "title": "History", "summary": "Commit, undo, redo against the shared history stack.", "whenToUse": "Group a multi-step edit into one undo via executeBatch, or commit/undo manually." },
+    "view": { "title": "View", "summary": "Zoom, locale, slide navigation, enter/exit presentation.", "whenToUse": "Drive presentation playback and the active slide." },
+    "import": { "title": "Import", "summary": "Replace the deck from a JSON-safe document (json / pptist / pptxSafe).", "whenToUse": "Load a whole deck the host already reduced to a serializable payload." },
+    "export": { "title": "Export", "summary": "Serializable JSON snapshot of the deck.", "whenToUse": "Persist/autosave from documentChanged events." }
+  },
+  "commands": {
+    "deck.setTheme": {
+      "summary": "Replace named theme properties (colors, fonts, background, outline, shadow) for the whole deck.",
+      "details": "Set the design tokens once before building slides so element defaults inherit them. Accepts a partial patch; only provided keys change.",
+      "params": [
+        { "name": "theme.themeColors", "type": "string[]", "description": "Accent palette used by charts and pickers." },
+        { "name": "theme.fontColor", "type": "string", "description": "Default body text color." },
+        { "name": "theme.fontName", "type": "string", "description": "Default font family." },
+        { "name": "theme.backgroundColor", "type": "string", "description": "Default slide background." }
+      ],
+      "examples": [
+        "controller.deck.setTheme({ themeColors: ['#2E75B6','#ED7D31','#70AD47'], fontColor: '#2D2D2D', fontName: 'Arial', backgroundColor: '#FFFFFF' })"
+      ],
+      "tips": ["Set the theme before creating elements so defaultColor/defaultFontName inherit it."],
+      "related": ["deck.setViewport", "slides.setBackground", "slides.applyBackground"]
+    },
+    "deck.setViewport": {
+      "summary": "Set the canvas size/aspect ratio. size is the canvas width in px; ratio is height/width.",
+      "details": "Default is { size: 1000, ratio: 0.5625 } (16:9, 1000 x 562.5 px). Use ratio 0.75 for 4:3.",
+      "examples": ["controller.deck.setViewport({ size: 1000, ratio: 0.5625 })"],
+      "related": ["deck.setTheme"]
+    },
+    "slides.create": {
+      "summary": "Create and append a new slide; returns the created slide (use its id for element placement).",
+      "details": "Pass a partial slide. Omit id to get a generated one. background defaults to the theme. Set select:true to make it the active slide. Use slides.insert to control the position.",
+      "params": [
+        { "name": "slide", "type": "Partial<Slide>", "required": false, "description": "Slide fields. elements may be provided inline, or added later with elements/text/shapes.create." },
+        { "name": "index", "type": "number", "required": false, "description": "Insert position; appends when omitted or non-finite." },
+        { "name": "select", "type": "boolean", "required": false, "description": "Select the new slide (default true)." }
+      ],
+      "examples": [
+        "const res = await controller.slides.create({ slide: { background: { type: 'solid', color: '#1F4E79' } }, select: true })",
+        "const slideId = res.data.id // reuse for every element on this slide"
+      ],
+      "tips": [
+        "Always read result.data.id and pass it as meta.slideId / payload.slideId for subsequent element commands.",
+        "Group the slide + its elements in one executeBatch so the whole slide is a single undo step."
+      ],
+      "related": ["slides.insert", "elements.create", "text.create", "shapes.create"]
+    },
+    "slides.insert": {
+      "summary": "Insert a slide at a specific index (same payload as slides.create plus index).",
+      "related": ["slides.create", "slides.move"]
+    },
+    "slides.setBackground": {
+      "summary": "Set one slide's background (solid color, gradient, or image).",
+      "examples": ["controller.slides.setBackground(slideId, { type: 'solid', color: '#1F4E79' })"],
+      "related": ["slides.applyBackground", "deck.setTheme"]
+    },
+    "slides.setRemark": {
+      "summary": "Set the speaker notes (remark) for a slide. Content is HTML.",
+      "examples": ["controller.slides.setRemark(slideId, '<p>Pause here and ask the audience.</p>')"],
+      "related": ["notes.create"]
+    },
+    "elements.create": {
+      "summary": "Create any element type on a slide. payload.element.type is required.",
+      "details": "Generic creator across all element types. For text you can use { type:'text', content } (HTML). Prefer the typed creators (text.create, shapes.create, charts.create, tables.create) for richer, validated input. Provide left/top/width/height in canvas px and rotate in degrees.",
+      "params": [
+        { "name": "slideId", "type": "string", "required": false, "description": "Target slide; defaults to the current slide." },
+        { "name": "element", "type": "Partial<PPTElement> & { type }", "required": true, "description": "Element fields; type is mandatory." },
+        { "name": "index", "type": "number", "required": false, "description": "Z-order insert index." }
+      ],
+      "examples": [
+        "controller.elements.create({ slideId, element: { type:'text', left:40, top:40, width:920, height:90, rotate:0, content:'<p><span style=\"font-size:40px;color:#1F4E79\"><strong>Action title</strong></span></p>', defaultFontName:'Arial', defaultColor:'#1F4E79' } })"
+      ],
+      "tips": ["Text font size lives in inline HTML styles inside content, not in a fontSize field."],
+      "related": ["text.create", "shapes.create", "charts.create", "tables.create"]
+    },
+    "text.create": {
+      "summary": "Create a text element. Accepts HTML via content, or Markdown via markdown (converted to HTML).",
+      "details": "If element.content or content (HTML) is given it wins; otherwise markdown is converted to HTML. Size text via inline styles in the HTML; use defaultColor for the fallback color.",
+      "params": [
+        { "name": "slideId", "type": "string", "required": false, "description": "Target slide." },
+        { "name": "content", "type": "string", "required": false, "description": "HTML content (wins over markdown)." },
+        { "name": "markdown", "type": "string", "required": false, "description": "Markdown content; converted to HTML." },
+        { "name": "element", "type": "Partial<PPTTextElement>", "required": false, "description": "Geometry/styling: left, top, width, height, rotate, defaultColor, defaultFontName, lineHeight, wordSpace, fill." }
+      ],
+      "examples": [
+        "controller.text.create({ slideId, markdown: '**Key finding:** treated group improved 18%', element: { left:520, top:130, width:440, height:300, rotate:0, defaultColor:'#2D2D2D' } })",
+        "controller.text.create({ slideId, content:'<p><span style=\"font-size:40px;color:#1F4E79\"><strong>Methods</strong></span></p>', element:{ left:40, top:40, width:920, height:90, rotate:0 } })"
+      ],
+      "tips": ["Flavor: markdown-it + markdown-it-texmath (KaTeX)."],
+      "related": ["text.setMarkdown", "text.setContent", "richText.setContent", "elements.create"]
+    },
+    "text.setMarkdown": {
+      "summary": "Replace a text element's content from a Markdown string (converted to HTML).",
+      "examples": ["controller.text.setMarkdown(elementId, '- First point\\n- Second point\\n- Third point')"],
+      "related": ["text.setContent", "text.create"]
+    },
+    "text.setContent": {
+      "summary": "Replace a text element's HTML content verbatim.",
+      "related": ["text.setMarkdown", "richText.setContent"]
+    },
+    "shapes.create": {
+      "summary": "Create a shape. Start from a preset (shapes.presets) or supply a raw SVG path + viewBox.",
+      "details": "Use shapes for accent rules, callout boxes, dividers and color blocks. Provide left/top/width/height in px; fill is a hex color; outline sets a border; text adds centered inner HTML text. Read shapes.presets(categoryKey?) for ready-made path/viewBox pairs.",
+      "params": [
+        { "name": "slideId", "type": "string", "required": false, "description": "Target slide." },
+        { "name": "preset", "type": "string", "required": false, "description": "A preset id from shapes.presets()." },
+        { "name": "element", "type": "Partial<PPTShapeElement>", "required": false, "description": "viewBox, path, fill, outline, gradient, opacity, text, plus geometry." }
+      ],
+      "examples": [
+        "// thin accent rule under a title\ncontroller.shapes.create({ slideId, element: { left:40, top:120, width:920, height:3, viewBox:[200,200], path:'M 0 0 L 200 0 L 200 200 L 0 200 Z', fill:'#CCCCCC' } })",
+        "// rounded callout box\nconst preset = controller.shapes.presets('rect')[0]\ncontroller.shapes.create({ slideId, element: { ...preset, left:150, top:160, width:700, height:160, fill:'#EBF3FA', outline:{ color:'#2E75B6', width:2, style:'solid' } } })"
+      ],
+      "tips": ["For a filled background band, place a wide low-height shape behind text with a lower z-order."],
+      "related": ["shapes.presets", "shapes.setFill", "shapes.setOutline", "shapes.setText"]
+    },
+    "shapes.presets": {
+      "summary": "List preset shapes (path + viewBox) grouped by category. Pass a category key to filter.",
+      "examples": ["controller.shapes.presets() // all categories", "controller.shapes.presets('rect')"],
+      "related": ["shapes.create"]
+    },
+    "charts.create": {
+      "summary": "Create a chart element with type + data (labels, legends, series).",
+      "details": "One chart per slide. Provide labels (category axis), legends (series names) and series (arrays of numbers). State the takeaway in an adjacent text element rather than relying on the chart alone.",
+      "params": [
+        { "name": "slideId", "type": "string", "required": false, "description": "Target slide." },
+        { "name": "chartType", "type": "ChartType", "required": false, "description": "bar, column, line, pie, ring, area, radar, scatter." },
+        { "name": "data", "type": "ChartData", "required": false, "description": "{ labels: string[], legends: string[], series: number[][] }." }
+      ],
+      "examples": [
+        "controller.charts.create({ slideId, chartType:'bar', data:{ labels:['Q1','Q2','Q3','Q4'], legends:['Effect %'], series:[[28,22,15,8]] }, element:{ left:40, top:130, width:540, height:360, rotate:0 } })"
+      ],
+      "tips": ["Put the interpretive text on the right (~520px) and the chart on the left (~40px)."],
+      "related": ["charts.setData", "charts.setType", "charts.setOptions"]
+    },
+    "tables.create": {
+      "summary": "Create a table with rows x columns of cells.",
+      "details": "Supply data as a 2D array of cells. Edit cells with tables.setCell, style with tables.setCellStyle, and grow/shrink with insert/delete row/column.",
+      "examples": [
+        "controller.tables.create({ slideId, element:{ left:40, top:140, width:920, height:300, rotate:0, colWidths:[0.5,0.5], data:[[{ text:'Metric' },{ text:'Value' }],[{ text:'N' },{ text:'2,400' }]] } })"
+      ],
+      "related": ["tables.setCell", "tables.setCellStyle", "tables.insertRow"]
+    },
+    "animations.create": {
+      "summary": "Add an animation to an element on a slide. Read animations.catalog for valid effect keys.",
+      "details": "type is 'in' (entrance), 'out' (exit) or 'attention' (emphasis). effect must be a key from animations.catalog. trigger is 'click', 'meantime' or 'auto'.",
+      "examples": [
+        "const cat = controller.animations.catalog()",
+        "controller.animations.create(slideId, { elId: elementId, type:'in', effect:'fadeIn', trigger:'click', duration:600 })"
+      ],
+      "related": ["animations.catalog", "animations.reorder", "animations.setTrigger"]
+    },
+    "executeBatch": {
+      "summary": "Run several commands as one atomic, single-undo step. Prefer this when one instruction expands to many edits.",
+      "details": "Atomic by default: any failure rolls back the whole batch. Pass { atomic:false } to keep successful child changes. Use deterministic ids so a failed child can be located.",
+      "examples": [
+        "await controller.executeBatch([\n  { type:'slides.create', payload:{ slide:{ id:'s1', background:{ type:'solid', color:'#fff' } }, select:true } },\n  { type:'text.create', payload:{ slideId:'s1', markdown:'# Title', element:{ left:40, top:60, width:920, height:90 } } }\n], { atomic:true })"
+      ],
+      "related": ["execute", "history.commit"]
+    }
+  },
+  "guides": [
+    {
+      "id": "getting-started",
+      "title": "How to build a deck",
+      "summary": "The read -> theme -> per-slide batch -> review loop the bridge is designed for.",
+      "body": [
+        "1. Read the current deck (controller.export.json() or deck.get) and the design tokens (controller.docs().designSystem).",
+        "2. Set the deck theme once with deck.setTheme so element defaults inherit your palette and font.",
+        "3. For each slide: create the slide, capture result.data.id, then add its elements in a single executeBatch so the slide is one undo step.",
+        "4. Place elements in canvas px (default 1000 x 562.5). Keep a 40px margin and a clear visual hierarchy: title row, content area, footer/citation.",
+        "5. Author body text in Markdown (text.create({ markdown }) / text.setMarkdown) or HTML; use inline font-size styles in HTML when you need exact sizes.",
+        "6. Review and iterate. Use meta.dryRun to validate a risky payload before applying it."
+      ]
+    },
+    {
+      "id": "coordinate-system",
+      "title": "Coordinate system & sizing",
+      "summary": "Everything is absolute pixels on a 1000 x 562.5 canvas.",
+      "body": [
+        "Canvas = viewport.size wide by viewport.size * viewport.ratio tall. Default 16:9 -> 1000 x 562.5 px. Origin is top-left.",
+        "Element box: left, top, width, height (px) and rotate (clockwise degrees about the center). Lines use start/end points instead.",
+        "Safe area: keep left/top >= 40 and right/bottom edges <= 960 / 522 on the default canvas.",
+        "Porting an inches layout (e.g. pptxgenjs 10in x 5.625in): multiply inches by 100. 0.5in margin -> 50px; a 5.4in-wide chart -> 540px.",
+        "Text size is set by inline HTML styles inside content, e.g. <span style=\"font-size:40px\">. defaultColor/defaultFontName are only fallbacks for unsized runs."
+      ]
+    },
+    {
+      "id": "title-slide",
+      "title": "Title slide",
+      "summary": "Dark background, large statement title, subtitle, author/affiliation, accent rule.",
+      "body": [
+        "Slide: background solid primary (#1F4E79).",
+        "Title text: left 70, top 150, width 860, height 180. content uses ~64px bold white, framed as a statement or question.",
+        "Subtitle text: left 70, top 330, width 860, height 40. ~18px in a light tint (#A0BBDD).",
+        "Author/affiliation text: left 70, top 380, width 860, height 60. ~16px (#CADCFC).",
+        "Accent rule: a shape at left 70, top 360, width 200, height 4, fill accent (#2E75B6).",
+        "Avoid: clip art, logos (unless requested), decorative images."
+      ]
+    },
+    {
+      "id": "section-divider",
+      "title": "Section divider",
+      "summary": "Orient the audience at the start of each major part of a long deck.",
+      "body": [
+        "Slide: dark background (a slightly lighter navy, e.g. #1A3A5C, for variety).",
+        "Eyebrow text: 'Part 2' at left 40, top 180, ~18px (#7BAFD4).",
+        "Section title text: left 40, top 220, width 920, ~40px bold white.",
+        "Accent rule: shape left 40, top 330, width 250, height 6, fill accent."
+      ]
+    },
+    {
+      "id": "content-bullets",
+      "title": "Content slide (action title + bullets)",
+      "summary": "An action title that states the takeaway, a thin divider, and concise body bullets.",
+      "body": [
+        "Action title text: left 40, top 30, width 920, height 90. ~40px bold primary. Write a full sentence that states the point, not just a topic.",
+        "Divider: shape left 40, top 120, width 920, height 3, fill rule (#CCCCCC).",
+        "Body text: left 40, top 140, width 920, height 360. Author with Markdown bullets (text.create({ markdown })). Keep <= ~40 words; body >= 24px.",
+        "Optional citation: text left 40, top 520, ~14px muted."
+      ]
+    },
+    {
+      "id": "two-column",
+      "title": "Two-column layout",
+      "summary": "A header per column with aligned body blocks; good for design vs. outcomes.",
+      "body": [
+        "Left column header: text left 40, top 130, width 440, ~30px accent bold.",
+        "Left body: text left 40, top 175, width 440, height 300, Markdown bullets.",
+        "Right column header: text left 520, top 130, width 440, ~30px accent bold.",
+        "Right body: text left 520, top 175, width 440, height 300, Markdown bullets.",
+        "Keep the same top for both columns so headers align."
+      ]
+    },
+    {
+      "id": "results-with-chart",
+      "title": "Results slide (chart + interpretation)",
+      "summary": "One exhibit, one finding. Chart left, interpretive text right, takeaway in the title.",
+      "body": [
+        "Action title text: left 40, top 30, width 920, height 90. State the result (e.g. 'Treated group earns 18% more').",
+        "Divider: shape left 40, top 120, width 920, height 3, fill rule.",
+        "Chart: charts.create at left 40, top 135, width 540, height 360 with labels + one series.",
+        "Interpretation header: text left 620, top 135, width 330, ~30px accent bold.",
+        "Interpretation bullets: text left 620, top 180, width 330, height 250, Markdown.",
+        "Source citation: text left 40, top 520, ~14px muted.",
+        "Annotate the single key number directly with a small highlight shape (#FFF2CC) + label over the chart."
+      ]
+    },
+    {
+      "id": "conclusions",
+      "title": "Conclusions slide",
+      "summary": "Mirror the title slide; numbered takeaways that stay on screen during Q&A.",
+      "body": [
+        "Slide: dark background primary (matches the title slide for a 'sandwich' structure).",
+        "Eyebrow text: 'Conclusions' at left 40, top 25, ~20px light tint.",
+        "Accent rule: shape left 40, top 70, width 920, height 4, fill accent.",
+        "Takeaways text: left 40, top 90, width 920, height 350. Numbered Markdown list, ~26px white, with the lead clause of each point bold.",
+        "Contact/link text: left 40, top 480, ~14px light tint."
+      ]
+    },
+    {
+      "id": "shapes-howto",
+      "title": "Working with shapes",
+      "summary": "How to build dividers, rules, callout boxes and color blocks from presets or raw paths.",
+      "body": [
+        "Start from a preset: const presets = controller.shapes.presets('rect'); then spread one into shapes.create and override geometry/fill.",
+        "Raw path: provide viewBox (e.g. [200,200]) and an SVG path in that box; PPTist scales it to width/height. A filled rectangle path is 'M 0 0 L 200 0 L 200 200 L 0 200 Z'.",
+        "Accent rule / divider: a wide, low-height filled rectangle (height 3-6px) in the rule or accent color.",
+        "Callout box: a rounded-rect preset with a light fill (#EBF3FA or #FFF2CC) and a 1.5-2px outline in accent; add centered inner text via element.text or shapes.setText.",
+        "Background band: a full-width shape with a low z-order (send it to back with elements.sendToBack) sitting behind text.",
+        "Use opacity and gradient (shapes.setGradient) sparingly for depth; keep contrast high enough to read body text."
+      ]
+    },
+    {
+      "id": "markdown",
+      "title": "Authoring text in Markdown",
+      "summary": "The bridge converts Markdown to the HTML PPTist stores. Use it for fast, readable copy.",
+      "body": [
+        "Flavor: markdown-it + markdown-it-texmath (KaTeX).",
+        "Use text.create({ markdown }) / text.setMarkdown(elementId, markdown), or await controller.markdownToHtml(md)."
+      ]
+    },
+    {
+      "id": "quality-checklist",
+      "title": "Pre-delivery checklist",
+      "summary": "Quick checks before declaring a deck done.",
+      "body": [
+        "Every content slide has an action title that states the takeaway (a full sentence, not a topic).",
+        "Reading the titles alone tells the complete argument.",
+        "Results slides show one exhibit each, with the key number annotated.",
+        "Body text >= 24px; no slide has more than ~40 words of body text.",
+        "Borrowed figures/data carry an in-slide citation.",
+        "A 40px margin is respected on every edge; nothing is clipped off-canvas.",
+        "Title and conclusions slides share the dark treatment (sandwich structure)."
+      ]
+    }
+  ]
+}

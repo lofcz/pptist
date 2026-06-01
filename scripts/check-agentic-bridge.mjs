@@ -101,6 +101,7 @@ const expectedCommands = [
   'text.delete',
   'text.getContent',
   'text.setContent',
+  'text.setMarkdown',
   'text.updateContent',
   'text.clearContent',
   'text.setStyle',

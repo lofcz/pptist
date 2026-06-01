@@ -1,5 +1,5 @@
 import type { Locales } from '@/i18n/locale'
-import type { Slide, SlideTheme } from '@/types/slides'
+import type { Slide, SlideTheme, SlideTemplate } from '@/types/slides'
 import type { PptistAgentApi, PptistSlideReference } from './agentic/types'
 
 /** Serializable deck passed between sciobot-next and PPTist. */
@@ -21,6 +21,12 @@ export interface PptistMountOptions {
    * Dev: `http://127.0.0.1:5173` while PPTist dev server runs, or sciobot proxy path.
    */
   assetBaseUrl?: string
+  /**
+   * Style/template catalog shown in the design picker. Each entry's `id` maps to
+   * a `mocks/<id>.json` payload resolved against `assetBaseUrl`. Omit to use the
+   * bundled defaults (which fall back to the demo deck when a file is missing).
+   */
+  templates?: SlideTemplate[]
   /** Fired when title, slides, or theme change (debounced). */
   onChange?: (document: PptistDocument) => void
   onChangeDebounceMs?: number

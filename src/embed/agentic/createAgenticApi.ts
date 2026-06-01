@@ -78,6 +78,8 @@ import {
   toIdList,
   updateLineElement,
 } from './helpers'
+import { markdownToHtml } from '@/utils/markdown'
+import { AGENTIC_DOCS, describeAgenticCommand, listAgenticDomains } from './manifestDocs'
 import type {
   PptistAgentApi,
   PptistAgentCapability,
@@ -2091,12 +2093,17 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     const element = findElement(stores.slides.slides, payload.elementId, payload.slideId, stores.slides.slideIndex).element
     return element.type === 'text' ? clonePlain(element) : null
   })
-  register('text.create', (payload: { slideId?: string; index?: number; content?: string; element?: Partial<PPTTextElement>; select?: boolean } = {}) => {
+  register('text.create', async (payload: { slideId?: string; index?: number; content?: string; markdown?: string; element?: Partial<PPTTextElement>; select?: boolean } = {}) => {
     const { slide, index: slideIndex } = ensureSlide(stores.slides.slides, payload.slideId, stores.slides.slideIndex)
+    // `markdown` is a convenience input — converted to the HTML the model stores.
+    // Explicit `content` (HTML) still wins when both are provided.
+    const resolvedContent = payload.element?.content
+      ?? payload.content
+      ?? (payload.markdown != null ? await markdownToHtml(payload.markdown) : '')
     const element = normalizeElement({
       ...payload.element,
       type: 'text',
-      content: payload.element?.content ?? payload.content ?? '',
+      content: resolvedContent,
       defaultFontName: payload.element?.defaultFontName ?? stores.slides.theme.fontName ?? '',
       defaultColor: payload.element?.defaultColor ?? stores.slides.theme.fontColor ?? '#000000',
     }) as PPTTextElement
@@ -2135,6 +2142,9 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
   })
   register('text.setContent', (payload: { elementId: string; slideId?: string; content: string }) => {
     return updateTextElement(payload.elementId, payload.slideId, { content: payload.content })
+  })
+  register('text.setMarkdown', async (payload: { elementId: string; slideId?: string; markdown: string }) => {
+    return updateTextElement(payload.elementId, payload.slideId, { content: await markdownToHtml(payload.markdown) })
   })
   register('text.updateContent', (payload: { elementId: string; slideId?: string; content?: string; prepend?: string; append?: string }) => {
     const { element } = getTextElement(payload.elementId, payload.slideId)
@@ -3142,6 +3152,17 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
         listeners.delete(listener)
       }
     },
+    // --- Introspection & authoring helpers -------------------------------
+    // Authoring/introspection helpers: Markdown conversion lazy-loads math
+    // support only when math delimiters are present.
+    markdownToHtml: markdown => markdownToHtml(markdown),
+    docs: () => clonePlain(AGENTIC_DOCS),
+    domains: () => listAgenticDomains(registry),
+    describe: commandType => describeAgenticCommand(registry, commandType),
+    guides: guideId => {
+      if (!guideId) return clonePlain(AGENTIC_DOCS.guides)
+      return clonePlain(AGENTIC_DOCS.guides.find(guide => guide.id === guideId) ?? null)
+    },
     deck: {
       get: () => documentFromStores(stores),
       set: (document, meta) => command('deck.set', document, meta),
@@ -3235,6 +3256,7 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
         return element.type === 'text' ? element.content : null
       },
       setContent: (elementId, content, meta) => command('text.setContent', { elementId, slideId: meta?.slideId, content }, meta),
+      setMarkdown: (elementId, markdown, meta) => command('text.setMarkdown', { elementId, slideId: meta?.slideId, markdown }, meta),
       updateContent: (elementId, update, meta) => command('text.updateContent', { elementId, slideId: meta?.slideId, ...update }, meta),
       clearContent: (elementId, meta) => command('text.clearContent', { elementId, slideId: meta?.slideId }, meta),
       setStyle: (elementId, style, meta) => command('text.setStyle', { elementId, slideId: meta?.slideId, style }, meta),

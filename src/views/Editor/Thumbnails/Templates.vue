@@ -104,19 +104,30 @@ const insertTemplates = ({ slides, theme }: { slides: Slide[], theme: Partial<Sl
   emit('selectAll', { slides, theme })
 }
 
+// Mock data ships in two shapes: a bare `Slide[]` (e.g. `slides.json`) or a
+// `{ slides, theme }` template payload. Normalize both.
+const applyCatalogData = (ret: any) => {
+  const data = Array.isArray(ret) ? { slides: ret as Slide[] } : (ret ?? {})
+  slides.value = Array.isArray(data.slides) ? data.slides : []
+  if (data.theme) theme.value = data.theme
+}
+
 const changeCatalog = (id: string) => {
   loading.value = true
   activeCatalog.value = id
-  api.getMockData(activeCatalog.value).then(ret => {
-    slides.value = ret.slides
-    if (ret.theme) theme.value = ret.theme
-
-    loading.value = false
-
-    if (listRef.value) listRef.value.scrollTo(0, 0) 
-  }).catch(() => {
-    loading.value = false
-  })
+  api.getMockData(id)
+    // Fall back to the always-bundled demo deck when a per-style template file
+    // hasn't been provisioned at the host asset base, so the picker is never empty.
+    .catch(() => (id === 'slides' ? Promise.reject() : api.getMockData('slides')))
+    .then(ret => {
+      applyCatalogData(ret)
+      loading.value = false
+      if (listRef.value) listRef.value.scrollTo(0, 0)
+    })
+    .catch(() => {
+      slides.value = []
+      loading.value = false
+    })
 }
 
 onMounted(() => {

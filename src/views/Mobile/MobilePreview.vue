@@ -13,12 +13,15 @@
       <div class="menu-item" @click="changeMode('editor')"><i-icon-park-outline:edit class="icon" /> {{ LL.common.edit() }}</div>
       <Divider type="vertical" style="height: 30px;" />
       <div class="menu-item" @click="changeMode('player')"><i-icon-park-outline:full-screen-play class="icon" /> {{ LL.mobile.preview.play() }}</div>
-      <Divider type="vertical" style="height: 30px;" />
-      <div class="menu-item ai" @click="openAIPPTDialog()">{{ LL.mobile.preview.aippt() }}</div>
+      <template v-if="EXTRAS_ENABLED">
+        <Divider type="vertical" style="height: 30px;" />
+        <div class="menu-item ai" @click="openAIPPTDialog()">{{ LL.mobile.preview.aippt() }}</div>
+      </template>
     </div>
   </div>
 
   <Modal
+    v-if="EXTRAS_ENABLED"
     :visible="!!showAIPPTDialog" 
     :closeOnClickMask="false"
     :closeOnEsc="false"
@@ -43,6 +46,7 @@ import Divider from '@/components/Divider.vue'
 import Modal from '@/components/Modal.vue'
 import AIPPTDialog from '../Editor/AIPPTDialog.vue'
 import { useI18nContext } from '@/i18n/useI18nContext'
+import { EXTRAS_ENABLED } from '@/configs/featureFlags'
 
 const { LL } = useI18nContext()
 

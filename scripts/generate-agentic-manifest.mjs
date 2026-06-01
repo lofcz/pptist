@@ -20,10 +20,14 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const SRC = join(root, 'src/embed/agentic/createAgenticApi.ts')
 const AGENTIC_DTS = join(root, 'dist/types/embed/agentic/types.d.ts')
 const SLIDES_DTS = join(root, 'dist/types/types/slides.d.ts')
+const DOCS = join(root, 'src/embed/agentic/docs.json')
 const PKG = join(root, 'package.json')
 const OUT = join(root, 'dist/embed/agentic-manifest.json')
 
-const SCHEMA_VERSION = 1
+// v2 adds human-authored docs (designSystem, per-domain/command notes, guides)
+// alongside the machine schema so server-side skill catalogs can render a
+// hierarchical, example-rich tool reference without importing PPTist.
+const SCHEMA_VERSION = 2
 
 function read(path) {
   return readFileSync(path, 'utf8')
@@ -361,6 +365,12 @@ function main() {
   for (const [name, text] of declAgentic) { declIndex.set(name, text); sourceOf.set(name, 'helper') }
   for (const [name, text] of declModel) { declIndex.set(name, text); sourceOf.set(name, 'model') }
 
+  // Human-authored documentation (single source shared with the runtime
+  // `controller.describe()` / `controller.guides()` helpers).
+  const authored = existsSync(DOCS) ? JSON.parse(read(DOCS)) : { domains: {}, commands: {}, guides: [], designSystem: undefined }
+  const commandDocs = authored.commands ?? {}
+  const domainDocs = authored.domains ?? {}
+
   const commands = []
   for (const reg of registers) {
     const payload = reg.payload ?? payloadMap.get(reg.name) ?? 'unknown'
@@ -372,6 +382,8 @@ function main() {
       returns,
     }
     if (reg.optional) entry.optional = true
+    const doc = commandDocs[reg.name]
+    if (doc) entry.doc = doc
     commands.push(entry)
   }
 
@@ -401,8 +413,13 @@ function main() {
   const domainSeen = new Map()
   for (const c of commands) {
     if (!domainSeen.has(c.domain)) {
-      domainSeen.set(c.domain, { id: c.domain, commandCount: 0 })
-      domains.push(domainSeen.get(c.domain))
+      const doc = domainDocs[c.domain]
+      const entry = { id: c.domain, commandCount: 0 }
+      if (doc?.title) entry.title = doc.title
+      if (doc?.summary) entry.summary = doc.summary
+      if (doc?.whenToUse) entry.whenToUse = doc.whenToUse
+      domainSeen.set(c.domain, entry)
+      domains.push(entry)
     }
     domainSeen.get(c.domain).commandCount++
   }
@@ -412,17 +429,22 @@ function main() {
     package: pkg.name,
     packageVersion: pkg.version,
     generatedAt: new Date().toISOString(),
+    summary: authored.summary,
     commandCount: commands.length,
+    designSystem: authored.designSystem,
     domains,
     commands,
+    guides: authored.guides ?? [],
     helperTypes,
     modelTypes,
   }
 
   mkdirSync(dirname(OUT), { recursive: true })
   writeFileSync(OUT, `${JSON.stringify(manifest, null, 2)}\n`)
+  const documentedCommands = commands.filter(c => c.doc).length
   console.log(
-    `Generated agentic-manifest.json: ${commands.length} commands, ${domains.length} domains, `
+    `Generated agentic-manifest.json: ${commands.length} commands (${documentedCommands} documented), ${domains.length} domains, `
+    + `${(manifest.guides ?? []).length} guides, `
     + `${Object.keys(helperTypes).length} helper types, ${Object.keys(modelTypes).length} model types.`,
   )
 }

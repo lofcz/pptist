@@ -2,18 +2,19 @@ import { defineStore } from 'pinia'
 import { omit } from 'lodash'
 import type { Slide, SlideTheme, PPTElement, PPTAnimation, SlideTemplate } from '@/types/slides'
 import { getLL } from '@/i18n/getLL'
+import { resolvePptistAsset } from '@/utils/assetBase'
 
 export function buildDefaultTemplates(): SlideTemplate[] {
   const T = getLL().editor.templates
   return [
-    { name: T.template1.name(), id: 'template_1', cover: './imgs/template_1.webp', origin: T.originOfficial() },
-    { name: T.template2.name(), id: 'template_2', cover: './imgs/template_2.webp', origin: T.originOfficial() },
-    { name: T.template3.name(), id: 'template_3', cover: './imgs/template_3.webp', origin: T.originOfficial() },
-    { name: T.template4.name(), id: 'template_4', cover: './imgs/template_4.webp', origin: T.originOfficial() },
-    { name: T.template5.name(), id: 'template_5', cover: './imgs/template_5.webp', origin: T.originCommunityRefined() },
-    { name: T.template6.name(), id: 'template_6', cover: './imgs/template_6.webp', origin: T.originCommunityRefined() },
-    { name: T.template7.name(), id: 'template_7', cover: './imgs/template_7.webp', origin: T.originCommunityRefined() },
-    { name: T.template8.name(), id: 'template_8', cover: './imgs/template_8.webp', origin: T.originCommunityRefined() },
+    { name: T.template1.name(), id: 'template_1', cover: resolvePptistAsset('imgs/template_1.webp'), origin: T.originOfficial() },
+    { name: T.template2.name(), id: 'template_2', cover: resolvePptistAsset('imgs/template_2.webp'), origin: T.originOfficial() },
+    { name: T.template3.name(), id: 'template_3', cover: resolvePptistAsset('imgs/template_3.webp'), origin: T.originOfficial() },
+    { name: T.template4.name(), id: 'template_4', cover: resolvePptistAsset('imgs/template_4.webp'), origin: T.originOfficial() },
+    { name: T.template5.name(), id: 'template_5', cover: resolvePptistAsset('imgs/template_5.webp'), origin: T.originCommunityRefined() },
+    { name: T.template6.name(), id: 'template_6', cover: resolvePptistAsset('imgs/template_6.webp'), origin: T.originCommunityRefined() },
+    { name: T.template7.name(), id: 'template_7', cover: resolvePptistAsset('imgs/template_7.webp'), origin: T.originCommunityRefined() },
+    { name: T.template8.name(), id: 'template_8', cover: resolvePptistAsset('imgs/template_8.webp'), origin: T.originCommunityRefined() },
   ]
 }
 
