@@ -9,10 +9,15 @@
         @click="updateTurningMode(item.value)"
       >
         <div :class="['animation-block', item.value]">P</div>
-        <div class="animation-text">{{item.label}}</div>
+        <div class="animation-text">
+          <FitText :text="item.label" :max-font-size="12" :min-font-size="9" />
+        </div>
       </div>
     </div>
-    <Button style="width: 100%;" @click="applyAllSlide()"><i-icon-park-outline:check /> {{ LL.editor.slideAnimation.applyToAll() }}</Button>
+    <Button style="width: 100%;" @click="applyAllSlide()">
+      <i-icon-park-outline:check />
+      <FitText :text="LL.editor.slideAnimation.applyToAll()" :max-font-size="13" :min-font-size="10" :letter-spacing="1" />
+    </Button>
   </div>
 </template>
 
@@ -24,6 +29,7 @@ import type { TurningMode } from '@/types/slides'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 import message from '@/utils/message'
 import Button from '@/components/Button.vue'
+import FitText from '@/components/FitText.vue'
 import { useI18nContext } from '@/i18n/useI18nContext'
 
 const { LL } = useI18nContext()
@@ -185,7 +191,10 @@ const applyAllSlide = () => {
   }
 }
 .animation-text {
-  font-size: 12px;
+  width: 100%;
+  height: 16px;
+  padding: 0 6px;
+  box-sizing: border-box;
   color: #333;
   text-align: center;
 }

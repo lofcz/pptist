@@ -34,7 +34,15 @@
                         `${ANIMATION_CLASS_PREFIX}fast`,
                         hoverPreviewAnimation === item.value && `${ANIMATION_CLASS_PREFIX}${item.value}`,
                       ]"
-                    >{{item.name}}</div>
+                    >
+                      <FitText
+                        :text="item.name"
+                        :max-font-size="12"
+                        :min-font-size="8"
+                        :max-lines="3"
+                        :line-height="1.15"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -43,7 +51,8 @@
           </template>
         </template>
         <Button class="element-animation-btn" @click="handleAnimationId = ''">
-          <i-icon-park-outline:effects /> {{ LL.editor.elementAnimation.addAnimation() }}
+          <i-icon-park-outline:effects />
+          <FitText :text="LL.editor.elementAnimation.addAnimation()" :max-font-size="13" :min-font-size="10" :letter-spacing="1" />
         </Button>
       </Popover>
     </div>
@@ -139,6 +148,7 @@ import Draggable from 'vuedraggable'
 import NumberInput from '@/components/NumberInput.vue'
 import Select from '@/components/Select.vue'
 import Popover from '@/components/Popover.vue'
+import FitText from '@/components/FitText.vue'
 import { useI18nContext } from '@/i18n/useI18nContext'
 
 const { LL } = useI18nContext()
@@ -453,13 +463,19 @@ $attentionColor: #e8b76a;
 
   margin-bottom: 5px;
   height: 40px;
-  line-height: 40px;
   text-align: center;
   cursor: pointer;
 }
 .animation-box {
+  width: 100%;
+  height: 100%;
   background-color: $lightGray;
   border-radius: $borderRadius;
+  padding: 4px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .animation-sequence {

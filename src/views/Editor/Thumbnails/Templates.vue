@@ -10,14 +10,12 @@
     </div>
     <div class="content" v-loading="{ state: loading, text: LL.common.loading() }">
       <div class="header">
-        <div class="types">
-          <div class="type" 
-            :class="{ 'active': activeType === item.value }"
-            v-for="item in types"
-            :key="item.value"
-            @click="activeType = item.value"
-          >{{ item.label }}</div>
-        </div>
+        <Tabs
+          class="types"
+          :tabs="types"
+          :value="activeType"
+          @update:value="value => activeType = value"
+        />
         <div class="insert-all" @click="insertTemplates({ slides, theme })">{{ LL.editor.templates.insertAll() }}</div>
       </div>
       <div class="list" ref="listRef">
@@ -48,6 +46,7 @@ import { useI18nContext } from '@/i18n/useI18nContext'
 
 import ThumbnailSlide from '@/views/components/ThumbnailSlide/index.vue'
 import Button from '@/components/Button.vue'
+import Tabs from '@/components/Tabs.vue'
 
 const emit = defineEmits<{
   (event: 'select', payload: Slide): void
@@ -83,12 +82,12 @@ const listRef = ref<HTMLElement | null>(null)
 const types = computed(() => {
   const slideTypes = LL.value.editor.templates.slideTypes
   return [
-    { label: slideTypes.all(), value: 'all' },
-    { label: slideTypes.cover(), value: 'cover' },
-    { label: slideTypes.contents(), value: 'contents' },
-    { label: slideTypes.transition(), value: 'transition' },
-    { label: slideTypes.content(), value: 'content' },
-    { label: slideTypes.end(), value: 'end' },
+    { label: slideTypes.all(), key: 'all' },
+    { label: slideTypes.cover(), key: 'cover' },
+    { label: slideTypes.contents(), key: 'contents' },
+    { label: slideTypes.transition(), key: 'transition' },
+    { label: slideTypes.content(), key: 'content' },
+    { label: slideTypes.end(), key: 'end' },
   ]
 })
 const activeType = ref('all')
@@ -104,11 +103,33 @@ const insertTemplates = ({ slides, theme }: { slides: Slide[], theme: Partial<Sl
   emit('selectAll', { slides, theme })
 }
 
+const localizeTemplateString = (value: string) => {
+  const placeholders = LL.value.editor.templates.placeholderText
+  const replacements: [RegExp, string][] = [
+    [/模板封面标题/g, placeholders.coverTitle()],
+    [/模板封面副标题|模板副标题/g, placeholders.coverSubtitle()],
+    [/目录/g, placeholders.contentsTitle()],
+    [/章节标题/g, placeholders.sectionTitle()],
+    [/标题一|标题 1/g, placeholders.title1()],
+    [/标题二|标题 2/g, placeholders.title2()],
+    [/标题三|标题 3/g, placeholders.title3()],
+    [/标题四|标题 4/g, placeholders.title4()],
+    [/正文内容|正文|内容文本/g, placeholders.bodyText()],
+  ]
+  return replacements.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), value)
+}
+
+const localizeTemplateSlides = (source: Slide[]) => {
+  return JSON.parse(JSON.stringify(source), (_key, value) => {
+    return typeof value === 'string' ? localizeTemplateString(value) : value
+  }) as Slide[]
+}
+
 // Mock data ships in two shapes: a bare `Slide[]` (e.g. `slides.json`) or a
 // `{ slides, theme }` template payload. Normalize both.
 const applyCatalogData = (ret: any) => {
   const data = Array.isArray(ret) ? { slides: ret as Slide[] } : (ret ?? {})
-  slides.value = Array.isArray(data.slides) ? data.slides : []
+  slides.value = Array.isArray(data.slides) ? localizeTemplateSlides(data.slides) : []
   if (data.theme) theme.value = data.theme
 }
 
@@ -187,19 +208,20 @@ onMounted(() => {
   }
 }
 .types {
-  display: flex;
+  flex: 1;
+  min-width: 0;
+  margin-right: 10px;
 
-  .type {
+  :deep(.tabs) {
+    border-bottom: 0;
+  }
+  :deep(.tab) {
     border-radius: $borderRadius;
     padding: 3px 8px;
     font-size: 12px;
-    cursor: pointer;
-
-    & +.type {
-      margin-left: 4px;
-    }
 
     &.active {
+      border-bottom-color: transparent;
       color: $themeColor;
       background-color: rgba($color: $themeColor, $alpha:.05);
       font-weight: 700;
@@ -211,6 +233,7 @@ onMounted(() => {
   }
 }
 .insert-all {
+  flex: 0 0 auto;
   opacity: 0;
   font-size: 12px;
   color: $themeColor;

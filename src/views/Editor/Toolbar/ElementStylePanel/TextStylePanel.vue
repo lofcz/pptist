@@ -14,7 +14,7 @@
           :font-weight="item.preview.fontWeight"
           :font-style="item.preview.fontStyle"
           :text-decoration="item.preview.textDecoration"
-          :max-lines="2"
+          :max-lines="1"
           :line-height="1.15"
         />
       </div>
@@ -156,7 +156,7 @@ const presetStyleDefs = [
   {
     key: 'largeTitle',
     preview: {
-      maxFontSize: 26,
+      maxFontSize: 24,
       fontWeight: 700,
       fontStyle: 'normal',
       textDecoration: 'none',
@@ -171,7 +171,7 @@ const presetStyleDefs = [
   {
     key: 'smallTitle',
     preview: {
-      maxFontSize: 22,
+      maxFontSize: 18,
       fontWeight: 700,
       fontStyle: 'normal',
       textDecoration: 'none',
@@ -186,7 +186,7 @@ const presetStyleDefs = [
   {
     key: 'body',
     preview: {
-      maxFontSize: 20,
+      maxFontSize: 18,
       fontWeight: 400,
       fontStyle: 'normal',
       textDecoration: 'none',
@@ -199,7 +199,7 @@ const presetStyleDefs = [
   {
     key: 'bodySmall',
     preview: {
-      maxFontSize: 18,
+      maxFontSize: 16,
       fontWeight: 400,
       fontStyle: 'normal',
       textDecoration: 'none',
@@ -212,7 +212,7 @@ const presetStyleDefs = [
   {
     key: 'note1',
     preview: {
-      maxFontSize: 16,
+      maxFontSize: 15,
       fontWeight: 400,
       fontStyle: 'italic',
       textDecoration: 'none',
@@ -226,7 +226,7 @@ const presetStyleDefs = [
   {
     key: 'note2',
     preview: {
-      maxFontSize: 16,
+      maxFontSize: 15,
       fontWeight: 400,
       fontStyle: 'normal',
       textDecoration: 'underline',
@@ -342,6 +342,7 @@ const updateInset = (index: number, value: number) => {
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 6px 8px;
   position: relative;
   cursor: pointer;
   transition: all $transitionDelay;

@@ -11,7 +11,15 @@
         <i-icon-park-outline:chart-scatter style="font-size: 24px" v-else-if="chart === 'scatter'" />
         <i-icon-park-outline:radar-chart style="font-size: 23px" v-else-if="chart === 'radar'" />
 
-        <div class="name">{{ CHART_TYPE_MAP[chart] }}</div>
+        <div class="name">
+          <FitText
+            :text="CHART_TYPE_MAP[chart]"
+            :max-font-size="12"
+            :min-font-size="9"
+            :max-lines="2"
+            :line-height="1.15"
+          />
+        </div>
       </div>
     </li>
   </ul>
@@ -20,6 +28,7 @@
 <script lang="ts" setup>
 import type { ChartType } from '@/types/slides'
 import { CHART_TYPE_MAP } from '@/configs/chart'
+import FitText from '@/components/FitText.vue'
 
 const emit = defineEmits<{
   (event: 'select', payload: ChartType): void
@@ -34,7 +43,7 @@ const selectChart = (chart: ChartType) => {
 
 <style lang="scss" scoped>
 .chart-pool {
-  width: 240px;
+  width: 320px;
   margin-bottom: -5px;
 
   @include flex-grid-layout();
@@ -62,7 +71,12 @@ const selectChart = (chart: ChartType) => {
   }
 
   .name {
+    width: 100%;
+    height: 30px;
     margin-top: 4px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    text-align: center;
   }
 }
 </style>

@@ -1,28 +1,36 @@
 <template>
-  <div class="tabs"
-    :class="{
-      'card': card,
-      'space-around': spaceAround,
-      'space-between': spaceBetween,
-    }" 
+  <div
+    ref="scrollRef"
+    class="tabs-scroll"
     :style="tabsStyle || {}"
   >
-    <div 
-      class="tab" 
-      :class="{ 'active': tab.key === value, 'disabled': tab.disabled }"
-      v-for="tab in tabs" 
-      :key="tab.key"
-      :style="{
-        ...(tabStyle || {}),
-        '--color': tab.color,
+    <div class="tabs"
+      :class="{
+        'card': card,
+        'space-around': spaceAround,
+        'space-between': spaceBetween,
       }"
-      @click="!tab.disabled && emit('update:value', tab.key)"
-    >{{tab.label}}</div>
+    >
+      <div
+        class="tab"
+        :class="{ 'active': tab.key === value, 'disabled': tab.disabled }"
+        v-for="tab in tabs"
+        :key="tab.key"
+        :style="{
+          ...(tabStyle || {}),
+          '--color': tab.color,
+        }"
+        @click="!tab.disabled && emit('update:value', tab.key)"
+      >{{tab.label}}</div>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { type CSSProperties } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch, type CSSProperties } from 'vue'
+import { OverlayScrollbars } from 'overlayscrollbars'
+
+import 'overlayscrollbars/overlayscrollbars.css'
 
 interface TabItem {
   key: string
@@ -31,7 +39,7 @@ interface TabItem {
   disabled?: boolean
 }
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   value: string
   tabs: TabItem[]
   card?: boolean
@@ -48,11 +56,46 @@ withDefaults(defineProps<{
 const emit = defineEmits<{
   (event: 'update:value', payload: string): void
 }>()
+
+const scrollRef = ref<HTMLElement | null>(null)
+let scrollbars: ReturnType<typeof OverlayScrollbars> | null = null
+
+const updateScrollbars = () => {
+  void nextTick(() => scrollbars?.update(true))
+}
+
+onMounted(() => {
+  if (!scrollRef.value) return
+  scrollbars = OverlayScrollbars(scrollRef.value, {
+    overflow: {
+      x: 'scroll',
+      y: 'hidden',
+    },
+    scrollbars: {
+      visibility: 'auto',
+      autoHide: 'leave',
+      autoHideDelay: 300,
+    },
+  })
+})
+
+onBeforeUnmount(() => {
+  scrollbars?.destroy()
+  scrollbars = null
+})
+
+watch(() => [props.tabs, props.value, props.tabsStyle, props.tabStyle], updateScrollbars, { deep: true })
 </script>
 
 <style lang="scss" scoped>
+.tabs-scroll {
+  width: 100%;
+  overflow: hidden;
+}
 .tabs {
   display: flex;
+  width: max-content;
+  min-width: 100%;
   user-select: none;
   line-height: 1;
 
@@ -70,6 +113,7 @@ const emit = defineEmits<{
     }
 
     .tab {
+      flex: 0 0 auto;
       text-align: center;
       border-bottom: 2px solid transparent;
       padding: 8px 10px;
@@ -91,7 +135,8 @@ const emit = defineEmits<{
     flex-shrink: 0;
 
     .tab {
-      flex: 1;
+      flex: 1 0 auto;
+      min-width: 96px;
       display: flex;
       justify-content: center;
       align-items: center;

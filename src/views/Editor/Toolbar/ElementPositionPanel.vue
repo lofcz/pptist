@@ -2,12 +2,24 @@
   <div class="element-positopn-panel">
     <div class="title">{{ LL.editor.positionPanel.layer() }}</div>
     <ButtonGroup class="row">
-      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.TOP)"><i-icon-park-outline:send-to-back /> {{ LL.editor.positionPanel.bringToTop() }}</Button>
-      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.BOTTOM)"><i-icon-park-outline:bring-to-front-one /> {{ LL.editor.positionPanel.sendToBack() }}</Button>
+      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.TOP)">
+        <i-icon-park-outline:send-to-back />
+        <FitText :text="LL.editor.positionPanel.bringToTop()" :max-font-size="13" :min-font-size="9" :letter-spacing="1" />
+      </Button>
+      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.BOTTOM)">
+        <i-icon-park-outline:bring-to-front-one />
+        <FitText :text="LL.editor.positionPanel.sendToBack()" :max-font-size="13" :min-font-size="9" :letter-spacing="1" />
+      </Button>
     </ButtonGroup>
     <ButtonGroup class="row">
-      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.UP)"><i-icon-park-outline:BringToFront /> {{ LL.editor.positionPanel.moveUp() }}</Button>
-      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.DOWN)"><i-icon-park-outline:SentToBack /> {{ LL.editor.positionPanel.moveDown() }}</Button>
+      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.UP)">
+        <i-icon-park-outline:BringToFront />
+        <FitText :text="LL.editor.positionPanel.moveUp()" :max-font-size="13" :min-font-size="9" :letter-spacing="1" />
+      </Button>
+      <Button style="flex: 1;" @click="orderElement(handleElement!, ElementOrderCommands.DOWN)">
+        <i-icon-park-outline:SentToBack />
+        <FitText :text="LL.editor.positionPanel.moveDown()" :max-font-size="13" :min-font-size="9" :letter-spacing="1" />
+      </Button>
     </ButtonGroup>
 
     <Divider />
@@ -130,6 +142,7 @@ import Divider from '@/components/Divider.vue'
 import Button from '@/components/Button.vue'
 import ButtonGroup from '@/components/ButtonGroup.vue'
 import NumberInput from '@/components/NumberInput.vue'
+import FitText from '@/components/FitText.vue'
 import { useI18nContext } from '@/i18n/useI18nContext'
 
 const { LL } = useI18nContext()

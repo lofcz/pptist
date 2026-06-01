@@ -3596,6 +3596,44 @@ export type NamespaceEditorTranslation = {
 			 */
 			end: string
 		}
+		placeholderText: {
+			/**
+			 * T​e​m​p​l​a​t​e​ ​c​o​v​e​r​ ​t​i​t​l​e
+			 */
+			coverTitle: string
+			/**
+			 * T​e​m​p​l​a​t​e​ ​c​o​v​e​r​ ​s​u​b​t​i​t​l​e
+			 */
+			coverSubtitle: string
+			/**
+			 * C​o​n​t​e​n​t​s
+			 */
+			contentsTitle: string
+			/**
+			 * S​e​c​t​i​o​n​ ​t​i​t​l​e
+			 */
+			sectionTitle: string
+			/**
+			 * T​i​t​l​e​ ​1
+			 */
+			title1: string
+			/**
+			 * T​i​t​l​e​ ​2
+			 */
+			title2: string
+			/**
+			 * T​i​t​l​e​ ​3
+			 */
+			title3: string
+			/**
+			 * T​i​t​l​e​ ​4
+			 */
+			title4: string
+			/**
+			 * B​o​d​y​ ​t​e​x​t
+			 */
+			bodyText: string
+		}
 		/**
 		 * I​n​s​e​r​t​ ​a​l​l
 		 */
@@ -8035,6 +8073,44 @@ export type TranslationFunctions = {
 				 * End
 				 */
 				end: () => LocalizedString
+			}
+			placeholderText: {
+				/**
+				 * Template cover title
+				 */
+				coverTitle: () => LocalizedString
+				/**
+				 * Template cover subtitle
+				 */
+				coverSubtitle: () => LocalizedString
+				/**
+				 * Contents
+				 */
+				contentsTitle: () => LocalizedString
+				/**
+				 * Section title
+				 */
+				sectionTitle: () => LocalizedString
+				/**
+				 * Title 1
+				 */
+				title1: () => LocalizedString
+				/**
+				 * Title 2
+				 */
+				title2: () => LocalizedString
+				/**
+				 * Title 3
+				 */
+				title3: () => LocalizedString
+				/**
+				 * Title 4
+				 */
+				title4: () => LocalizedString
+				/**
+				 * Body text
+				 */
+				bodyText: () => LocalizedString
 			}
 			/**
 			 * Insert all
