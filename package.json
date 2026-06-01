@@ -126,7 +126,7 @@
     "typescript": "^6.0.3",
     "unplugin-icons": "^22.5.0",
     "unplugin-vue-components": "^30.0.0",
-    "vite": "npm:@voidzero-dev/vite-plus-core@^0.1.23",
+    "vite": "^8.0.14",
     "vite-plus": "^0.1.23",
     "vue-tsc": "^3.3.3"
   }
