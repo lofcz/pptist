@@ -24,8 +24,7 @@ const SLIDES_DTS = join(root, 'dist/types/types/slides.d.ts')
 // shapes (styles + layouts). Their declarations must be indexed so the manifest
 // carries the real bodies instead of dangling type names.
 const AGENTIC_AUX_DTS = [
-  join(root, 'dist/types/embed/agentic/styles.d.ts'),
-  join(root, 'dist/types/embed/agentic/layouts.d.ts'),
+  join(root, 'dist/types/embed/agentic/templates.d.ts'),
 ]
 const DOCS = join(root, 'src/embed/agentic/docs.json')
 const PKG = join(root, 'package.json')

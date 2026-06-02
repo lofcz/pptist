@@ -81,7 +81,7 @@ import { storeToRefs } from 'pinia'
 import { debounce } from 'lodash'
 import tinycolor from 'tinycolor2'
 import { useMainStore, useSlidesStore } from '@/store'
-import type { PPTTextElement } from '@/types/slides'
+import type { PPTElement, PPTTextElement } from '@/types/slides'
 import type { ContextmenuItem } from '@/components/Contextmenu/types'
 import useElementShadow from '@/views/components/element/hooks/useElementShadow'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
@@ -114,6 +114,24 @@ const inset = computed(() => props.elementInfo.inset || [10, 10, 10, 10])
 const computeEmpty = (html: string) => {
   return !html.replace(/<br\s*\/?>/gi, '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim()
 }
+
+/** True when an element carries authored content (ignore template decor images/shapes). */
+function elementHasContent(element: PPTElement): boolean {
+  if (element.type === 'text') return !computeEmpty(element.content)
+  if (element.type === 'shape' && element.text?.content) return !computeEmpty(element.text.content)
+  if (element.type === 'chart') return (element.data?.series?.length ?? 0) > 0
+  if (element.type === 'table') return (element.data?.length ?? 0) > 0
+  if (element.type === 'latex') return !!(element.latex?.trim())
+  if (element.type === 'video') return !!(element.src?.trim())
+  if (element.type === 'audio') return !!(element.src?.trim())
+  return false
+}
+
+const slideHasContent = computed(() => {
+  const slide = currentSlide.value
+  if (!slide?.elements?.length) return false
+  return slide.elements.some(elementHasContent)
+})
 // 由 ProsemirrorEditor 实时（非防抖）回传，确保占位符显隐与正文严格互斥，避免聚焦/失焦时两者同时渲染
 const editorEmpty = ref(computeEmpty(props.elementInfo.content))
 watch(() => props.elementInfo.content, content => {
@@ -123,7 +141,9 @@ watch(() => props.elementInfo.content, content => {
 // 是否为“空占位”元素：仅用于布局（保持设计高度、跳过自动测高），与聚焦状态无关
 const isEmptyPlaceholder = computed(() => !!props.elementInfo.placeholder && editorEmpty.value)
 // 占位浮层是否可见：聚焦时隐藏，避免与编辑器光标/正文重叠
-const showPlaceholder = computed(() => isEmptyPlaceholder.value && !editorFocused.value)
+const showPlaceholder = computed(
+  () => isEmptyPlaceholder.value && !editorFocused.value && !slideHasContent.value,
+)
 const editorFontSize = computed(() => {
   if (props.elementInfo.placeholder) return `${props.elementInfo.placeholderFontSize ?? 20}px`
   return undefined

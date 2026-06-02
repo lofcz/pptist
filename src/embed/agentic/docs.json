@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "summary": "Authoring guidance for the PPTist agentic bridge. The fast, reliable way to build a deck: (1) pick ONE style preset and apply it with deck.applyStyle, then (2) add slides with slides.createFromLayout, filling a few content slots. The engine handles colors, contrast, fonts, sizing and placement for you. Drop down to manual element placement only for bespoke slides. Content is authored as Markdown, plain text, or structured slot values — never hand-written HTML. Pair this with the machine schema (command payload/return types) in the same manifest.",
+  "summary": "Authoring guidance for the PPTist agentic bridge. The fast, reliable way to build a deck: (1) pick ONE built-in presentation template (the same styles as the template picker — template_1 … template_8) with deck.applyTemplate, (2) read templates.slidesCatalog for that template's slide slugs grouped by type (cover, contents, transition, content, end), then (3) insert slides with slides.insertFromTemplate and edit text via text.setMarkdown. Do NOT build decks from blank slides.create or hand-placed elements unless no template slide fits. Content is Markdown or plain text — never hand-written HTML. Pair this with the machine schema (command payload/return types) in the same manifest.",
   "designSystem": {
-    "summary": "PPTist lays elements out in a fixed pixel coordinate space, not inches. Prefer style presets + layouts (deck.applyStyle + slides.createFromLayout) so colors, contrast, fonts and sizing come from a curated, accessible design system instead of being hand-picked. These tokens describe the *fallback* defaults for manual placement.",
+    "summary": "PPTist lays elements out in a fixed pixel coordinate space, not inches. Prefer built-in templates (deck.applyTemplate + slides.insertFromTemplate) so colors, contrast, fonts and layout come from the official template library instead of being hand-picked. These tokens describe the *fallback* defaults for manual placement only.",
     "coordinateSystem": {
       "summary": "The default 16:9 canvas is 1000 x 562.5 px (viewport.size = 1000, viewport.ratio = 0.5625). Origin (0,0) is the top-left corner. Every element has left, top, width, height in px and rotate in degrees.",
       "notes": [
@@ -10,12 +10,12 @@
         "Keep a 40px safe margin from every edge (left/top >= 40, and left+width <= 960, top+height <= 522 on the default canvas).",
         "Coordinates are absolute px, NOT inches/points. To port an inches-based layout, multiply inches by 100 (10in wide deck -> 1000px).",
         "rotate is clockwise degrees about the element center. Lines use start/end points instead of width/height/rotate.",
-        "When you use slides.createFromLayout you do NOT compute coordinates or sizes — the layout places themed elements for you. The notes above only matter for manual element placement.",
+        "When you use slides.insertFromTemplate you do NOT compute coordinates or sizes — the template slide already has designed elements. The notes above only matter for manual element placement.",
         "For manual text, write Markdown or plain text (text.create({ markdown }) / { content } as plain text). The engine stores text as HTML internally; you should not author raw HTML tags yourself (they are escaped and show as literal text). Per-run font sizing is an advanced manual concern — reach for a layout instead."
       ]
     },
     "tokens": {
-      "summary": "The neutral fallback palette/type scale (px) used when no style preset is applied. PREFER applying a curated preset with deck.applyStyle (see styles.catalog) — presets ship contrast-safe role colors (background/surface/title/body/muted/rule/accent), a heading+body font pairing, and a tuned type scale. Override individual tokens with deck.setTheme only when a preset is not enough.",
+      "summary": "The neutral fallback palette/type scale (px) used when no template theme is applied. PREFER deck.applyTemplate (see templates.catalog) — each built-in template ships a full theme and designed slides. Override individual tokens with deck.setTheme only when a template is not enough.",
       "colors": {
         "background": "#FFFFFF",
         "primary": "#1F4E79",
@@ -42,10 +42,9 @@
     }
   },
   "domains": {
-    "styles": { "title": "Styles", "summary": "Curated style presets (palette + fonts + type scale). styles.catalog lists them; deck.applyStyle applies one to the whole deck.", "whenToUse": "FIRST. Pick exactly one preset that matches the audience/tone and apply it before adding any slides. Never hand-pick colors or fonts when a preset fits." },
-    "layouts": { "title": "Layouts", "summary": "Pre-composed slide recipes (title, section, bullets, twoColumn, imageText, bigStat, quote, chart, comparison, closing). layouts.catalog lists them with their content slots; slides.createFromLayout builds one.", "whenToUse": "The default way to add a slide. Choose the layout that fits the content, fill its slots with text/bullets/data, and the engine places themed, contrast-safe elements. Only fall back to manual element placement for bespoke slides a layout can't express." },
-    "deck": { "title": "Deck", "summary": "Whole-document state: title, theme/style, viewport, templates, plus full get/set/patch.", "whenToUse": "Apply a style with deck.applyStyle up front; set the viewport once; use whole-document import/export at persistence boundaries." },
-    "slides": { "title": "Slides", "summary": "Create slides from layouts (slides.createFromLayout) or blank; read, update, delete, duplicate, move, select; set background, transition and speaker remark.", "whenToUse": "Prefer slides.createFromLayout (one call per slide). When building manually, add one slide per idea and reuse the returned slide id for every element." },
+    "templates": { "title": "Templates", "summary": "Built-in presentation templates (template_1 … template_8 — same as the UI template picker). templates.catalog lists them; templates.slidesCatalog lists insertable slide slugs by type; deck.applyTemplate sets the deck theme.", "whenToUse": "FIRST. Pick exactly one template style for the whole deck, apply its theme, then insert slides by slug. Never invent custom slide layouts when a template slide fits." },
+    "deck": { "title": "Deck", "summary": "Whole-document state: title, theme, viewport, templates, plus full get/set/patch.", "whenToUse": "Apply a template theme with deck.applyTemplate up front; set the viewport once; use whole-document import/export at persistence boundaries." },
+    "slides": { "title": "Slides", "summary": "Insert slides from built-in templates (slides.insertFromTemplate); read, update, delete, duplicate, move, select; set background, transition and speaker remark.", "whenToUse": "Prefer slides.insertFromTemplate (one call per slide). After insert, use text.setMarkdown on the returned element ids. Avoid slides.create for deck building." },
     "elements": { "title": "Elements", "summary": "Generic element CRUD plus transform, ordering, grouping, lock/hide, and shared styling (outline, shadow, fill, link).", "whenToUse": "Use the generic create/update when you want one call across element types, or the typed sub-domains (text/shapes/charts/...) for richer helpers." },
     "text": { "title": "Text", "summary": "Text element create/update plus content helpers. Author content as Markdown (text.create({ markdown }) / text.setMarkdown) or plain text.", "whenToUse": "For manual slides only — layouts already place titles, body and captions. Pass Markdown or plain text; do NOT write raw HTML tags (they are escaped and show as literal text). The literal-HTML path (text.setContent / { content }) is reserved for intentionally rendering code-like markup." },
     "richText": { "title": "Rich text", "summary": "Document-model edits to a text element's prose: set content, run styles and paragraph attributes.", "whenToUse": "Use when you need paragraph alignment / inline run styling on an existing text element." },
@@ -68,49 +67,53 @@
     "export": { "title": "Export", "summary": "Serializable JSON snapshot of the deck.", "whenToUse": "Persist/autosave from documentChanged events." }
   },
   "commands": {
-    "styles.catalog": {
-      "summary": "List the available style presets: id, label, description, the heading+body fonts, and a few preview colors.",
-      "details": "Read this first. Each preset is a curated, contrast-safe bundle of role colors (background/surface/title/body/muted/rule/accent), a font pairing, and a type scale. Pick exactly one whose tone fits the audience, then apply it with deck.applyStyle.",
-      "examples": ["const styles = controller.styles.catalog() // -> [{ id:'academic', label:'Academic', ... }, ...]"],
-      "related": ["deck.applyStyle", "layouts.catalog"]
+    "templates.catalog": {
+      "summary": "List built-in presentation templates (template_1 … template_8) with human-readable names — the same catalog as the template picker UI.",
+      "details": "Read this first. Each entry is a full designed theme (e.g. template_1 = Crimson landscape). Pick exactly one whose tone fits the audience, then apply it with deck.applyTemplate before inserting any slides.",
+      "examples": ["const templates = controller.templates.catalog() // -> [{ id:'template_1', name:'Crimson landscape', ... }, ...]"],
+      "related": ["deck.applyTemplate", "templates.slidesCatalog"]
     },
-    "deck.applyStyle": {
-      "summary": "Apply ONE style preset to the whole deck. Sets the theme (background, fonts, accent palette) and records the active style id so layouts inherit it.",
-      "details": "Do this once, up front, before adding slides. After applying, slides.createFromLayout uses the preset's role tokens automatically. Pass applyToSlides:true to also restyle slides you already created.",
+    "deck.applyTemplate": {
+      "summary": "Apply ONE built-in template theme to the whole deck (fonts, colors, background).",
+      "details": "Do this once, up front, before inserting slides. slides.insertFromTemplate also applies the theme automatically when the deck is still empty (default).",
       "params": [
-        { "name": "style", "type": "string", "required": true, "description": "A preset id from styles.catalog (e.g. 'academic', 'minimal', 'bold', 'playful')." },
-        { "name": "applyToSlides", "type": "boolean", "required": false, "description": "Also re-apply fonts/colors to existing slide content." }
+        { "name": "templateId", "type": "string", "required": true, "description": "A built-in id from templates.catalog (e.g. 'template_1' for Crimson landscape)." }
       ],
-      "examples": ["await controller.deck.applyStyle('academic')"],
-      "tips": ["Choose one style and keep it for the whole deck. Do not hand-pick colors or fonts on top of a preset."],
-      "related": ["styles.catalog", "slides.createFromLayout"]
+      "examples": ["await controller.deck.applyTemplate('template_1')"],
+      "tips": ["Keep one template style for the whole deck. Do not hand-pick colors or fonts on top of a template."],
+      "related": ["templates.catalog", "templates.slidesCatalog", "slides.insertFromTemplate"]
     },
-    "layouts.catalog": {
-      "summary": "List the compositional slide layouts with their content slots (name, type, required, description).",
-      "details": "Each layout is a pre-composed, themed recipe. Read the slots to see what content it needs, then call slides.createFromLayout with that layout id and a slots object.",
-      "examples": ["const layouts = controller.layouts.catalog() // -> [{ id:'bullets', slots:[{ name:'title', ... }, { name:'bullets', ... }] }, ...]"],
-      "related": ["slides.createFromLayout", "styles.catalog"]
-    },
-    "slides.createFromLayout": {
-      "summary": "Create a new themed slide from a layout id + content slots. The PREFERRED way to add a slide.",
-      "details": "The engine places contrast-safe, themed elements using the active style preset — you do NOT pick colors, fonts, sizes or coordinates. Fill the layout's slots (see layouts.catalog) with Markdown/plain-text strings, arrays (for bullets), or structured values (chart/comparison data). Do not pass HTML. If a required slot is missing the command fails with a clear message; non-fatal issues (e.g. a missing optional image) come back as warnings.",
+    "templates.slidesCatalog": {
+      "summary": "List insertable slides for a template, grouped by type (cover, contents, transition, content, end) with slug + description.",
+      "details": "Call after choosing a templateId. Each slug (e.g. cover_1, content_2) maps to one designed slide in that template. Pick the slug whose description best matches the slide you need, then call slides.insertFromTemplate.",
       "params": [
-        { "name": "layout", "type": "string", "required": true, "description": "Layout id from layouts.catalog (e.g. 'title', 'bullets', 'twoColumn', 'imageText', 'bigStat', 'quote', 'chart', 'comparison', 'section', 'closing')." },
-        { "name": "slots", "type": "Record<string, unknown>", "required": true, "description": "Content for the layout's slots. Strings are Markdown/plain text; bullets accept string arrays; chart/comparison take labels/series/rows." },
-        { "name": "style", "type": "string", "required": false, "description": "Override the style preset for this slide; defaults to the deck's active style." },
-        { "name": "index", "type": "number", "required": false, "description": "Insert position; appends when omitted." },
-        { "name": "background", "type": "'auto' | 'feature' | 'plain'", "required": false, "description": "Background override; 'auto' uses the layout default (dark for title/section/closing)." }
+        { "name": "templateId", "type": "string", "required": true, "description": "Built-in template id from templates.catalog." }
       ],
       "examples": [
-        "await controller.slides.createFromLayout({ layout:'title', slots:{ eyebrow:'Biology 101', title:'Cellular Respiration', subtitle:'How cells release energy' } })",
-        "await controller.slides.createFromLayout({ layout:'bullets', slots:{ title:'Key stages', bullets:['Glycolysis','Krebs cycle','Electron transport chain'] } })",
-        "await controller.slides.createFromLayout({ layout:'chart', slots:{ title:'ATP yield by stage', chartType:'column', labels:['Glycolysis','Krebs','ETC'], series:[2, 2, 34] } })"
+        "const catalog = await controller.templates.slidesCatalog('template_1')",
+        "// catalog.byType.cover -> [{ slug:'cover_1', description:'...', ... }, ...]"
+      ],
+      "related": ["slides.insertFromTemplate", "templates.catalog"]
+    },
+    "slides.insertFromTemplate": {
+      "summary": "Insert a designed slide from a built-in template by slug. The PREFERRED way to add a slide.",
+      "details": "Clones the template slide (layout, decor, placeholder text boxes) into the deck. You do NOT pick coordinates or sizes. After insert, fill placeholders with text.setMarkdown on the returned elementIds. Do not use slides.create for normal deck building.",
+      "params": [
+        { "name": "templateId", "type": "string", "required": true, "description": "Built-in template id (same as deck.applyTemplate)." },
+        { "name": "slug", "type": "string", "required": true, "description": "Slide slug from templates.slidesCatalog (e.g. 'cover_1', 'contents_1', 'content_3')." },
+        { "name": "index", "type": "number", "required": false, "description": "Insert position; appends when omitted." },
+        { "name": "select", "type": "boolean", "required": false, "description": "Select the new slide after insert (default true)." },
+        { "name": "applyTemplateTheme", "type": "boolean", "required": false, "description": "Apply template theme when deck is empty (default true)." }
+      ],
+      "examples": [
+        "await controller.slides.insertFromTemplate({ templateId:'template_1', slug:'cover_1' })",
+        "await controller.slides.insertFromTemplate({ templateId:'template_1', slug:'content_2', index:2 })"
       ],
       "tips": [
-        "One layout call creates a complete, themed slide. After creating/editing a slide, look at a screenshot and fix any overflow before moving on.",
-        "Choose the layout by content shape: a list -> bullets; two groups -> twoColumn; a visual + text -> imageText; a metric -> bigStat; data -> chart; options -> comparison."
+        "Plan slide flow: cover → contents → content slides → end. Match slug descriptions from slidesCatalog.",
+        "After insert, batch text.setMarkdown calls for each placeholder element id returned."
       ],
-      "related": ["layouts.catalog", "deck.applyStyle", "slides.create"]
+      "related": ["templates.slidesCatalog", "deck.applyTemplate", "text.setMarkdown"]
     },
     "deck.setTheme": {
       "summary": "Replace named theme properties (colors, fonts, background, outline, shadow) for the whole deck.",
@@ -167,7 +170,7 @@
     },
     "elements.create": {
       "summary": "Create any element type on a slide (manual placement). payload.element.type is required.",
-      "details": "Generic creator across all element types, for bespoke slides a layout can't express. Prefer slides.createFromLayout for whole slides, or the typed creators (text.create, shapes.create, charts.create, tables.create) for single elements. Provide left/top/width/height in canvas px and rotate in degrees. For text, pass Markdown via text.create instead of hand-writing HTML here.",
+      "details": "Generic creator across all element types, for bespoke slides a template can't express. Prefer slides.insertFromTemplate for whole slides, or the typed creators (text.create, shapes.create, charts.create, tables.create) for single elements. Provide left/top/width/height in canvas px and rotate in degrees. For text, pass Markdown via text.create instead of hand-writing HTML here.",
       "params": [
         { "name": "slideId", "type": "string", "required": false, "description": "Target slide; defaults to the current slide." },
         { "name": "element", "type": "Partial<PPTElement> & { type }", "required": true, "description": "Element fields; type is mandatory." },
@@ -192,8 +195,8 @@
         "controller.text.create({ slideId, markdown: '**Key finding:** treated group improved 18%', element: { left:520, top:130, width:440, height:300, rotate:0, defaultColor:'#2D2D2D' } })",
         "controller.text.create({ slideId, markdown: '- First point\\n- Second point\\n- Third point', element:{ left:40, top:140, width:920, height:300, rotate:0 } })"
       ],
-      "tips": ["Prefer slides.createFromLayout for whole slides. Markdown flavor: markdown-it + markdown-it-texmath (KaTeX). Write Markdown, not HTML."],
-      "related": ["text.setMarkdown", "text.setContent", "richText.setContent", "slides.createFromLayout"]
+      "tips": ["Prefer slides.insertFromTemplate for whole slides. Markdown flavor: markdown-it + markdown-it-texmath (KaTeX). Write Markdown, not HTML."],
+      "related": ["text.setMarkdown", "text.setContent", "richText.setContent", "slides.insertFromTemplate"]
     },
     "text.setMarkdown": {
       "summary": "Replace a text element's content from a Markdown string (converted to HTML).",
@@ -268,17 +271,17 @@
   },
   "guides": [
     {
-      "id": "styles-and-layouts",
-      "title": "How to build a deck (styles + layouts)",
-      "summary": "The recommended flow: apply one style, then add each slide with a layout. The engine handles design.",
+      "id": "templates-flow",
+      "title": "How to build a deck (built-in templates)",
+      "summary": "The recommended flow: pick one template style, apply its theme, insert slides by slug, then edit text.",
       "body": [
-        "1. Read styles.catalog and pick exactly ONE preset whose tone fits the audience (e.g. 'academic' for lessons, 'minimal' for crisp talks, 'bold' for keynotes, 'playful' for younger groups).",
-        "2. Apply it once: deck.applyStyle('<id>'). This sets the palette, fonts and type scale for the whole deck. Do not hand-pick colors or fonts after this.",
-        "3. Read layouts.catalog to see the available slide recipes and their content slots.",
-        "4. For each slide, call slides.createFromLayout with the layout that matches the content shape and fill its slots: a list -> 'bullets'; two groups -> 'twoColumn'; a visual + explanation -> 'imageText'; a headline metric -> 'bigStat'; a quotation -> 'quote'; data -> 'chart'; options across attributes -> 'comparison'; opener -> 'title'; part break -> 'section'; wrap-up -> 'closing'.",
-        "5. Fill slots with Markdown/plain-text strings and arrays (bullets) or structured data (chart labels/series, comparison rows). Never pass HTML.",
-        "6. After creating or editing a slide, look at a screenshot of it. Check for text overflow, empty/placeholder content, and balance; fix issues before moving to the next slide. Trust the screenshot over your assumptions.",
-        "7. Only drop to manual element placement (slides.create + text/shapes/charts) for a bespoke slide no layout can express."
+        "1. Read templates.catalog and pick exactly ONE template (template_1 … template_8) whose tone fits the audience (e.g. template_1 Crimson landscape for bold keynotes, template_5 Minimal green for crisp lessons).",
+        "2. Apply it once: deck.applyTemplate({ templateId:'template_1' }). This sets the deck theme. Do not hand-pick colors or fonts after this.",
+        "3. Read templates.slidesCatalog({ templateId }) — slides are grouped by type: cover, contents, transition, content, end. Each entry has a slug and description.",
+        "4. For each slide in your outline, call slides.insertFromTemplate({ templateId, slug }) with the slug that best matches (e.g. cover_1 for title, contents_1 for agenda, content_2 for a text+image slide).",
+        "5. Use the returned elementIds: batch text.setMarkdown (or text.update) to replace placeholder copy. Author Markdown/plain text only — never HTML.",
+        "6. After creating or editing a slide, look at the auto-screenshot. Fix overflow and literal markup before moving on.",
+        "7. Only use slides.create + manual elements when no template slide in the catalog fits."
       ]
     },
     {
@@ -290,7 +293,7 @@
         "Do NOT write raw HTML tags (<div>, <span style>, <br>, <b>, ...) into Markdown/plain-text inputs. They are ESCAPED and appear as literal angle-bracket text on the slide. The bridge attaches a warning when it detects this — treat that warning as a must-fix.",
         "Use Markdown syntax for emphasis: **bold**, _italic_, `code`, and - / 1. for lists. Math uses $...$ / $$...$$ (KaTeX).",
         "The only place literal HTML is appropriate is the explicit literal path (text.setContent / element.content) when you intentionally want to render markup — for example, displaying an HTML code snippet as content. Even then, prefer a fenced code block in Markdown when you just want code to look like code.",
-        "If a screenshot shows literal tags or markup characters on a slide, you used the wrong path: re-author the text as Markdown via text.setMarkdown, or rebuild the slide with slides.createFromLayout."
+        "If a screenshot shows literal tags or markup characters on a slide, you used the wrong path: re-author the text as Markdown via text.setMarkdown."
       ]
     },
     {
@@ -298,8 +301,8 @@
       "title": "Manual placement (fallback)",
       "summary": "For bespoke slides a layout can't express: the read -> style -> per-slide batch -> review loop.",
       "body": [
-        "Prefer styles + layouts (see the styles-and-layouts guide). Use manual placement only when no layout fits.",
-        "1. Read the current deck (controller.export.json() or deck.get) and apply a style (deck.applyStyle) so element defaults inherit a coherent palette and font.",
+        "Prefer built-in templates (see the templates-flow guide). Use manual placement only when no template slide fits.",
+        "1. Read the current deck (controller.export.json() or deck.get) and apply a template theme (deck.applyTemplate) so element defaults inherit a coherent palette and font.",
         "2. For each slide: create the slide, capture result.data.id, then add its elements in a single executeBatch so the slide is one undo step.",
         "3. Place elements in canvas px (default 1000 x 562.5). Keep a 40px margin and a clear visual hierarchy: title row, content area, footer/citation.",
         "4. Author body text in Markdown (text.create({ markdown }) / text.setMarkdown), never raw HTML.",

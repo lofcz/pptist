@@ -80,16 +80,14 @@ import {
 } from './helpers'
 import { markdownToHtml } from '@/utils/markdown'
 import {
-  listStylePresets,
-  resolveStylePreset,
-  styleThemePatch,
-} from './styles'
-import type { PptistStyleSummary } from './styles'
-import {
-  buildLayoutSlide,
-  listLayouts,
-} from './layouts'
-import type { PptistLayout, PptistLayoutBackgroundMode } from './layouts'
+  assertBuiltInTemplateId,
+  buildTemplateSlidesCatalog,
+  listTemplateCatalog,
+  loadTemplatePayload,
+  resolveTemplateSlide,
+  templateThemePatch,
+} from './templates'
+import type { PptistTemplateSlidesCatalogResult, PptistTemplateSummary } from './templates'
 import { AGENTIC_DOCS, describeAgenticCommand, listAgenticDomains } from './manifestDocs'
 import type {
   PptistAgentApi,
@@ -1462,8 +1460,8 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     'animations.list',
     'animations.catalog',
     'animations.sequence',
-    'styles.catalog',
-    'layouts.catalog',
+    'templates.catalog',
+    'templates.slidesCatalog',
     'slides.current',
     'slides.read',
     'slides.getTransition',
@@ -1632,19 +1630,26 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     stores.slides.setTheme(mergeDeckTheme(stores.slides.theme, theme))
     return clonePlain(stores.slides.theme)
   })
-  register('deck.applyStyle', (payload: { style: string; applyToSlides?: boolean } = { style: '' }) => {
-    const requested = payload?.style
-    const preset = resolveStylePreset(requested ?? stores.slides.theme.styleId)
-    if (requested && preset.id !== requested) {
-      addWarning(createIssue('UnknownStyle', `Unknown style "${requested}". Applied "${preset.id}" instead — call styles.catalog for valid ids.`, 'payload.style', true))
+  register('deck.applyTemplate', async (payload: { templateId: string } = { templateId: '' }) => {
+    if (!payload?.templateId) {
+      throw new AgenticCommandError('InvalidTemplate', 'templateId is required. Call templates.catalog.', 'payload.templateId')
     }
-    stores.slides.setTheme(mergeDeckTheme(stores.slides.theme, styleThemePatch(preset)))
-    if (payload?.applyToSlides) {
-      applyThemeToSlideContent(stores, stores.slides.theme, { applyToSlides: true })
-    }
-    return { styleId: preset.id, theme: clonePlain(stores.slides.theme) }
+    assertBuiltInTemplateId(payload.templateId)
+    const data = await loadTemplatePayload(payload.templateId)
+    const themePatch = templateThemePatch(data)
+    if (themePatch) stores.slides.setTheme(mergeDeckTheme(stores.slides.theme, themePatch))
+    if (data.width) stores.slides.setViewportSize(data.width)
+    if (data.width && data.height) stores.slides.setViewportRatio(data.height / data.width)
+    return { templateId: payload.templateId, theme: clonePlain(stores.slides.theme) }
   })
-  register('styles.catalog', () => listStylePresets())
+  register('templates.catalog', () => listTemplateCatalog())
+  register('templates.slidesCatalog', async (payload: { templateId: string } = { templateId: '' }) => {
+    if (!payload?.templateId) {
+      throw new AgenticCommandError('InvalidTemplate', 'templateId is required. Call templates.catalog.', 'payload.templateId')
+    }
+    assertBuiltInTemplateId(payload.templateId)
+    return buildTemplateSlidesCatalog(payload.templateId)
+  })
   register('deck.setViewport', (payload: { size?: number; ratio?: number }) => {
     const viewport = normalizeDocumentViewport(cloneJsonSafePayload(payload, 'payload'), 'payload')
     applyViewport(stores, viewport)
@@ -1657,8 +1662,6 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     stores.slides.setTemplates(templates)
     return clonePlain(stores.slides.templates)
   })
-  register('layouts.catalog', () => listLayouts())
-
   register('slides.list', () => clonePlain(stores.slides.slides))
   register('slides.get', (payload: SlideSelectorPayload = {}) => {
     const found = readSlide(stores, payload)
@@ -1682,20 +1685,23 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     if (payload.select !== false) selectSlide(stores, index)
     return clonePlain(slide)
   })
-  register('slides.createFromLayout', async (payload: { layout: string; slots?: Record<string, unknown>; style?: string; index?: number; select?: boolean; background?: PptistLayoutBackgroundMode } = { layout: '' }) => {
-    if (!payload?.layout) throw new AgenticCommandError('InvalidLayout', 'A layout id is required. Call layouts.catalog to list layouts.', 'payload.layout')
-    warnLiteralHtmlInSlots(payload.slots)
-    const preset = resolveStylePreset(payload.style ?? stores.slides.theme.styleId)
-    const viewport = { width: stores.slides.viewportSize, height: stores.slides.viewportSize * stores.slides.viewportRatio }
-    const built = buildLayoutSlide(payload.layout, payload.slots ?? {}, preset, viewport, payload.background ?? 'auto')
-    for (const warning of built.warnings) addWarning(createIssue('LayoutWarning', warning, 'payload.slots', true))
-    const slide = normalizeSlideForInsert(built.slide)
+  register('slides.insertFromTemplate', async (payload: { templateId: string; slug: string; index?: number; select?: boolean; applyTemplateTheme?: boolean } = { templateId: '', slug: '' }) => {
+    if (!payload?.templateId) throw new AgenticCommandError('InvalidTemplate', 'templateId is required.', 'payload.templateId')
+    if (!payload?.slug) throw new AgenticCommandError('InvalidTemplateSlide', 'slug is required. Call templates.slidesCatalog.', 'payload.slug')
+    assertBuiltInTemplateId(payload.templateId)
+    const data = await loadTemplatePayload(payload.templateId)
+    if (payload.applyTemplateTheme !== false && stores.slides.slides.length === 0) {
+      const themePatch = templateThemePatch(data)
+      if (themePatch) stores.slides.setTheme({ ...stores.slides.theme, ...themePatch })
+    }
+    const { slide: sourceSlide } = resolveTemplateSlide(data, payload.slug)
+    const slide = normalizeSlideForInsert(sourceSlide)
     const slides = clonePlain(stores.slides.slides)
     const index = insertIndex(payload.index, slides.length)
     slides.splice(index, 0, slide)
     stores.slides.setSlides(slides)
     if (payload.select !== false) selectSlide(stores, index)
-    return { slideId: slide.id, elementIds: slide.elements.map(element => element.id), layout: payload.layout, styleId: preset.id }
+    return { slideId: slide.id, templateId: payload.templateId, slug: payload.slug, elementIds: slide.elements.map(element => element.id) }
   })
   register('slides.insert', (payload: PptistInsertSlidesInput) => {
     const sourceSlides = Array.isArray(payload.slides) ? payload.slides : [payload.slides]
@@ -3241,7 +3247,7 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
       setTitle: (title, meta) => command('deck.setTitle', { title }, meta),
       getTheme: () => clonePlain(stores.slides.theme),
       setTheme: (theme, meta) => command('deck.setTheme', { theme }, meta),
-      applyStyle: (style, options, meta) => command('deck.applyStyle', { style, ...(options || {}) }, meta),
+      applyTemplate: (templateId, meta) => command('deck.applyTemplate', { templateId }, meta),
       applyTheme: (theme, options, meta) => command('deck.applyTheme', { theme, options }, meta),
       extractTheme: options => extractThemeFromDeck(stores, options),
       setViewport: (viewport, meta) => command('deck.setViewport', viewport, meta),
@@ -3259,7 +3265,7 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
       },
       read: (slideIdOrIndex, meta) => command('slides.read', { slideIdOrIndex }, meta),
       create: (input, meta) => command('slides.create', input, meta),
-      createFromLayout: (input, meta) => command('slides.createFromLayout', input, meta),
+      insertFromTemplate: (input, meta) => command('slides.insertFromTemplate', input, meta),
       insert: (input, meta) => command('slides.insert', input, meta),
       update: (slideId, patch, meta) => command('slides.update', { slideId, patch }, meta),
       delete: (slideId, meta) => command('slides.delete', { slideId }, meta),
@@ -3277,13 +3283,9 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
       getRemark: slideId => (slideId ? ensureSlide(stores.slides.slides, slideId, stores.slides.slideIndex).slide : stores.slides.currentSlide)?.remark || '',
       setRemark: (slideId, remark, meta) => command('slides.setRemark', { slideId, remark }, meta),
     },
-    styles: {
-      catalog: () => listStylePresets(),
-      apply: (style, options, meta) => command('deck.applyStyle', { style, ...(options || {}) }, meta),
-    },
-    layouts: {
-      catalog: () => listLayouts(),
-      createSlide: (input, meta) => command('slides.createFromLayout', input, meta),
+    templates: {
+      catalog: () => listTemplateCatalog(),
+      slidesCatalog: (templateId, meta) => command('templates.slidesCatalog', { templateId }, meta),
     },
     elements: {
       list: slideId => clonePlain(ensureSlide(stores.slides.slides, slideId, stores.slides.slideIndex).slide.elements),
