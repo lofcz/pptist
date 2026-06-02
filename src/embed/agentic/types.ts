@@ -35,6 +35,8 @@ import type {
   TurningMode,
 } from '@/types/slides'
 import type { PptistDocument } from '../types'
+import type { PptistStyleSummary } from './styles'
+import type { PptistLayout, PptistLayoutBackgroundMode } from './layouts'
 import type {
   PptistAgenticDocs,
   PptistCommandDescription,
@@ -52,6 +54,19 @@ export type {
   PptistDomainDoc,
   PptistDomainSummary,
 } from './manifestDocs'
+
+export type {
+  PptistStylePreset,
+  PptistStylePalette,
+  PptistStyleScale,
+  PptistStyleFonts,
+  PptistStyleSummary,
+} from './styles'
+export type {
+  PptistLayout,
+  PptistLayoutSlotDef,
+  PptistLayoutBackgroundMode,
+} from './layouts'
 
 export type PptistKnownCommandType = keyof PptistCommandPayloadMap
 export type PptistCommandType = PptistKnownCommandType | (string & {})
@@ -629,6 +644,52 @@ export interface PptistElementFlipInput {
   flipV?: boolean
 }
 
+export interface PptistApplyStyleOptions {
+  /** Restyle existing slide content (fonts/colors) to match the preset too. */
+  applyToSlides?: boolean
+}
+
+export interface PptistApplyStyleResult {
+  styleId: string
+  theme: SlideTheme
+}
+
+export interface PptistCreateFromLayoutInput {
+  /** Layout id from `layouts.catalog` (e.g. `bullets`, `twoColumn`, `chart`). */
+  layout: string
+  /** Content slots for the layout. Shapes vary per layout (see its `slots`). */
+  slots?: Record<string, unknown>
+  /** Style preset id to use; defaults to the deck's active style. */
+  style?: string
+  /** Insertion index (defaults to the end). */
+  index?: number
+  /** Select the new slide after creating it (default true). */
+  select?: boolean
+  /** Background override: `auto` (layout default), `feature` (dark), `plain`. */
+  background?: PptistLayoutBackgroundMode
+}
+
+export interface PptistCreateFromLayoutResult {
+  slideId: string
+  elementIds: string[]
+  layout: string
+  styleId: string
+}
+
+export interface PptistAgentStylesApi {
+  /** List the style presets (id, label, fonts, preview colors). */
+  catalog(): PptistStyleSummary[]
+  /** Apply a preset to the deck theme (and optionally restyle existing slides). */
+  apply(style: string, options?: PptistApplyStyleOptions, meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistApplyStyleResult>>
+}
+
+export interface PptistAgentLayoutsApi {
+  /** List the compositional layouts with their content slots. */
+  catalog(): PptistLayout[]
+  /** Create a new themed slide from a layout id + slots. */
+  createSlide(input: PptistCreateFromLayoutInput, meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistCreateFromLayoutResult>>
+}
+
 export interface PptistAgentDeckApi {
   get(): PptistDeckDocument
   set(document: PptistDeckInput, meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistDeckDocument>>
@@ -636,6 +697,7 @@ export interface PptistAgentDeckApi {
   setTitle(title: string, meta?: PptistCommandMeta): Promise<PptistCommandResult<{ title: string }>>
   getTheme(): SlideTheme
   setTheme(theme: PptistSlideThemePatch, meta?: PptistCommandMeta): Promise<PptistCommandResult<SlideTheme>>
+  applyStyle(style: string, options?: PptistApplyStyleOptions, meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistApplyStyleResult>>
   applyTheme(theme: PptistSlideThemePatch, options?: PptistApplyThemeOptions, meta?: PptistCommandMeta): Promise<PptistCommandResult<SlideTheme>>
   extractTheme(options?: PptistThemeExtractionOptions): SlideTheme
   setViewport(viewport: { size?: number; ratio?: number }, meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistBridgeState>>
@@ -648,6 +710,7 @@ export interface PptistAgentSlidesApi {
   current(): Slide | null
   read(slideIdOrIndex?: PptistSlideReference, meta?: PptistCommandMeta): Promise<PptistCommandResult<Slide | null>>
   create(input?: PptistCreateSlideInput, meta?: PptistCommandMeta): Promise<PptistCommandResult<Slide>>
+  createFromLayout(input: PptistCreateFromLayoutInput, meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistCreateFromLayoutResult>>
   insert(input: PptistInsertSlidesInput, meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistInsertSlidesResult>>
   update(slideId: string, patch: Partial<Slide>, meta?: PptistCommandMeta): Promise<PptistCommandResult<Slide>>
   delete(slideId: string | string[], meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistDeleteSlidesResult>>
@@ -988,6 +1051,8 @@ export interface PptistAgentApi {
   guides(guideId?: string): PptistDesignGuide[] | PptistDesignGuide | null
   deck: PptistAgentDeckApi
   slides: PptistAgentSlidesApi
+  styles: PptistAgentStylesApi
+  layouts: PptistAgentLayoutsApi
   elements: PptistAgentElementsApi
   text: PptistAgentTextApi
   shapes: PptistAgentShapesApi
@@ -1019,9 +1084,12 @@ export interface PptistCommandPayloadMap {
   'deck.getTheme': undefined
   'deck.setTheme': { theme: PptistSlideThemePatch | Partial<SlideTheme> }
   'deck.applyTheme': { theme: PptistSlideThemePatch | Partial<SlideTheme>; options?: PptistApplyThemeOptions }
+  'deck.applyStyle': { style: string; applyToSlides?: boolean }
   'deck.extractTheme': { options?: PptistThemeExtractionOptions } | undefined
   'deck.setViewport': { size?: number; ratio?: number }
   'deck.setTemplates': { templates: SlideTemplate[] }
+  'styles.catalog': undefined
+  'layouts.catalog': undefined
   'import.json': PptistDocumentImportPayload
   'import.pptist': PptistDocumentImportPayload
   'import.pptxSafe': PptistDocumentImportPayload
@@ -1031,6 +1099,7 @@ export interface PptistCommandPayloadMap {
   'slides.current': undefined
   'slides.read': { slideIdOrIndex?: PptistSlideReference } | undefined
   'slides.create': PptistCreateSlideInput | undefined
+  'slides.createFromLayout': PptistCreateFromLayoutInput
   'slides.insert': PptistInsertSlidesInput
   'slides.update': { slideId: string; patch: Partial<Slide> }
   'slides.delete': { slideId: string | string[] }
@@ -1180,9 +1249,12 @@ export interface PptistCommandResultDataMap {
   'deck.getTheme': SlideTheme
   'deck.setTheme': SlideTheme
   'deck.applyTheme': SlideTheme
+  'deck.applyStyle': PptistApplyStyleResult
   'deck.extractTheme': SlideTheme
   'deck.setViewport': PptistBridgeState
   'deck.setTemplates': SlideTemplate[]
+  'styles.catalog': PptistStyleSummary[]
+  'layouts.catalog': PptistLayout[]
   'import.json': PptistDeckDocument
   'import.pptist': PptistDeckDocument
   'import.pptxSafe': PptistDeckDocument
@@ -1192,6 +1264,7 @@ export interface PptistCommandResultDataMap {
   'slides.current': Slide | null
   'slides.read': Slide | null
   'slides.create': Slide
+  'slides.createFromLayout': PptistCreateFromLayoutResult
   'slides.insert': PptistInsertSlidesResult
   'slides.update': Slide
   'slides.delete': PptistDeleteSlidesResult

@@ -793,6 +793,13 @@ export interface SlideTheme {
   fontName: string
   outline: PPTElementOutline
   shadow: PPTElementShadow
+  /**
+   * Id of the agentic style preset last applied via `deck.applyStyle`. Additive
+   * and optional: it lets `slides.createFromLayout` inherit the active preset's
+   * role tokens (colors, fonts, type scale) without re-specifying them. It is a
+   * plain string so it survives theme merges and document (de)serialization.
+   */
+  styleId?: string
 }
 
 export interface SlideTemplate {

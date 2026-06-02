@@ -63,11 +63,11 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import tinycolor from 'tinycolor2'
 import { useSlidesStore } from '@/store'
-import { FONTS } from '@/configs/font'
+import { useFonts } from '@/configs/font'
 import useSlideTheme from '@/hooks/useSlideTheme'
 import Tabs from '@/components/Tabs.vue'
 import Button from '@/components/Button.vue'
@@ -76,6 +76,7 @@ import message from '@/utils/message'
 import { useI18nContext } from '@/i18n/useI18nContext'
 
 const { LL } = useI18nContext()
+const fonts = useFonts()
 
 const emit = defineEmits<{
   (event: 'close'): void
@@ -96,13 +97,12 @@ const tabs = computed<TabItem[]>(() => [
 ])
 const activeTab = ref<'single' | 'all'>('single')
 
-const fontMap = ref<Record<string, string>>({})
-onMounted(() => {
+const fontMap = computed(() => {
   const map: Record<string, string> = {}
-  for (const item of FONTS) {
+  for (const item of fonts.value) {
     map[item.value] = item.label
   }
-  fontMap.value = map
+  return map
 })
 
 const themeStyles = ref<ReturnType<typeof getSlidesThemeStyles>>({

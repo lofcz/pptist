@@ -20,6 +20,13 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const SRC = join(root, 'src/embed/agentic/createAgenticApi.ts')
 const AGENTIC_DTS = join(root, 'dist/types/embed/agentic/types.d.ts')
 const SLIDES_DTS = join(root, 'dist/types/types/slides.d.ts')
+// Self-contained agentic submodules whose exported types feed payload/return
+// shapes (styles + layouts). Their declarations must be indexed so the manifest
+// carries the real bodies instead of dangling type names.
+const AGENTIC_AUX_DTS = [
+  join(root, 'dist/types/embed/agentic/styles.d.ts'),
+  join(root, 'dist/types/embed/agentic/layouts.d.ts'),
+]
 const DOCS = join(root, 'src/embed/agentic/docs.json')
 const PKG = join(root, 'package.json')
 const OUT = join(root, 'dist/embed/agentic-manifest.json')
@@ -357,6 +364,12 @@ function main() {
   const declModel = extractDecls(slidesStripped)
   const declAgentic = extractDecls(agenticStripped)
   const declLocal = extractDecls(srcStripped)
+  for (const auxPath of AGENTIC_AUX_DTS) {
+    if (!existsSync(auxPath)) continue
+    for (const [name, text] of extractDecls(stripComments(read(auxPath)))) {
+      if (!declAgentic.has(name)) declAgentic.set(name, text)
+    }
+  }
 
   // Combined lookup; model wins on the (rare) name clash, then agentic, then local.
   const declIndex = new Map()

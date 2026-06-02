@@ -123,7 +123,7 @@
         :searchLabel="LL.editor.multiStyle.searchFont()"
         autofocus
         @update:value="value => updateTheme({ fontName: value as string })"
-        :options="FONTS"
+        :options="fonts"
       />
     </div>
     <div class="row">
@@ -317,7 +317,7 @@ import type {
   LineStyleType,
 } from '@/types/slides'
 import { PRESET_THEMES } from '@/configs/theme'
-import { FONTS } from '@/configs/font'
+import { useFonts } from '@/configs/font'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 import useSlideTheme from '@/hooks/useSlideTheme'
 import { getImageDataURL } from '@/utils/image'
@@ -342,6 +342,7 @@ import FitText from '@/components/FitText.vue'
 import { useI18nContext } from '@/i18n/useI18nContext'
 
 const { LL } = useI18nContext()
+const fonts = useFonts()
 
 const backgroundTypeOptions = computed(() => [
   { label: LL.value.editor.slideDesign.solidFill(), value: 'solid' },

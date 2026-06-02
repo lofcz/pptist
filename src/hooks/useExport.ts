@@ -5,7 +5,7 @@ import pptxgen from 'pptxgenjs'
 import tinycolor from 'tinycolor2'
 import { toPng, toJpeg } from 'html-to-image'
 import { useSlidesStore } from '@/store'
-import type { PPTElementOutline, PPTElementShadow, PPTElementLink, Slide } from '@/types/slides'
+import type { PPTElementOutline, PPTElementShadow, PPTElementLink, PPTTextElement, Slide } from '@/types/slides'
 import { getElementRange, getLineElementPath, getTableSubThemeColor } from '@/utils/element'
 import { type AST, toAST } from '@/utils/htmlParser'
 import { type SvgPoints, toPoints } from '@/utils/svgPathParser'
@@ -153,6 +153,17 @@ export default () => {
   }
 
   type FormatColor = ReturnType<typeof formatColor>
+
+  // 判断富文本内容是否为空（仅含空标签/空白）。空的占位元素（如"点击添加标题"）
+  // 只是编辑态的交互提示，导出时不应生成空文本框
+  const isEmptyHTMLText = (html?: string) => {
+    if (!html) return true
+    const text = html
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&#8203;|\u200b/g, '')
+    return text.trim().length === 0
+  }
 
   // 将HTML字符串格式化为pptxgenjs所需的格式
   // 核心思路：将HTML字符串按样式分片平铺，每个片段需要继承祖先元素的样式信息，遇到块级元素需要换行
@@ -495,8 +506,59 @@ export default () => {
       })
     }
 
+    // 用于为每张幻灯片生成唯一母版名（承载标题/正文占位符）
+    let phMasterSeq = 0
+    // 正文类占位（PowerPoint 仅支持 title/body 等有限类型，副标题/内容统一归入 body）
+    const BODY_TEXT_TYPES = ['subtitle', 'content', 'item', 'itemTitle']
+
     for (const slide of _slides) {
-      const pptxSlide = pptx.addSlide()
+      // 计算本张幻灯片的占位符绑定：标题元素 → title 占位符，首个正文类元素 → body 占位符。
+      // 通过自定义母版导出原生 <p:ph type="title|body">，使 PowerPoint 大纲视图/无障碍正确识别标题与正文。
+      const phBindings = new Map<string, 'title' | 'body'>()
+      type MasterObjects = NonNullable<pptxgen.SlideMasterProps['objects']>
+      const masterObjects: MasterObjects = []
+
+      if (slide.elements) {
+        const titleEl = slide.elements.find(el => el.type === 'text' && el.textType === 'title') as PPTTextElement | undefined
+        const bodyEl = slide.elements.find(el => el.type === 'text' && BODY_TEXT_TYPES.includes(el.textType || '')) as PPTTextElement | undefined
+
+        const registerPlaceholder = (el: PPTTextElement, name: 'title' | 'body', type: 'title' | 'body') => {
+          phBindings.set(el.id, name)
+          // 母版占位符的几何尺寸与元素一致：pptxgenjs 会以母版几何覆盖元素几何，
+          // 设为相同值即可在保持原位置的同时获得正确的占位符语义；空占位则由母版自动补齐并显示原生提示。
+          masterObjects.push({
+            placeholder: {
+              options: {
+                name,
+                type,
+                x: el.left / ratioPx2Inch.value,
+                y: el.top / ratioPx2Inch.value,
+                w: el.width / ratioPx2Inch.value,
+                h: el.height / ratioPx2Inch.value,
+              },
+              text: '',
+            },
+          })
+        }
+
+        if (titleEl) registerPlaceholder(titleEl, 'title', 'title')
+        if (bodyEl) registerPlaceholder(bodyEl, 'body', 'body')
+      }
+
+      let pptxSlide: ReturnType<typeof pptx.addSlide>
+      if (masterObjects.length) {
+        const masterName = `PPTIST_PH_${phMasterSeq++}`
+        const masterProps: pptxgen.SlideMasterProps = { title: masterName, objects: masterObjects }
+        if (masterOverwrite) {
+          const { color: bgColor, alpha: bgAlpha } = formatColor(theme.value.backgroundColor)
+          masterProps.background = { color: bgColor, transparency: (1 - bgAlpha) * 100 }
+        }
+        pptx.defineSlideMaster(masterProps)
+        pptxSlide = pptx.addSlide({ masterName })
+      }
+      else {
+        pptxSlide = pptx.addSlide()
+      }
 
       if (slide.background) {
         const background = slide.background
@@ -545,6 +607,13 @@ export default () => {
 
       for (const el of slide.elements) {
         if (el.type === 'text') {
+          const phName = phBindings.get(el.id)
+
+          // 空内容处理：
+          // - 绑定了占位符的空元素：不显式写入，交给 pptxgenjs 依据母版自动补齐为原生空占位符（显示"单击此处添加…"提示）
+          // - 其它纯提示性空占位元素：直接跳过，避免导出为多余的空文本框/段落
+          if (isEmptyHTMLText(el.content) && (phName || el.placeholder)) continue
+
           const textProps = formatHTML(el.content)
           const inset = el.inset || [10, 10, 10, 10]
 
@@ -577,6 +646,8 @@ export default () => {
           if (el.opacity !== undefined) options.transparency = (1 - el.opacity) * 100
           if (el.paragraphSpace !== undefined) options.paraSpaceBefore = el.paragraphSpace / ratioPx2Pt.value
           if (el.vertical) options.vert = 'eaVert'
+          // 绑定到母版的标题/正文占位符，导出为带 <p:ph> 语义的占位元素
+          if (phName) options.placeholder = phName
 
           pptxSlide.addText(textProps, options)
         }

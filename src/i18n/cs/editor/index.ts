@@ -595,7 +595,7 @@ const cs_editor: NamespaceEditorTranslation = {
     forTestingOnly: '(pouze pro testování)',
     proprietaryFormat: '(vlastní formát)',
     exportFiles: 'Exportovat soubor',
-    resetSlides: 'Obnovit snímky',
+    resetSlides: 'Nová prezentace',
     markupSlides: 'Označení typu snímku',
     hotkeys: 'Klávesové zkratky',
     feedback: 'Zpětná vazba',

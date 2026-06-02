@@ -318,7 +318,7 @@ const en_editor: BaseTranslation = {
     forTestingOnly: '(for testing only)',
     proprietaryFormat: '(proprietary format)',
     exportFiles: 'Export file',
-    resetSlides: 'Reset slides',
+    resetSlides: 'New presentation',
     markupSlides: 'Slide type markup',
     hotkeys: 'Keyboard shortcuts',
     feedback: 'Feedback',

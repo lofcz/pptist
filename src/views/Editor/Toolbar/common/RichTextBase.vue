@@ -8,7 +8,7 @@
         :searchLabel="LL.editor.multiStyle.searchFont()"
         autofocus
         @update:value="value => emitRichTextCommand('fontname', value as string)"
-        :options="FONTS"
+        :options="fonts"
       >
         <template #icon>
           <i-icon-park-outline:font-size />
@@ -263,7 +263,7 @@ import { storeToRefs } from 'pinia'
 import api from '@/services'
 import { useMainStore } from '@/store'
 import emitter, { EmitterEvents } from '@/utils/emitter'
-import { FONTS } from '@/configs/font'
+import { useFonts } from '@/configs/font'
 import { EXTRAS_ENABLED } from '@/configs/featureFlags'
 import useTextFormatPainter from '@/hooks/useTextFormatPainter'
 import message from '@/utils/message'
@@ -286,6 +286,7 @@ import PopoverMenuItem from '@/components/PopoverMenuItem.vue'
 import { useI18nContext } from '@/i18n/useI18nContext'
 
 const { LL } = useI18nContext()
+const fonts = useFonts()
 
 /** API expects Chinese command labels */
 const AI_WRITING_COMMANDS = {

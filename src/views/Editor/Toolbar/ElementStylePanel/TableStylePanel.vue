@@ -8,7 +8,7 @@
         :searchLabel="LL.editor.multiStyle.searchFont()"
         autofocus
         @update:value="value => updateTextAttrs({ fontname: value as string })"
-        :options="FONTS"
+        :options="fonts"
       >
         <template #icon>
           <i-icon-park-outline:font-size />
@@ -189,7 +189,7 @@ import { storeToRefs } from 'pinia'
 import { nanoid } from 'nanoid'
 import { useMainStore, useSlidesStore } from '@/store'
 import type { PPTTableElement, TableCell, TableCellStyle, TableTheme, TextAlign, TextAlignVertical } from '@/types/slides'
-import { FONTS } from '@/configs/font'
+import { useFonts } from '@/configs/font'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 
 import ElementOutline from '../common/ElementOutline.vue'
@@ -209,6 +209,7 @@ import SelectGroup from '@/components/SelectGroup.vue'
 import Popover from '@/components/Popover.vue'
 
 const { LL } = useI18nContext()
+const fonts = useFonts()
 
 const slidesStore = useSlidesStore()
 const { handleElement, handleElementId, selectedTableCells: selectedCells } = storeToRefs(useMainStore())

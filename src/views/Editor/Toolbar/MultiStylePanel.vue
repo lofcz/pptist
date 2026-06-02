@@ -59,7 +59,7 @@
         :searchLabel="LL.editor.multiStyle.searchFont()"
         autofocus
         @update:value="value => updateFontStyle('fontname', value as string)"
-        :options="FONTS"
+        :options="fonts"
       >
         <template #icon>
           <i-icon-park-outline:font-size />
@@ -138,7 +138,7 @@ import { storeToRefs } from 'pinia'
 import { useMainStore, useSlidesStore } from '@/store'
 import type { LineStyleType, PPTElement, PPTElementOutline, TableCell } from '@/types/slides'
 import emitter, { EmitterEvents } from '@/utils/emitter'
-import { FONTS } from '@/configs/font'
+import { useFonts } from '@/configs/font'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 
 import SVGLine from './common/SVGLine.vue'
@@ -159,6 +159,7 @@ import Popover from '@/components/Popover.vue'
 import { useI18nContext } from '@/i18n/useI18nContext'
 
 const { LL } = useI18nContext()
+const fonts = useFonts()
 
 const slidesStore = useSlidesStore()
 const { richTextAttrs, activeElementList } = storeToRefs(useMainStore())

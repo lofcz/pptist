@@ -595,7 +595,7 @@ const pl_editor: NamespaceEditorTranslation = {
     forTestingOnly: '(tylko do testów)',
     proprietaryFormat: '(format własny)',
     exportFiles: 'Eksportuj plik',
-    resetSlides: 'Resetuj slajdy',
+    resetSlides: 'Nowa prezentacja',
     markupSlides: 'Oznaczenie typu slajdu',
     hotkeys: 'Skróty klawiszowe',
     feedback: 'Opinie',

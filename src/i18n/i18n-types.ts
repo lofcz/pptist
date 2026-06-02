@@ -2993,7 +2993,7 @@ export type NamespaceEditorTranslation = {
 		 */
 		exportFiles: string
 		/**
-		 * R​e​s​e​t​ ​s​l​i​d​e​s
+		 * N​e​w​ ​p​r​e​s​e​n​t​a​t​i​o​n
 		 */
 		resetSlides: string
 		/**
@@ -7536,7 +7536,7 @@ export type TranslationFunctions = {
 			 */
 			exportFiles: () => LocalizedString
 			/**
-			 * Reset slides
+			 * New presentation
 			 */
 			resetSlides: () => LocalizedString
 			/**

@@ -469,7 +469,7 @@ const sk_editor: NamespaceEditorTranslation = {
     forTestingOnly: '(iba na testovanie)',
     proprietaryFormat: '(vlastný formát)',
     exportFiles: 'Exportovať súbor',
-    resetSlides: 'Obnoviť snímky',
+    resetSlides: 'Nová prezentácia',
     markupSlides: 'Označenie typu snímky',
     hotkeys: 'Klávesové skratky',
     feedback: 'Spätná väzba',

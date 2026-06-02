@@ -5,7 +5,7 @@
     search
     :searchLabel="LL.canvas.floatingToolbar.searchFonts()"
     @update:value="value => emitRichTextCommand('fontname', value as string)"
-    :options="FONTS"
+    :options="fonts"
   />
   <Select
     class="fontsize-select"
@@ -75,7 +75,7 @@
 <script lang="ts" setup>
 import { storeToRefs } from 'pinia'
 import { useMainStore } from '@/store'
-import { FONTS } from '@/configs/font'
+import { useFonts } from '@/configs/font'
 import emitter, { EmitterEvents } from '@/utils/emitter'
 
 import Select from '@/components/Select.vue'
@@ -84,6 +84,7 @@ import ColorPicker from '@/components/ColorPicker/index.vue'
 import { useI18nContext } from '@/i18n/useI18nContext'
 
 const { LL } = useI18nContext()
+const fonts = useFonts()
 
 const { richTextAttrs } = storeToRefs(useMainStore())
 

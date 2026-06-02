@@ -79,6 +79,17 @@ import {
   updateLineElement,
 } from './helpers'
 import { markdownToHtml } from '@/utils/markdown'
+import {
+  listStylePresets,
+  resolveStylePreset,
+  styleThemePatch,
+} from './styles'
+import type { PptistStyleSummary } from './styles'
+import {
+  buildLayoutSlide,
+  listLayouts,
+} from './layouts'
+import type { PptistLayout, PptistLayoutBackgroundMode } from './layouts'
 import { AGENTIC_DOCS, describeAgenticCommand, listAgenticDomains } from './manifestDocs'
 import type {
   PptistAgentApi,
@@ -1354,6 +1365,33 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     currentWarnings?.push(issue)
   }
 
+  // Non-enforcing content-contract signal. Markdown/plain-text inputs are
+  // converted to HTML by the engine; any raw tags the model typed get ESCAPED
+  // and render as literal text. We never reject — some tags are intentional —
+  // but we surface a recoverable warning so the agent self-corrects instead of
+  // shipping a slide full of visible `<div>`s.
+  const HTML_TAG_RE = /<\/?[a-zA-Z][a-zA-Z0-9]*(?:\s[^<>]*)?>/
+  const containsHtmlTag = (value: unknown): boolean => typeof value === 'string' && HTML_TAG_RE.test(value)
+  const warnLiteralHtml = (value: unknown, path: string) => {
+    if (containsHtmlTag(value)) {
+      addWarning(createIssue(
+        'LiteralHtmlInMarkdown',
+        'This Markdown/plain-text input contains HTML tags. Raw HTML is escaped here and will appear as literal text on the slide. Use Markdown (or plain text) for content; only the `content` / text.setContent path renders literal HTML (e.g. when intentionally showing a code snippet).',
+        path,
+        true,
+      ))
+    }
+  }
+  const warnLiteralHtmlInSlots = (slots: Record<string, unknown> | undefined) => {
+    if (!slots) return
+    for (const [key, value] of Object.entries(slots)) {
+      if (containsHtmlTag(value)) return warnLiteralHtml(value, `payload.slots.${key}`)
+      if (Array.isArray(value) && value.some(containsHtmlTag)) {
+        return warnLiteralHtml(value.find(containsHtmlTag), `payload.slots.${key}`)
+      }
+    }
+  }
+
   const markRolledBack = (result: PptistCommandResult): PptistCommandResult => ({
     ...result,
     changed: false,
@@ -1424,6 +1462,8 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     'animations.list',
     'animations.catalog',
     'animations.sequence',
+    'styles.catalog',
+    'layouts.catalog',
     'slides.current',
     'slides.read',
     'slides.getTransition',
@@ -1592,6 +1632,19 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     stores.slides.setTheme(mergeDeckTheme(stores.slides.theme, theme))
     return clonePlain(stores.slides.theme)
   })
+  register('deck.applyStyle', (payload: { style: string; applyToSlides?: boolean } = { style: '' }) => {
+    const requested = payload?.style
+    const preset = resolveStylePreset(requested ?? stores.slides.theme.styleId)
+    if (requested && preset.id !== requested) {
+      addWarning(createIssue('UnknownStyle', `Unknown style "${requested}". Applied "${preset.id}" instead — call styles.catalog for valid ids.`, 'payload.style', true))
+    }
+    stores.slides.setTheme(mergeDeckTheme(stores.slides.theme, styleThemePatch(preset)))
+    if (payload?.applyToSlides) {
+      applyThemeToSlideContent(stores, stores.slides.theme, { applyToSlides: true })
+    }
+    return { styleId: preset.id, theme: clonePlain(stores.slides.theme) }
+  })
+  register('styles.catalog', () => listStylePresets())
   register('deck.setViewport', (payload: { size?: number; ratio?: number }) => {
     const viewport = normalizeDocumentViewport(cloneJsonSafePayload(payload, 'payload'), 'payload')
     applyViewport(stores, viewport)
@@ -1604,6 +1657,7 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     stores.slides.setTemplates(templates)
     return clonePlain(stores.slides.templates)
   })
+  register('layouts.catalog', () => listLayouts())
 
   register('slides.list', () => clonePlain(stores.slides.slides))
   register('slides.get', (payload: SlideSelectorPayload = {}) => {
@@ -1627,6 +1681,21 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     stores.slides.setSlides(slides)
     if (payload.select !== false) selectSlide(stores, index)
     return clonePlain(slide)
+  })
+  register('slides.createFromLayout', async (payload: { layout: string; slots?: Record<string, unknown>; style?: string; index?: number; select?: boolean; background?: PptistLayoutBackgroundMode } = { layout: '' }) => {
+    if (!payload?.layout) throw new AgenticCommandError('InvalidLayout', 'A layout id is required. Call layouts.catalog to list layouts.', 'payload.layout')
+    warnLiteralHtmlInSlots(payload.slots)
+    const preset = resolveStylePreset(payload.style ?? stores.slides.theme.styleId)
+    const viewport = { width: stores.slides.viewportSize, height: stores.slides.viewportSize * stores.slides.viewportRatio }
+    const built = buildLayoutSlide(payload.layout, payload.slots ?? {}, preset, viewport, payload.background ?? 'auto')
+    for (const warning of built.warnings) addWarning(createIssue('LayoutWarning', warning, 'payload.slots', true))
+    const slide = normalizeSlideForInsert(built.slide)
+    const slides = clonePlain(stores.slides.slides)
+    const index = insertIndex(payload.index, slides.length)
+    slides.splice(index, 0, slide)
+    stores.slides.setSlides(slides)
+    if (payload.select !== false) selectSlide(stores, index)
+    return { slideId: slide.id, elementIds: slide.elements.map(element => element.id), layout: payload.layout, styleId: preset.id }
   })
   register('slides.insert', (payload: PptistInsertSlidesInput) => {
     const sourceSlides = Array.isArray(payload.slides) ? payload.slides : [payload.slides]
@@ -2097,6 +2166,7 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     const { slide, index: slideIndex } = ensureSlide(stores.slides.slides, payload.slideId, stores.slides.slideIndex)
     // `markdown` is a convenience input — converted to the HTML the model stores.
     // Explicit `content` (HTML) still wins when both are provided.
+    if (payload.element?.content == null && payload.content == null) warnLiteralHtml(payload.markdown, 'payload.markdown')
     const resolvedContent = payload.element?.content
       ?? payload.content
       ?? (payload.markdown != null ? await markdownToHtml(payload.markdown) : '')
@@ -2144,6 +2214,7 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     return updateTextElement(payload.elementId, payload.slideId, { content: payload.content })
   })
   register('text.setMarkdown', async (payload: { elementId: string; slideId?: string; markdown: string }) => {
+    warnLiteralHtml(payload.markdown, 'payload.markdown')
     return updateTextElement(payload.elementId, payload.slideId, { content: await markdownToHtml(payload.markdown) })
   })
   register('text.updateContent', (payload: { elementId: string; slideId?: string; content?: string; prepend?: string; append?: string }) => {
@@ -3170,6 +3241,7 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
       setTitle: (title, meta) => command('deck.setTitle', { title }, meta),
       getTheme: () => clonePlain(stores.slides.theme),
       setTheme: (theme, meta) => command('deck.setTheme', { theme }, meta),
+      applyStyle: (style, options, meta) => command('deck.applyStyle', { style, ...(options || {}) }, meta),
       applyTheme: (theme, options, meta) => command('deck.applyTheme', { theme, options }, meta),
       extractTheme: options => extractThemeFromDeck(stores, options),
       setViewport: (viewport, meta) => command('deck.setViewport', viewport, meta),
@@ -3187,6 +3259,7 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
       },
       read: (slideIdOrIndex, meta) => command('slides.read', { slideIdOrIndex }, meta),
       create: (input, meta) => command('slides.create', input, meta),
+      createFromLayout: (input, meta) => command('slides.createFromLayout', input, meta),
       insert: (input, meta) => command('slides.insert', input, meta),
       update: (slideId, patch, meta) => command('slides.update', { slideId, patch }, meta),
       delete: (slideId, meta) => command('slides.delete', { slideId }, meta),
@@ -3203,6 +3276,14 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
       setTransition: (slideId, turningMode, meta) => command('slides.setTransition', { slideId, turningMode }, meta),
       getRemark: slideId => (slideId ? ensureSlide(stores.slides.slides, slideId, stores.slides.slideIndex).slide : stores.slides.currentSlide)?.remark || '',
       setRemark: (slideId, remark, meta) => command('slides.setRemark', { slideId, remark }, meta),
+    },
+    styles: {
+      catalog: () => listStylePresets(),
+      apply: (style, options, meta) => command('deck.applyStyle', { style, ...(options || {}) }, meta),
+    },
+    layouts: {
+      catalog: () => listLayouts(),
+      createSlide: (input, meta) => command('slides.createFromLayout', input, meta),
     },
     elements: {
       list: slideId => clonePlain(ensureSlide(stores.slides.slides, slideId, stores.slides.slideIndex).slide.elements),

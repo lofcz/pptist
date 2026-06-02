@@ -74,7 +74,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMainStore, useSlidesStore, useKeyboardStore } from '@/store'
 import type { Slide, SlideTheme } from '@/types/slides'
@@ -223,6 +223,12 @@ const setThumbnailsFocus = (focus: boolean) => {
 
   if (!focus) mainStore.updateSelectedSlidesIndex([])
 }
+
+// 初始加载时让缩略图区域处于聚焦态（首张幻灯片已默认选中），
+// 与 PowerPoint 一致：打开后无需先点击即可直接按 Enter 新建幻灯片
+onMounted(() => {
+  setThumbnailsFocus(true)
+})
 
 // 拖拽调整顺序后进行数据的同步
 const handleDragEnd = (eventData: { newIndex: number; oldIndex: number }) => {
