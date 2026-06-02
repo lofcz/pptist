@@ -4,7 +4,13 @@
     <Editor v-else-if="_isPC" />
     <Mobile v-else />
   </template>
-  <FullscreenSpin :tip="LL.common.loadingData()" v-else loading :mask="false" />
+  <FullscreenSpin
+    v-else-if="init.showLoadingData !== false"
+    :tip="LL.common.loadingData()"
+    loading
+    :mask="false"
+  />
+  <div v-else class="pptist-empty-host-state" />
 </template>
 
 <script lang="ts" setup>
@@ -87,5 +93,11 @@ onUnmounted(() => {
   width: 100%;
   min-height: 0;
   overflow: hidden;
+}
+
+.pptist-empty-host-state {
+  height: 100%;
+  width: 100%;
+  min-height: 0;
 }
 </style>

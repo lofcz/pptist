@@ -44,6 +44,8 @@ export interface PptistMountOptions {
   loadDocument?: PptistDocumentLoader
   /** Legacy demo behavior: when explicitly true, load `mocks/slides.json` instead of the starter slide. */
   loadMockOnEmpty?: boolean
+  /** Set false when the embed host renders its own empty/loading state. */
+  showLoadingData?: boolean
   /** Customize the default one-slide starter deck used when no existing document is loaded. */
   starterPresentation?: PptistStarterPresentationOptions
   /** Base URL for runtime image/font assets and fallback mock decks. */
