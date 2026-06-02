@@ -62,7 +62,7 @@
           :label="elementInfo.placeholder!"
           :contentType="elementInfo.textType ?? 'content'"
           :fontSize="elementInfo.placeholderFontSize ?? 20"
-          :color="elementInfo.placeholderColor ?? '#9aa3ad'"
+          :color="placeholderColor"
           :align="elementInfo.placeholderAlign ?? 'center'"
           @activate="activatePlaceholder"
         />
@@ -79,6 +79,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { debounce } from 'lodash'
+import tinycolor from 'tinycolor2'
 import { useMainStore, useSlidesStore } from '@/store'
 import type { PPTTextElement } from '@/types/slides'
 import type { ContextmenuItem } from '@/components/Contextmenu/types'
@@ -99,6 +100,7 @@ const props = defineProps<{
 const mainStore = useMainStore()
 const slidesStore = useSlidesStore()
 const { handleElementId, isScaling } = storeToRefs(mainStore)
+const { currentSlide, theme } = storeToRefs(slidesStore)
 
 const { addHistorySnapshot } = useHistorySnapshot()
 
@@ -125,6 +127,48 @@ const showPlaceholder = computed(() => isEmptyPlaceholder.value && !editorFocuse
 const editorFontSize = computed(() => {
   if (props.elementInfo.placeholder) return `${props.elementInfo.placeholderFontSize ?? 20}px`
   return undefined
+})
+
+// 占位提示颜色自适应：占位“幽灵文字”需在任意主题/背景下保持可读。
+// 取当前页有效背景色（纯色/渐变中点，缺省回退主题背景），若作者预设的占位
+// 色已满足最小对比度则沿用（保留浅色背景下的传统灰）；否则按正文色（或主题字色）
+// 派生一个达标的半透明色，正文色仍不达标时再回退黑/白冲淡色。
+const PLACEHOLDER_FALLBACK_COLOR = '#9aa3ad'
+const MIN_PLACEHOLDER_CONTRAST = 2.2
+
+const slideBackgroundColor = computed(() => {
+  const background = currentSlide.value?.background
+  let raw: string | undefined
+  if (background?.type === 'solid') raw = background.color
+  else if (background?.type === 'gradient') {
+    const stops = background.gradient?.colors ?? []
+    const midStop = stops.length
+      ? stops.reduce((closest, stop) => (Math.abs(stop.pos - 50) < Math.abs(closest.pos - 50) ? stop : closest))
+      : undefined
+    raw = midStop?.color
+  }
+  // 图片背景无法可靠取色，回退到主题背景色。
+  if (!raw) raw = theme.value?.backgroundColor
+  if (!raw) return null
+  const color = tinycolor(raw)
+  return color.isValid() ? color : null
+})
+
+const placeholderColor = computed(() => {
+  const background = slideBackgroundColor.value
+  const authored = props.elementInfo.placeholderColor
+  if (!background) return authored ?? PLACEHOLDER_FALLBACK_COLOR
+
+  if (authored) {
+    const color = tinycolor(authored)
+    if (color.isValid() && tinycolor.readability(color, background) >= MIN_PLACEHOLDER_CONTRAST) return authored
+  }
+
+  const textColor = tinycolor(props.elementInfo.defaultColor || theme.value?.fontColor || '#333333')
+  const legible = textColor.isValid() && tinycolor.readability(textColor, background) >= MIN_PLACEHOLDER_CONTRAST
+    ? textColor
+    : tinycolor(background.isLight() ? '#000000' : '#ffffff')
+  return legible.setAlpha(0.5).toRgbString()
 })
 
 const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = true) => {
