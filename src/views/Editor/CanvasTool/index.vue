@@ -437,7 +437,11 @@ const openImageLibPanel = () => {
     }
 
     .icon {
-      margin-right: 4px;
+      margin-right: 0;
+    }
+
+    .text {
+      display: none;
     }
 
     &.group-btn {
@@ -517,18 +521,6 @@ const openImageLibPanel = () => {
   }
 }
 
-@container (width <= 1000px) {
-  .add-element-handler {
-    .insert-handler-item {
-      .icon {
-        margin-right: 0;
-      }
-      .text {
-        display: none;
-      }
-    }
-  }
-}
 @container (width <= 700px) {
   .add-element-handler {
     .insert-handler-item {
@@ -548,7 +540,7 @@ const openImageLibPanel = () => {
   }
 }
 @container (width <= 560px) {
-  .left-handler, .right-handler {
+  .left-handler {
     display: none;
   }
 }
