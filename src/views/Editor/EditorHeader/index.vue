@@ -192,6 +192,7 @@ const openAIPPTDialog = () => {
   display: flex;
   justify-content: center;
   align-items: center;
+  min-width: 0;
 }
 .menu-item {
   height: 30px;
@@ -343,6 +344,7 @@ const openAIPPTDialog = () => {
   height: 30px;
   margin-left: 2px;
   font-size: 13px;
+  min-width: 0;
 
   .title-input {
     width: 200px;
@@ -373,5 +375,14 @@ const openAIPPTDialog = () => {
 .github-link {
   display: inline-block;
   height: 30px;
+}
+
+@container (width <= 900px) {
+  .right {
+    display: none;
+  }
+  .title .title-text {
+    max-width: 260px;
+  }
 }
 </style>

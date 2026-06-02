@@ -97,6 +97,7 @@ usePasteEvent()
 <style lang="scss" scoped>
 .pptist-editor {
   height: 100%;
+  container-type: inline-size;
 }
 .layout-header {
   height: 40px;
@@ -104,6 +105,7 @@ usePasteEvent()
 .layout-content {
   height: calc(100% - 40px);
   display: flex;
+  min-width: 0;
 }
 .layout-content-left {
   width: 160px;
@@ -111,7 +113,9 @@ usePasteEvent()
   flex-shrink: 0;
 }
 .layout-content-center {
-  width: calc(100% - 160px - 260px);
+  flex: 1;
+  min-width: 0;
+  container-type: inline-size;
 
   .center-top {
     height: 40px;
@@ -120,5 +124,12 @@ usePasteEvent()
 .layout-content-right {
   width: 260px;
   height: 100%;
+  flex-shrink: 0;
+}
+
+@container (width <= 900px) {
+  .layout-content-right {
+    display: none;
+  }
 }
 </style>

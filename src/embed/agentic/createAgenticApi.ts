@@ -1701,7 +1701,20 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     slides.splice(index, 0, slide)
     stores.slides.setSlides(slides)
     if (payload.select !== false) selectSlide(stores, index)
-    return { slideId: slide.id, templateId: payload.templateId, slug: payload.slug, elementIds: slide.elements.map(element => element.id) }
+    const textElementIds = slide.elements
+      .filter((element): element is PPTTextElement => element.type === 'text')
+      .map(element => element.id)
+    const placeholderElementIds = slide.elements
+      .filter((element): element is PPTTextElement => element.type === 'text' && !!element.placeholder)
+      .map(element => element.id)
+    return {
+      slideId: slide.id,
+      templateId: payload.templateId,
+      slug: payload.slug,
+      elementIds: slide.elements.map(element => element.id),
+      textElementIds,
+      placeholderElementIds,
+    }
   })
   register('slides.insert', (payload: PptistInsertSlidesInput) => {
     const sourceSlides = Array.isArray(payload.slides) ? payload.slides : [payload.slides]

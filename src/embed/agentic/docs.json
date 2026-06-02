@@ -44,7 +44,7 @@
   "domains": {
     "templates": { "title": "Templates", "summary": "Built-in presentation templates (template_1 … template_8 — same as the UI template picker). templates.catalog lists them; templates.slidesCatalog lists insertable slide slugs by type; deck.applyTemplate sets the deck theme.", "whenToUse": "FIRST. Pick exactly one template style for the whole deck, apply its theme, then insert slides by slug. Never invent custom slide layouts when a template slide fits." },
     "deck": { "title": "Deck", "summary": "Whole-document state: title, theme, viewport, templates, plus full get/set/patch.", "whenToUse": "Apply a template theme with deck.applyTemplate up front; set the viewport once; use whole-document import/export at persistence boundaries." },
-    "slides": { "title": "Slides", "summary": "Insert slides from built-in templates (slides.insertFromTemplate); read, update, delete, duplicate, move, select; set background, transition and speaker remark.", "whenToUse": "Prefer slides.insertFromTemplate (one call per slide). After insert, use text.setMarkdown on the returned element ids. Avoid slides.create for deck building." },
+    "slides": { "title": "Slides", "summary": "Insert slides from built-in templates (slides.insertFromTemplate); read, update, delete, duplicate, move, select; set background, transition and speaker remark.", "whenToUse": "Prefer slides.insertFromTemplate (one call per slide). After insert, use text.setMarkdown on the returned placeholderElementIds/textElementIds. Avoid slides.create for deck building." },
     "elements": { "title": "Elements", "summary": "Generic element CRUD plus transform, ordering, grouping, lock/hide, and shared styling (outline, shadow, fill, link).", "whenToUse": "Use the generic create/update when you want one call across element types, or the typed sub-domains (text/shapes/charts/...) for richer helpers." },
     "text": { "title": "Text", "summary": "Text element create/update plus content helpers. Author content as Markdown (text.create({ markdown }) / text.setMarkdown) or plain text.", "whenToUse": "For manual slides only — layouts already place titles, body and captions. Pass Markdown or plain text; do NOT write raw HTML tags (they are escaped and show as literal text). The literal-HTML path (text.setContent / { content }) is reserved for intentionally rendering code-like markup." },
     "richText": { "title": "Rich text", "summary": "Document-model edits to a text element's prose: set content, run styles and paragraph attributes.", "whenToUse": "Use when you need paragraph alignment / inline run styling on an existing text element." },
@@ -97,7 +97,7 @@
     },
     "slides.insertFromTemplate": {
       "summary": "Insert a designed slide from a built-in template by slug. The PREFERRED way to add a slide.",
-      "details": "Clones the template slide (layout, decor, placeholder text boxes) into the deck. You do NOT pick coordinates or sizes. After insert, fill placeholders with text.setMarkdown on the returned elementIds. Do not use slides.create for normal deck building.",
+      "details": "Clones the template slide (layout, decor, placeholder text boxes) into the deck. You do NOT pick coordinates or sizes. After insert, fill placeholders with text.setMarkdown on the returned placeholderElementIds (or textElementIds). Do not create new text boxes on top of an unfilled placeholder; Office-style placeholders show their prompt until that same placeholder is filled.",
       "params": [
         { "name": "templateId", "type": "string", "required": true, "description": "Built-in template id (same as deck.applyTemplate)." },
         { "name": "slug", "type": "string", "required": true, "description": "Slide slug from templates.slidesCatalog (e.g. 'cover_1', 'contents_1', 'content_3')." },
@@ -111,7 +111,7 @@
       ],
       "tips": [
         "Plan slide flow: cover → contents → content slides → end. Match slug descriptions from slidesCatalog.",
-        "After insert, batch text.setMarkdown calls for each placeholder element id returned."
+        "After insert, batch text.setMarkdown calls for each placeholderElementIds entry that should contain slide copy. Empty placeholders intentionally keep their Office-style prompt."
       ],
       "related": ["templates.slidesCatalog", "deck.applyTemplate", "text.setMarkdown"]
     },
@@ -279,7 +279,7 @@
         "2. Apply it once: deck.applyTemplate({ templateId:'template_1' }). This sets the deck theme. Do not hand-pick colors or fonts after this.",
         "3. Read templates.slidesCatalog({ templateId }) — slides are grouped by type: cover, contents, transition, content, end. Each entry has a slug and description.",
         "4. For each slide in your outline, call slides.insertFromTemplate({ templateId, slug }) with the slug that best matches (e.g. cover_1 for title, contents_1 for agenda, content_2 for a text+image slide).",
-        "5. Use the returned elementIds: batch text.setMarkdown (or text.update) to replace placeholder copy. Author Markdown/plain text only — never HTML.",
+        "5. Use the returned placeholderElementIds/textElementIds: batch text.setMarkdown (or text.update) to replace placeholder copy. Do not add separate text boxes over placeholders. Author Markdown/plain text only — never HTML.",
         "6. After creating or editing a slide, look at the auto-screenshot. Fix overflow and literal markup before moving on.",
         "7. Only use slides.create + manual elements when no template slide in the catalog fits."
       ]

@@ -1,35 +1,41 @@
 <template>
-  <div class="canvas-tool">
-    <div class="left-handler">
-      <span class="handler-item" :class="{ 'disable': !canUndo }" :v-tooltip="LL.editor.canvasTool.undoTooltip()" @click="undo()">
-        <i-icon-park-outline:back />
-      </span>
-      <span class="handler-item" :class="{ 'disable': !canRedo }" :v-tooltip="LL.editor.canvasTool.redoTooltip()" @click="redo()">
-        <i-icon-park-outline:next />
-      </span>
-      <div class="more">
-        <Divider type="vertical" style="height: 20px;" />
-        <Popover class="more-icon" trigger="click" v-model:value="moreVisible" :offset="10">
-          <template #content>
-            <PopoverMenuItem class="popover-menu-item" center @click="toggleNotesPanel(); moreVisible = false"><i-icon-park-outline:comment class="icon" />{{ LL.editor.canvasTool.notesPanel() }}</PopoverMenuItem>
-            <PopoverMenuItem class="popover-menu-item" center @click="toggleSelectPanel(); moreVisible = false"><i-icon-park-outline:move-one class="icon" />{{ LL.editor.canvasTool.selectionPane() }}</PopoverMenuItem>
-            <PopoverMenuItem class="popover-menu-item" center @click="toggleSraechPanel(); moreVisible = false"><i-icon-park-outline:search class="icon" />{{ LL.editor.canvasTool.findReplace() }}</PopoverMenuItem>
-          </template>
-          <span class="handler-item">
-            <i-icon-park-outline:more />
+  <div
+    ref="scrollRef"
+    class="canvas-tool"
+    :class="{ 'scrollable': isScrollable }"
+    @wheel="handleWheel"
+  >
+    <div ref="contentRef" class="canvas-tool-content">
+      <div class="left-handler">
+        <span class="handler-item" :class="{ 'disable': !canUndo }" :v-tooltip="LL.editor.canvasTool.undoTooltip()" @click="undo()">
+          <i-icon-park-outline:back />
+        </span>
+        <span class="handler-item" :class="{ 'disable': !canRedo }" :v-tooltip="LL.editor.canvasTool.redoTooltip()" @click="redo()">
+          <i-icon-park-outline:next />
+        </span>
+        <div class="more">
+          <Divider type="vertical" style="height: 20px;" />
+          <Popover class="more-icon" trigger="click" v-model:value="moreVisible" :offset="10">
+            <template #content>
+              <PopoverMenuItem class="popover-menu-item" center @click="toggleNotesPanel(); moreVisible = false"><i-icon-park-outline:comment class="icon" />{{ LL.editor.canvasTool.notesPanel() }}</PopoverMenuItem>
+              <PopoverMenuItem class="popover-menu-item" center @click="toggleSelectPanel(); moreVisible = false"><i-icon-park-outline:move-one class="icon" />{{ LL.editor.canvasTool.selectionPane() }}</PopoverMenuItem>
+              <PopoverMenuItem class="popover-menu-item" center @click="toggleSraechPanel(); moreVisible = false"><i-icon-park-outline:search class="icon" />{{ LL.editor.canvasTool.findReplace() }}</PopoverMenuItem>
+            </template>
+            <span class="handler-item">
+              <i-icon-park-outline:more />
+            </span>
+          </Popover>
+          <span class="handler-item" :class="{ 'active': showNotesPanel }" :v-tooltip="LL.editor.canvasTool.notesPanel()" @click="toggleNotesPanel()">
+            <i-icon-park-outline:comment />
           </span>
-        </Popover>
-        <span class="handler-item" :class="{ 'active': showNotesPanel }" :v-tooltip="LL.editor.canvasTool.notesPanel()" @click="toggleNotesPanel()">
-          <i-icon-park-outline:comment />
-        </span>
-        <span class="handler-item" :class="{ 'active': showSelectPanel }" :v-tooltip="LL.editor.canvasTool.selectionPane()" @click="toggleSelectPanel()">
-          <i-icon-park-outline:move-one />
-        </span>
-        <span class="handler-item" :class="{ 'active': showSearchPanel }" :v-tooltip="LL.editor.canvasTool.findReplaceTooltip()" @click="toggleSraechPanel()">
-          <i-icon-park-outline:search />
-        </span>
+          <span class="handler-item" :class="{ 'active': showSelectPanel }" :v-tooltip="LL.editor.canvasTool.selectionPane()" @click="toggleSelectPanel()">
+            <i-icon-park-outline:move-one />
+          </span>
+          <span class="handler-item" :class="{ 'active': showSearchPanel }" :v-tooltip="LL.editor.canvasTool.findReplaceTooltip()" @click="toggleSraechPanel()">
+            <i-icon-park-outline:search />
+          </span>
+        </div>
       </div>
-    </div>
 
     <div class="add-element-handler">
       <div class="insert-handler-item group-btn" :class="{ 'active': creatingElement?.type === 'text' }" :v-tooltip="LL.editor.canvasTool.insertText()">
@@ -145,6 +151,8 @@
       </span>
     </div>
 
+    </div>
+
     <Modal
       v-model:visible="latexEditorVisible" 
       :width="880"
@@ -158,8 +166,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import { OverlayScrollbars } from 'overlayscrollbars'
 import { useMainStore, useSnapshotStore } from '@/store'
 import { getImageDataURL } from '@/utils/image'
 import type { ShapePoolItem } from '@/configs/shapes'
@@ -180,6 +189,7 @@ import Divider from '@/components/Divider.vue'
 import Popover from '@/components/Popover.vue'
 import PopoverMenuItem from '@/components/PopoverMenuItem.vue'
 import { useI18nContext } from '@/i18n/useI18nContext'
+import 'overlayscrollbars/overlayscrollbars.css'
 
 const { LL } = useI18nContext()
 
@@ -198,6 +208,72 @@ const {
 
 const canvasScalePresetList = [200, 150, 125, 100, 75, 50]
 const canvasScaleVisible = ref(false)
+const scrollRef = ref<HTMLElement | null>(null)
+const contentRef = ref<HTMLElement | null>(null)
+const isScrollable = ref(false)
+let scrollbars: ReturnType<typeof OverlayScrollbars> | null = null
+
+const hasHorizontalOverflow = () => {
+  if (!scrollRef.value || !contentRef.value) return false
+  return contentRef.value.scrollWidth > scrollRef.value.clientWidth + 1
+}
+
+const getScrollViewport = () => scrollbars?.elements().viewport ?? scrollRef.value
+
+const handleWheel = (event: WheelEvent) => {
+  if (!isScrollable.value) return
+  const viewport = getScrollViewport()
+  if (!viewport) return
+
+  const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY
+  if (!delta) return
+
+  event.preventDefault()
+  event.stopPropagation()
+  viewport.scrollLeft += delta
+}
+
+const updateScrollbars = () => {
+  void nextTick(() => {
+    const overflowing = hasHorizontalOverflow()
+    isScrollable.value = overflowing
+
+    if (overflowing) {
+      if (!scrollbars && scrollRef.value) {
+        scrollbars = OverlayScrollbars(scrollRef.value, {
+          overflow: {
+            x: 'scroll',
+            y: 'hidden',
+          },
+          scrollbars: {
+            visibility: 'auto',
+            autoHide: 'leave',
+            autoHideDelay: 300,
+          },
+        })
+      }
+      else scrollbars?.update(true)
+    }
+    else if (scrollbars) {
+      scrollbars.destroy()
+      scrollbars = null
+    }
+  })
+}
+
+const resizeObserver = new ResizeObserver(updateScrollbars)
+
+onMounted(() => {
+  if (scrollRef.value) resizeObserver.observe(scrollRef.value)
+  if (contentRef.value) resizeObserver.observe(contentRef.value)
+  updateScrollbars()
+})
+
+onBeforeUnmount(() => {
+  resizeObserver.disconnect()
+  scrollbars?.destroy()
+  scrollbars = null
+})
 
 const applyCanvasPresetScale = (value: number) => {
   setCanvasScalePercentage(value)
@@ -292,15 +368,29 @@ const openImageLibPanel = () => {
   position: relative;
   border-bottom: 1px solid $borderColor;
   background-color: #fff;
-  display: flex;
-  justify-content: space-between;
   padding: 0 10px;
   font-size: 13px;
   user-select: none;
+  overflow: hidden;
+}
+.canvas-tool-content {
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) max-content minmax(max-content, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  width: 100%;
+  min-width: max-content;
+  height: 100%;
+}
+.canvas-tool.scrollable {
+  padding-bottom: 2px;
 }
 .left-handler, .more {
   display: flex;
   align-items: center;
+}
+.left-handler {
+  justify-self: start;
 }
 .more-icon {
   display: none;
@@ -319,11 +409,8 @@ const openImageLibPanel = () => {
   }
 }
 .add-element-handler {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   display: flex;
+  justify-self: center;
 
   & > div {
     flex-shrink: 0;
@@ -416,6 +503,7 @@ const openImageLibPanel = () => {
 .right-handler {
   display: flex;
   align-items: center;
+  justify-self: end;
 
   .text {
     display: inline-block;
@@ -429,7 +517,7 @@ const openImageLibPanel = () => {
   }
 }
 
-@media screen and (width <= 1600px) {
+@container (width <= 1000px) {
   .add-element-handler {
     .insert-handler-item {
       .icon {
@@ -441,14 +529,14 @@ const openImageLibPanel = () => {
     }
   }
 }
-@media screen and (width <= 1366px) {
+@container (width <= 700px) {
   .add-element-handler {
     .insert-handler-item {
       padding: 0 6px;
     }
   }
 }
-@media screen and (width <= 1200px) {
+@container (width <= 640px) {
   .right-handler .text {
     display: none;
   }
@@ -459,7 +547,7 @@ const openImageLibPanel = () => {
     display: block;
   }
 }
-@media screen and (width <= 1000px) {
+@container (width <= 560px) {
   .left-handler, .right-handler {
     display: none;
   }

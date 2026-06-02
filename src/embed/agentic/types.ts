@@ -661,6 +661,8 @@ export interface PptistInsertFromTemplateResult {
   templateId: string
   slug: string
   elementIds: string[]
+  textElementIds: string[]
+  placeholderElementIds: string[]
 }
 
 export interface PptistAgentTemplatesApi {
