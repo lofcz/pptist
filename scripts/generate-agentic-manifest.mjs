@@ -25,6 +25,8 @@ const SLIDES_DTS = join(root, 'dist/types/types/slides.d.ts')
 // carries the real bodies instead of dangling type names.
 const AGENTIC_AUX_DTS = [
   join(root, 'dist/types/embed/agentic/templates.d.ts'),
+  join(root, 'dist/types/embed/agentic/styles.d.ts'),
+  join(root, 'dist/types/embed/agentic/layouts.d.ts'),
 ]
 const DOCS = join(root, 'src/embed/agentic/docs.json')
 const PKG = join(root, 'package.json')

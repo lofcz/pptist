@@ -9,12 +9,19 @@
  * need to hand-place boxes or hand-pick colors/sizes, and it never emits raw
  * authoring HTML the agent has to reason about.
  *
- * Builders are deterministic and pure (no async, no store access): given a
- * viewport, a style preset, and slots, they return a `Partial<Slide>` that the
- * bridge normalizes and inserts. Text content is rendered to the small, safe
- * HTML subset PPTist stores (`<p>/<ul>/<li>/<span style>` with inline size and
+ * Text never overflows: every text box is **auto-fit** with `@chenglou/pretext`
+ * (the same measurement engine the editor's FitText uses). Each box has a fixed
+ * region; the builder measures the content and picks the largest font size from
+ * the style scale that still fits the box, shrinking gracefully toward a legible
+ * minimum instead of clipping. The agent fills content; sizing is automatic.
+ *
+ * Builders are deterministic and pure (no store access): given a viewport, a
+ * style preset, and slots, they return a `Partial<Slide>` that the bridge
+ * normalizes and inserts. Text content is rendered to the small, safe HTML
+ * subset PPTist stores (`<p>/<ul>/<li>/<span style>` with inline size and
  * color), with light inline markdown (`**bold**`, `_italic_`, `` `code` ``).
  */
+import { layout as pretextLayout, prepare as pretextPrepare } from '@chenglou/pretext'
 import type {
   ChartData,
   ChartType,
@@ -98,11 +105,16 @@ interface ParagraphStyle extends SpanStyle {
   align?: 'left' | 'center' | 'right'
 }
 
-function paragraphsHtml(value: string, style: ParagraphStyle): string {
-  const lines = String(value)
+/** Split a multi-line value into trimmed, non-empty blocks (paragraphs). */
+function blocksOf(value: string): string[] {
+  return String(value)
     .split(/\r?\n/)
     .map(line => line.trim())
     .filter(Boolean)
+}
+
+function paragraphsHtml(value: string, style: ParagraphStyle): string {
+  const lines = blocksOf(value)
   if (!lines.length) return ''
   const align = style.align ?? 'left'
   return lines.map(line => `<p style="text-align:${align}">${spanHtml(line, style)}</p>`).join('')
@@ -136,6 +148,89 @@ function reqStr(slots: Slots, key: string, layoutId: string): string {
 function optStr(slots: Slots, key: string): string | undefined {
   const value = slots[key]
   return value == null || String(value).trim() === '' ? undefined : String(value)
+}
+
+// ---------------------------------------------------------------------------
+// Responsive text fitting (pretext)
+// ---------------------------------------------------------------------------
+
+/** Default text-element inset (PPTist uses [10,10,10,10]); subtracted when fitting. */
+const TEXT_PAD = 10
+/** Horizontal space a list marker + indent steals from a bullet's text column. */
+const BULLET_INDENT = 28
+/** Vertical gap PPTist leaves between paragraphs (paragraphSpace default). */
+const PARAGRAPH_SPACE = 6
+/** Vertical gap between list items. */
+const BULLET_SPACE = 4
+
+interface FitInput {
+  /** Plain-text blocks (paragraphs / bullet items) measured independently. */
+  blocks: string[]
+  /** Box width in px (inset + indent are subtracted internally). */
+  width: number
+  /** Box height in px (inset is subtracted internally). */
+  height: number
+  fontFamily: string
+  bold?: boolean
+  italic?: boolean
+  lineHeight: number
+  /** Largest size to try (the style-scale size for this role). */
+  maxSize: number
+  /** Smallest legible size to fall back to. */
+  minSize?: number
+  bulletIndent?: number
+  blockSpace?: number
+}
+
+function measureBlocksHeight(blocks: string[], size: number, innerWidth: number, input: FitInput): number {
+  const lineHeightPx = Math.ceil(size * input.lineHeight)
+  const font = `${input.italic ? 'italic' : 'normal'} ${input.bold ? 700 : 400} ${size}px ${input.fontFamily}`
+  let total = 0
+  for (const block of blocks) {
+    const prepared = pretextPrepare(block, font)
+    total += pretextLayout(prepared, innerWidth, lineHeightPx).height
+  }
+  total += Math.max(0, blocks.length - 1) * (input.blockSpace ?? 0)
+  return total
+}
+
+/**
+ * Pick the largest font size (<= maxSize, >= minSize) at which `blocks` fit the
+ * box. Uses pretext to measure real wrapped height per block. Falls back to
+ * maxSize if measurement is unavailable (e.g. no canvas in a non-DOM context).
+ */
+function fitFontSize(input: FitInput): number {
+  const max = Math.max(1, round(input.maxSize))
+  const min = Math.max(1, Math.min(max, round(input.minSize ?? Math.min(max, 12))))
+  const blocks = input.blocks.map(block => block.trim()).filter(Boolean)
+  const innerWidth = input.width - TEXT_PAD * 2 - (input.bulletIndent ?? 0)
+  const innerHeight = input.height - TEXT_PAD * 2
+  if (!blocks.length || innerWidth <= 2 || innerHeight <= 2) return max
+
+  try {
+    const fits = (size: number) => measureBlocksHeight(blocks, size, innerWidth, input) <= innerHeight
+    if (fits(max)) return max
+    let lo = min
+    let hi = max - 1
+    let best = min
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1
+      if (fits(mid)) {
+        best = mid
+        lo = mid + 1
+      }
+      else hi = mid - 1
+    }
+    return best
+  }
+  catch {
+    return max
+  }
+}
+
+/** Height needed to comfortably show `lines` lines at `size` (incl. inset). */
+function regionHeight(size: number, lines: number, lineHeight: number): number {
+  return Math.ceil(size * lineHeight) * lines + TEXT_PAD * 2
 }
 
 // ---------------------------------------------------------------------------
@@ -185,11 +280,14 @@ function roleColors(ctx: LayoutCtx): RoleColors {
   }
 }
 
-interface TextBox {
+interface Box {
   left: number
   top: number
   width: number
   height: number
+}
+
+interface TextBox extends Box {
   content: string
   color: string
   font: string
@@ -209,6 +307,71 @@ function textElement(box: TextBox): Partial<PPTTextElement> & { type: 'text' } {
     defaultFontName: box.font,
     lineHeight: box.lineHeight ?? 1.35,
   }
+}
+
+interface ParagraphFit {
+  color: string
+  font: string
+  bold?: boolean
+  italic?: boolean
+  align?: 'left' | 'center' | 'right'
+  lineHeight: number
+  maxSize: number
+  minSize?: number
+}
+
+/** Emit a paragraph text element whose font is auto-fit to the box. */
+function paragraphsElement(box: Box, text: string, style: ParagraphFit): Partial<PPTTextElement> & { type: 'text' } {
+  const size = fitFontSize({
+    blocks: blocksOf(text),
+    width: box.width,
+    height: box.height,
+    fontFamily: style.font,
+    bold: style.bold,
+    italic: style.italic,
+    lineHeight: style.lineHeight,
+    maxSize: style.maxSize,
+    minSize: style.minSize,
+    blockSpace: PARAGRAPH_SPACE,
+  })
+  return textElement({
+    ...box,
+    content: paragraphsHtml(text, { size, color: style.color, font: style.font, bold: style.bold, align: style.align }),
+    color: style.color,
+    font: style.font,
+    lineHeight: style.lineHeight,
+  })
+}
+
+interface BulletFit {
+  color: string
+  font: string
+  lineHeight: number
+  maxSize: number
+  minSize?: number
+  ordered?: boolean
+}
+
+/** Emit a bulleted text element whose font is auto-fit to the box. */
+function bulletsElement(box: Box, items: string[], style: BulletFit): Partial<PPTTextElement> & { type: 'text' } {
+  const size = fitFontSize({
+    blocks: items,
+    width: box.width,
+    height: box.height,
+    fontFamily: style.font,
+    lineHeight: style.lineHeight,
+    maxSize: style.maxSize,
+    minSize: style.minSize,
+    bulletIndent: BULLET_INDENT,
+    blockSpace: BULLET_SPACE,
+  })
+  return textElement({
+    ...box,
+    content: bulletsHtml(items, { size, color: style.color, font: style.font }, style.ordered),
+    color: style.color,
+    font: style.font,
+    lineHeight: style.lineHeight,
+  })
 }
 
 const RECT_VIEWBOX: [number, number] = [200, 200]
@@ -256,37 +419,30 @@ function buildHeader(
 
   const eyebrow = optStr(slots, 'eyebrow')
   if (eyebrow) {
+    const h = regionHeight(sc.label, 1, 1.3)
     elements.push(
-      textElement({
-        left: ctx.m,
-        top: y,
-        width: ctx.cw,
-        height: round(sc.label * 1.4),
-        content: paragraphsHtml(eyebrow.toUpperCase(), { size: sc.label, color: c.accent, font: fonts.body, bold: true }),
-        color: c.accent,
-        font: fonts.body,
-      }),
+      paragraphsElement(
+        { left: ctx.m, top: y, width: ctx.cw, height: h },
+        eyebrow.toUpperCase(),
+        { color: c.accent, font: fonts.body, bold: true, lineHeight: 1.3, maxSize: sc.label, minSize: 11 },
+      ),
     )
-    y += round(sc.label * 1.9)
+    y += h + round(sc.label * 0.4)
   }
 
   const title = reqStr(slots, 'title', layoutId)
+  const titleH = regionHeight(sc.title, 2, 1.18)
   elements.push(
-    textElement({
-      left: ctx.m,
-      top: y,
-      width: ctx.cw,
-      height: round(sc.title * 1.5),
-      content: paragraphsHtml(title, { size: sc.title, color: c.title, font: fonts.heading, bold: true }),
-      color: c.title,
-      font: fonts.heading,
-      lineHeight: 1.15,
-    }),
+    paragraphsElement(
+      { left: ctx.m, top: y, width: ctx.cw, height: titleH },
+      title,
+      { color: c.title, font: fonts.heading, bold: true, lineHeight: 1.18, maxSize: sc.title, minSize: 22 },
+    ),
   )
-  y += round(sc.title * 1.5)
+  y += titleH
 
   elements.push(rectElement({ left: ctx.m, top: y + 4, width: round(Math.min(ctx.cw, 120)), height: 4, fill: c.accent }))
-  y += round(sc.body * 1.4)
+  y += round(sc.body * 1.2)
 
   return { elements, contentTop: y }
 }
@@ -297,55 +453,44 @@ function buildFeature(ctx: LayoutCtx, slots: Slots, layoutId: string, titleSize:
   const sc = ctx.preset.scale
   const fonts = ctx.preset.fonts
   const elements: PptistLayoutElementInput[] = []
-  let y = round(ctx.H * 0.3)
+  let y = round(ctx.H * 0.26)
 
   const eyebrow = optStr(slots, 'eyebrow')
   if (eyebrow) {
+    const h = regionHeight(sc.label, 1, 1.4)
     elements.push(
-      textElement({
-        left: ctx.m,
-        top: y,
-        width: ctx.cw,
-        height: round(sc.label * 1.6),
-        content: paragraphsHtml(eyebrow.toUpperCase(), { size: sc.label, color: c.accent, font: fonts.body, bold: true }),
-        color: c.accent,
-        font: fonts.body,
-      }),
+      paragraphsElement(
+        { left: ctx.m, top: y, width: ctx.cw, height: h },
+        eyebrow.toUpperCase(),
+        { color: c.accent, font: fonts.body, bold: true, lineHeight: 1.4, maxSize: sc.label, minSize: 11 },
+      ),
     )
-    y += round(sc.label * 2.1)
+    y += h + round(sc.label * 0.5)
   }
 
   const title = reqStr(slots, 'title', layoutId)
+  const titleH = regionHeight(titleSize, 2, 1.12)
   elements.push(
-    textElement({
-      left: ctx.m,
-      top: y,
-      width: ctx.cw,
-      height: round(titleSize * 2.2),
-      content: paragraphsHtml(title, { size: titleSize, color: c.title, font: fonts.heading, bold: true }),
-      color: c.title,
-      font: fonts.heading,
-      lineHeight: 1.12,
-    }),
+    paragraphsElement(
+      { left: ctx.m, top: y, width: ctx.cw, height: titleH },
+      title,
+      { color: c.title, font: fonts.heading, bold: true, lineHeight: 1.12, maxSize: titleSize, minSize: 28 },
+    ),
   )
-  y += round(titleSize * 1.5)
+  y += titleH
 
   elements.push(rectElement({ left: ctx.m, top: y + 6, width: 140, height: 5, fill: c.accent }))
-  y += round(sc.sectionHeader * 1.2)
+  y += round(sc.sectionHeader * 1.1)
 
   const subtitle = optStr(slots, 'subtitle')
   if (subtitle) {
+    const h = Math.max(regionHeight(sc.sectionHeader, 2, 1.3), ctx.H - ctx.m - y)
     elements.push(
-      textElement({
-        left: ctx.m,
-        top: y,
-        width: ctx.cw,
-        height: round(sc.sectionHeader * 2.4),
-        content: paragraphsHtml(subtitle, { size: sc.sectionHeader, color: c.body, font: fonts.body }),
-        color: c.body,
-        font: fonts.body,
-        lineHeight: 1.3,
-      }),
+      paragraphsElement(
+        { left: ctx.m, top: y, width: ctx.cw, height: h },
+        subtitle,
+        { color: c.body, font: fonts.body, lineHeight: 1.3, maxSize: sc.sectionHeader, minSize: 16 },
+      ),
     )
   }
 
@@ -366,16 +511,11 @@ function buildBullets(ctx: LayoutCtx, slots: Slots): PptistLayoutElementInput[] 
   if (!items.length) throw new Error('Layout "bullets" requires a non-empty "bullets" slot (array or newline-separated string).')
   const ordered = slots.ordered === true
   elements.push(
-    textElement({
-      left: ctx.m,
-      top: contentTop,
-      width: ctx.cw,
-      height: ctx.H - ctx.m - contentTop,
-      content: bulletsHtml(items, { size: sc.body, color: c.body, font: ctx.preset.fonts.body }, ordered),
-      color: c.body,
-      font: ctx.preset.fonts.body,
-      lineHeight: 1.5,
-    }),
+    bulletsElement(
+      { left: ctx.m, top: contentTop, width: ctx.cw, height: ctx.H - ctx.m - contentTop },
+      items,
+      { color: c.body, font: ctx.preset.fonts.body, lineHeight: 1.5, maxSize: sc.body, minSize: 14, ordered },
+    ),
   )
   return elements
 }
@@ -397,49 +537,36 @@ function buildColumn(
 
   const heading = optStr(slots, `${prefix}Heading`)
   if (heading) {
+    const h = regionHeight(sc.sectionHeader, 2, 1.2)
     elements.push(
-      textElement({
-        left,
-        top: y,
-        width,
-        height: round(sc.sectionHeader * 1.5),
-        content: paragraphsHtml(heading, { size: sc.sectionHeader, color: c.title, font: fonts.heading, bold: true }),
-        color: c.title,
-        font: fonts.heading,
-        lineHeight: 1.2,
-      }),
+      paragraphsElement(
+        { left, top: y, width, height: h },
+        heading,
+        { color: c.title, font: fonts.heading, bold: true, lineHeight: 1.2, maxSize: sc.sectionHeader, minSize: 18 },
+      ),
     )
-    y += round(sc.sectionHeader * 1.7)
+    y += h
   }
 
   const items = toItems(slots[`${prefix}Bullets`])
   const body = optStr(slots, `${prefix}Body`)
+  const regionH = top + height - y
   if (items.length) {
     elements.push(
-      textElement({
-        left,
-        top: y,
-        width,
-        height: top + height - y,
-        content: bulletsHtml(items, { size: sc.body, color: c.body, font: fonts.body }),
-        color: c.body,
-        font: fonts.body,
-        lineHeight: 1.5,
-      }),
+      bulletsElement(
+        { left, top: y, width, height: regionH },
+        items,
+        { color: c.body, font: fonts.body, lineHeight: 1.5, maxSize: sc.body, minSize: 13 },
+      ),
     )
   }
   else if (body) {
     elements.push(
-      textElement({
-        left,
-        top: y,
-        width,
-        height: top + height - y,
-        content: paragraphsHtml(body, { size: sc.body, color: c.body, font: fonts.body }),
-        color: c.body,
-        font: fonts.body,
-        lineHeight: 1.45,
-      }),
+      paragraphsElement(
+        { left, top: y, width, height: regionH },
+        body,
+        { color: c.body, font: fonts.body, lineHeight: 1.45, maxSize: sc.body, minSize: 13 },
+      ),
     )
   }
 
@@ -462,28 +589,36 @@ function buildImageText(ctx: LayoutCtx, slots: Slots, warnings: string[]): Pptis
   const sc = ctx.preset.scale
   const fonts = ctx.preset.fonts
   const gutter = round(ctx.W * 0.04)
-  const regionHeight = ctx.H - ctx.m - contentTop
+  const regionHeightPx = ctx.H - ctx.m - contentTop
   const src = optStr(slots, 'image') ?? optStr(slots, 'imageSrc') ?? optStr(slots, 'src')
   const side = optStr(slots, 'imageSide') === 'left' ? 'left' : 'right'
 
-  if (!src) {
-    warnings.push('Layout "imageText" has no "image" src — rendering text full width. Add an image url to use the split layout.')
+  const pushBody = (left: number, width: number, height: number) => {
     const items = toItems(slots.bullets)
     const body = optStr(slots, 'body')
-    elements.push(
-      textElement({
-        left: ctx.m,
-        top: contentTop,
-        width: ctx.cw,
-        height: regionHeight,
-        content: items.length
-          ? bulletsHtml(items, { size: sc.body, color: c.body, font: fonts.body })
-          : paragraphsHtml(body ?? '', { size: sc.body, color: c.body, font: fonts.body }),
-        color: c.body,
-        font: fonts.body,
-        lineHeight: 1.5,
-      }),
-    )
+    if (items.length) {
+      elements.push(
+        bulletsElement(
+          { left, top: contentTop, width, height },
+          items,
+          { color: c.body, font: fonts.body, lineHeight: 1.5, maxSize: sc.body, minSize: 13 },
+        ),
+      )
+    }
+    else {
+      elements.push(
+        paragraphsElement(
+          { left, top: contentTop, width, height },
+          body ?? '',
+          { color: c.body, font: fonts.body, lineHeight: 1.5, maxSize: sc.body, minSize: 13 },
+        ),
+      )
+    }
+  }
+
+  if (!src) {
+    warnings.push('Layout "imageText" has no "image" src — rendering text full width. Add an image url to use the split layout.')
+    pushBody(ctx.m, ctx.cw, regionHeightPx)
     return elements
   }
 
@@ -491,41 +626,22 @@ function buildImageText(ctx: LayoutCtx, slots: Slots, warnings: string[]): Pptis
   const textWidth = ctx.cw - imageWidth - gutter
   const caption = optStr(slots, 'caption')
   const captionHeight = caption ? round(sc.caption * 2) : 0
-  const imageHeight = regionHeight - captionHeight - (caption ? 8 : 0)
+  const imageHeight = regionHeightPx - captionHeight - (caption ? 8 : 0)
   const imageLeft = side === 'left' ? ctx.m : ctx.m + textWidth + gutter
   const textLeft = side === 'left' ? ctx.m + imageWidth + gutter : ctx.m
 
   elements.push(imageElement({ left: imageLeft, top: contentTop, width: imageWidth, height: imageHeight, src }))
   if (caption) {
     elements.push(
-      textElement({
-        left: imageLeft,
-        top: contentTop + imageHeight + 8,
-        width: imageWidth,
-        height: captionHeight,
-        content: paragraphsHtml(caption, { size: sc.caption, color: c.muted, font: fonts.body }),
-        color: c.muted,
-        font: fonts.body,
-      }),
+      paragraphsElement(
+        { left: imageLeft, top: contentTop + imageHeight + 8, width: imageWidth, height: captionHeight },
+        caption,
+        { color: c.muted, font: fonts.body, lineHeight: 1.3, maxSize: sc.caption, minSize: 10 },
+      ),
     )
   }
 
-  const items = toItems(slots.bullets)
-  const body = optStr(slots, 'body')
-  elements.push(
-    textElement({
-      left: textLeft,
-      top: contentTop,
-      width: textWidth,
-      height: regionHeight,
-      content: items.length
-        ? bulletsHtml(items, { size: sc.body, color: c.body, font: fonts.body })
-        : paragraphsHtml(body ?? '', { size: sc.body, color: c.body, font: fonts.body }),
-      color: c.body,
-      font: fonts.body,
-      lineHeight: 1.5,
-    }),
-  )
+  pushBody(textLeft, textWidth, regionHeightPx)
   return elements
 }
 
@@ -574,33 +690,24 @@ function buildBigStat(ctx: LayoutCtx, slots: Slots): PptistLayoutElementInput[] 
   const blockHeight = ctx.H - ctx.m - top
   const valueSize = count === 1 ? sc.display * 1.3 : count === 2 ? sc.display : sc.title * 1.3
   const valueTop = title ? top : top + round(blockHeight * 0.18)
+  const valueHeight = round(valueSize * 1.4)
 
   visible.forEach((stat, index) => {
     const left = ctx.m + index * (cellWidth + gutter)
     elements.push(
-      textElement({
-        left,
-        top: valueTop,
-        width: cellWidth,
-        height: round(valueSize * 1.5),
-        content: paragraphsHtml(stat.value, { size: valueSize, color: c.accent, font: fonts.heading, bold: true, align: 'center' }),
-        color: c.accent,
-        font: fonts.heading,
-        lineHeight: 1.05,
-      }),
+      paragraphsElement(
+        { left, top: valueTop, width: cellWidth, height: valueHeight },
+        stat.value,
+        { color: c.accent, font: fonts.heading, bold: true, align: 'center', lineHeight: 1.05, maxSize: valueSize, minSize: 28 },
+      ),
     )
     if (stat.label) {
       elements.push(
-        textElement({
-          left,
-          top: valueTop + round(valueSize * 1.5),
-          width: cellWidth,
-          height: round(sc.body * 2.4),
-          content: paragraphsHtml(stat.label, { size: sc.body, color: c.muted, font: fonts.body, align: 'center' }),
-          color: c.muted,
-          font: fonts.body,
-          lineHeight: 1.3,
-        }),
+        paragraphsElement(
+          { left, top: valueTop + valueHeight, width: cellWidth, height: round(sc.body * 2.6) },
+          stat.label,
+          { color: c.muted, font: fonts.body, align: 'center', lineHeight: 1.3, maxSize: sc.body, minSize: 12 },
+        ),
       )
     }
   })
@@ -608,15 +715,11 @@ function buildBigStat(ctx: LayoutCtx, slots: Slots): PptistLayoutElementInput[] 
   const footnote = optStr(slots, 'body') ?? optStr(slots, 'footnote')
   if (footnote) {
     elements.push(
-      textElement({
-        left: ctx.m,
-        top: ctx.H - ctx.m - round(sc.caption * 2.2),
-        width: ctx.cw,
-        height: round(sc.caption * 2.2),
-        content: paragraphsHtml(footnote, { size: sc.caption, color: c.muted, font: fonts.body, align: 'center' }),
-        color: c.muted,
-        font: fonts.body,
-      }),
+      paragraphsElement(
+        { left: ctx.m, top: ctx.H - ctx.m - round(sc.caption * 2.4), width: ctx.cw, height: round(sc.caption * 2.4) },
+        footnote,
+        { color: c.muted, font: fonts.body, align: 'center', lineHeight: 1.3, maxSize: sc.caption, minSize: 10 },
+      ),
     )
   }
   return elements
@@ -632,34 +735,26 @@ function buildQuote(ctx: LayoutCtx, slots: Slots): PptistLayoutElementInput[] {
   const quoteSize = round(sc.sectionHeader * 1.15)
   const blockWidth = round(ctx.cw * 0.82)
   const blockLeft = ctx.m + round((ctx.cw - blockWidth) / 2)
-  const top = round(ctx.H * 0.28)
+  const top = round(ctx.H * 0.26)
+  const quoteHeight = round(sc.sectionHeader * 4.5)
 
   elements.push(rectElement({ left: blockLeft, top, width: 6, height: round(sc.sectionHeader * 4), fill: c.accent }))
   elements.push(
-    textElement({
-      left: blockLeft + 28,
-      top,
-      width: blockWidth - 28,
-      height: round(sc.sectionHeader * 4.5),
-      content: paragraphsHtml(quote, { size: quoteSize, color: c.title, font: fonts.heading }),
-      color: c.title,
-      font: fonts.heading,
-      lineHeight: 1.35,
-    }),
+    paragraphsElement(
+      { left: blockLeft + 28, top, width: blockWidth - 28, height: quoteHeight },
+      quote,
+      { color: c.title, font: fonts.heading, lineHeight: 1.35, maxSize: quoteSize, minSize: 18 },
+    ),
   )
 
   const attribution = optStr(slots, 'attribution')
   if (attribution) {
     elements.push(
-      textElement({
-        left: blockLeft + 28,
-        top: top + round(sc.sectionHeader * 4.7),
-        width: blockWidth - 28,
-        height: round(sc.body * 2),
-        content: paragraphsHtml(`— ${attribution}`, { size: sc.body, color: c.muted, font: fonts.body }),
-        color: c.muted,
-        font: fonts.body,
-      }),
+      paragraphsElement(
+        { left: blockLeft + 28, top: top + quoteHeight + round(sc.body * 0.4), width: blockWidth - 28, height: round(sc.body * 2.2) },
+        `— ${attribution}`,
+        { color: c.muted, font: fonts.body, lineHeight: 1.3, maxSize: sc.body, minSize: 13 },
+      ),
     )
   }
   return elements
@@ -723,15 +818,11 @@ function buildChart(ctx: LayoutCtx, slots: Slots): PptistLayoutElementInput[] {
 
   if (caption) {
     elements.push(
-      textElement({
-        left: ctx.m,
-        top: contentTop + chartHeight + 8,
-        width: ctx.cw,
-        height: captionHeight,
-        content: paragraphsHtml(caption, { size: sc.caption, color: c.muted, font: fonts.body }),
-        color: c.muted,
-        font: fonts.body,
-      }),
+      paragraphsElement(
+        { left: ctx.m, top: contentTop + chartHeight + 8, width: ctx.cw, height: captionHeight },
+        caption,
+        { color: c.muted, font: fonts.body, lineHeight: 1.3, maxSize: sc.caption, minSize: 10 },
+      ),
     )
   }
   return elements
@@ -833,6 +924,18 @@ export const PPTX_LAYOUTS: PptistLayout[] = [
       { name: 'title', type: 'text', required: true, description: 'Section heading.' },
       { name: 'subtitle', type: 'text', required: false, description: 'One line about the section.' },
       { name: 'eyebrow', type: 'text', required: false, description: 'Kicker such as "Part 2".' },
+    ],
+  },
+  {
+    id: 'closing',
+    label: 'Closing',
+    summary: 'Closing slide: a large sign-off line + optional subtitle/eyebrow on a dark feature background.',
+    bestFor: 'The final slide — thank-you, recap, or a call to action / contact line.',
+    feature: true,
+    slots: [
+      { name: 'title', type: 'text', required: true, description: 'Closing line (e.g. "Thank you" or the key takeaway).' },
+      { name: 'subtitle', type: 'text', required: false, description: 'Contact details, next steps, or a closing thought.' },
+      { name: 'eyebrow', type: 'text', required: false, description: 'Small kicker above the closing line.' },
     ],
   },
   {
@@ -947,8 +1050,9 @@ export interface PptistLayoutBuildResult {
 /**
  * Build a themed slide from a layout id + content slots. Pure and deterministic:
  * returns a `Partial<Slide>` (background + un-normalized elements) plus any
- * non-fatal warnings (e.g. a missing optional image). Throws on missing
- * required slots or an unknown layout.
+ * non-fatal warnings (e.g. a missing optional image). Text is auto-fit to each
+ * box via pretext, so content never overflows. Throws on missing required slots
+ * or an unknown layout.
  */
 export function buildLayoutSlide(
   layoutId: string,

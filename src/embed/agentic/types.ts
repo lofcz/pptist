@@ -40,6 +40,11 @@ import type {
   PptistTemplateSummary,
 } from './templates'
 import type {
+  PptistLayout,
+  PptistLayoutBackgroundMode,
+} from './layouts'
+import type { PptistStyleSummary } from './styles'
+import type {
   PptistAgenticDocs,
   PptistCommandDescription,
   PptistDesignGuide,
@@ -63,6 +68,20 @@ export type {
   PptistTemplateSlidesCatalog,
   PptistTemplateSlidesCatalogResult,
 } from './templates'
+
+export type {
+  PptistLayout,
+  PptistLayoutSlotDef,
+  PptistLayoutBackgroundMode,
+} from './layouts'
+
+export type {
+  PptistStyleSummary,
+  PptistStylePreset,
+  PptistStylePalette,
+  PptistStyleScale,
+  PptistStyleFonts,
+} from './styles'
 
 export type PptistKnownCommandType = keyof PptistCommandPayloadMap
 export type PptistCommandType = PptistKnownCommandType | (string & {})
@@ -672,6 +691,40 @@ export interface PptistAgentTemplatesApi {
   slidesCatalog(templateId: string, meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistTemplateSlidesCatalogResult>>
 }
 
+export interface PptistApplyStyleResult {
+  /** The preset id actually applied (the requested one, or the default fallback). */
+  styleId: string
+  theme: SlideTheme
+}
+
+export interface PptistCreateFromLayoutInput {
+  /** Layout id from `layouts.catalog` (e.g. `title`, `bullets`, `twoColumn`). */
+  layoutId: string
+  /** Content slots for the layout. Keys + shapes are described per layout in the catalog. */
+  slots?: Record<string, unknown>
+  index?: number
+  select?: boolean
+  /** Force a feature (dark) or plain background; defaults to the layout's own preference. */
+  backgroundMode?: PptistLayoutBackgroundMode
+}
+
+export interface PptistCreateFromLayoutResult {
+  slideId: string
+  layoutId: string
+  elementIds: string[]
+  textElementIds: string[]
+}
+
+export interface PptistAgentStylesApi {
+  /** List the contrast-safe visual identity presets (academic/minimal/bold/playful). */
+  catalog(): PptistStyleSummary[]
+}
+
+export interface PptistAgentLayoutsApi {
+  /** List the compositional slide recipes and their content slots. */
+  catalog(): PptistLayout[]
+}
+
 export interface PptistAgentDeckApi {
   get(): PptistDeckDocument
   set(document: PptistDeckInput, meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistDeckDocument>>
@@ -680,6 +733,8 @@ export interface PptistAgentDeckApi {
   getTheme(): SlideTheme
   setTheme(theme: PptistSlideThemePatch, meta?: PptistCommandMeta): Promise<PptistCommandResult<SlideTheme>>
   applyTemplate(templateId: string, meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistApplyTemplateResult>>
+  /** Apply a style preset (from `styles.catalog`) as the deck's visual identity; records `theme.styleId`. */
+  applyStyle(styleId: string, meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistApplyStyleResult>>
   applyTheme(theme: PptistSlideThemePatch, options?: PptistApplyThemeOptions, meta?: PptistCommandMeta): Promise<PptistCommandResult<SlideTheme>>
   extractTheme(options?: PptistThemeExtractionOptions): SlideTheme
   setViewport(viewport: { size?: number; ratio?: number }, meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistBridgeState>>
@@ -692,6 +747,8 @@ export interface PptistAgentSlidesApi {
   current(): Slide | null
   read(slideIdOrIndex?: PptistSlideReference, meta?: PptistCommandMeta): Promise<PptistCommandResult<Slide | null>>
   create(input?: PptistCreateSlideInput, meta?: PptistCommandMeta): Promise<PptistCommandResult<Slide>>
+  /** Build + insert a themed slide from a layout recipe (from `layouts.catalog`) using the active style preset. */
+  createFromLayout(input: PptistCreateFromLayoutInput, meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistCreateFromLayoutResult>>
   insertFromTemplate(input: PptistInsertFromTemplateInput, meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistInsertFromTemplateResult>>
   insert(input: PptistInsertSlidesInput, meta?: PptistCommandMeta): Promise<PptistCommandResult<PptistInsertSlidesResult>>
   update(slideId: string, patch: Partial<Slide>, meta?: PptistCommandMeta): Promise<PptistCommandResult<Slide>>
@@ -1034,6 +1091,8 @@ export interface PptistAgentApi {
   deck: PptistAgentDeckApi
   slides: PptistAgentSlidesApi
   templates: PptistAgentTemplatesApi
+  styles: PptistAgentStylesApi
+  layouts: PptistAgentLayoutsApi
   elements: PptistAgentElementsApi
   text: PptistAgentTextApi
   shapes: PptistAgentShapesApi
@@ -1066,11 +1125,14 @@ export interface PptistCommandPayloadMap {
   'deck.setTheme': { theme: PptistSlideThemePatch | Partial<SlideTheme> }
   'deck.applyTheme': { theme: PptistSlideThemePatch | Partial<SlideTheme>; options?: PptistApplyThemeOptions }
   'deck.applyTemplate': { templateId: string }
+  'deck.applyStyle': { styleId: string }
   'deck.extractTheme': { options?: PptistThemeExtractionOptions } | undefined
   'deck.setViewport': { size?: number; ratio?: number }
   'deck.setTemplates': { templates: SlideTemplate[] }
   'templates.catalog': undefined
   'templates.slidesCatalog': { templateId: string }
+  'styles.catalog': undefined
+  'layouts.catalog': undefined
   'import.json': PptistDocumentImportPayload
   'import.pptist': PptistDocumentImportPayload
   'import.pptxSafe': PptistDocumentImportPayload
@@ -1080,6 +1142,7 @@ export interface PptistCommandPayloadMap {
   'slides.current': undefined
   'slides.read': { slideIdOrIndex?: PptistSlideReference } | undefined
   'slides.create': PptistCreateSlideInput | undefined
+  'slides.createFromLayout': PptistCreateFromLayoutInput
   'slides.insertFromTemplate': PptistInsertFromTemplateInput
   'slides.insert': PptistInsertSlidesInput
   'slides.update': { slideId: string; patch: Partial<Slide> }
@@ -1231,11 +1294,14 @@ export interface PptistCommandResultDataMap {
   'deck.setTheme': SlideTheme
   'deck.applyTheme': SlideTheme
   'deck.applyTemplate': PptistApplyTemplateResult
+  'deck.applyStyle': PptistApplyStyleResult
   'deck.extractTheme': SlideTheme
   'deck.setViewport': PptistBridgeState
   'deck.setTemplates': SlideTemplate[]
   'templates.catalog': PptistTemplateSummary[]
   'templates.slidesCatalog': PptistTemplateSlidesCatalogResult
+  'styles.catalog': PptistStyleSummary[]
+  'layouts.catalog': PptistLayout[]
   'import.json': PptistDeckDocument
   'import.pptist': PptistDeckDocument
   'import.pptxSafe': PptistDeckDocument
@@ -1245,6 +1311,7 @@ export interface PptistCommandResultDataMap {
   'slides.current': Slide | null
   'slides.read': Slide | null
   'slides.create': Slide
+  'slides.createFromLayout': PptistCreateFromLayoutResult
   'slides.insertFromTemplate': PptistInsertFromTemplateResult
   'slides.insert': PptistInsertSlidesResult
   'slides.update': Slide
