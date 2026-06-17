@@ -8,8 +8,8 @@
     <ElementFlip />
 
     <ButtonGroup class="row" passive>
-      <Button first style="width: calc(100% / 6 * 5);" @click="clipImage()"><i-icon-park-outline:tailoring /> {{ LL.editor.stylePanel.image.cropImage() }}</Button>
-      <Popover trigger="click" v-model:value="clipPanelVisible" style="width: calc(100% / 6);">
+      <Button first style="width: calc(100% - 32px);" @click="clipImage()"><i-icon-park-outline:tailoring /> {{ LL.editor.stylePanel.image.cropImage() }}</Button>
+      <Popover trigger="click" v-model:value="clipPanelVisible" style="width: 32px;">
         <template #content>
           <div class="clip">
             <div class="title">{{ LL.editor.stylePanel.image.clipByShape() }}</div>
@@ -37,7 +37,7 @@
             </template>
           </div>
         </template>
-        <Button last class="popover-btn" style="width: 100%;"><i-icon-park-outline:down /></Button>
+        <Button last class="popover-btn"><i-icon-park-outline:down /></Button>
       </Popover>
     </ButtonGroup>
     
@@ -321,6 +321,7 @@ const setBackgroundImage = () => {
   }
 }
 .popover-btn {
+  width: 100%;
   padding: 0 3px;
 }
 </style>

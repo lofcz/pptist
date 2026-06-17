@@ -60,6 +60,7 @@
         <Popover trigger="click" v-model:value="shapeMenuVisible" style="height: 100%;" :offset="10">
           <template #content>
             <PopoverMenuItem center @click="shapeMenuVisible = false; shapePoolVisible = true"><i-icon-park-outline:graphic-design class="icon" />{{ LL.editor.canvasTool.presetShapes() }}</PopoverMenuItem>
+            <PopoverMenuItem center @click="() => { svgPathEditorVisible = true; shapeMenuVisible = false }"><i-icon-park-outline:connection class="icon" />{{ LL.editor.canvasTool.pathDraw() }}</PopoverMenuItem>
             <PopoverMenuItem center @click="() => { drawCustomShape(); shapeMenuVisible = false }"><i-icon-park-outline:writing-fluently class="icon" />{{ LL.editor.canvasTool.freeDraw() }}</PopoverMenuItem>
           </template>
           <span class="arrow"><i-icon-park-outline:down /></span>
@@ -162,6 +163,16 @@
         @update="data => { createLatexElement(data); latexEditorVisible = false }"
       />
     </Modal>
+
+    <Modal
+      v-model:visible="svgPathEditorVisible"
+      :width="800"
+    >
+      <SVGPathEditor
+        @close="svgPathEditorVisible = false"
+        @insert="path => insertSvgPath(path)"
+      />
+    </Modal>
   </div>
 </template>
 
@@ -169,10 +180,11 @@
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { OverlayScrollbars } from 'overlayscrollbars'
-import { useMainStore, useSnapshotStore } from '@/store'
+import { useMainStore, useSlidesStore, useSnapshotStore } from '@/store'
 import { getImageDataURL } from '@/utils/image'
 import type { ShapePoolItem } from '@/configs/shapes'
 import type { LinePoolItem } from '@/configs/lines'
+import type { PPTShapeElement } from '@/types/slides'
 import useScaleCanvas from '@/hooks/useScaleCanvas'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 import useCreateElement from '@/hooks/useCreateElement'
@@ -182,6 +194,7 @@ import LinePool from './LinePool.vue'
 import ChartPool from './ChartPool.vue'
 import TableGenerator from './TableGenerator.vue'
 import MediaInput from './MediaInput.vue'
+import SVGPathEditor from './SVGPathEditor.vue'
 import LaTeXEditor from '@/components/LaTeXEditor/index.vue'
 import FileInput from '@/components/FileInput.vue'
 import Modal from '@/components/Modal.vue'
@@ -194,8 +207,10 @@ import 'overlayscrollbars/overlayscrollbars.css'
 const { LL } = useI18nContext()
 
 const mainStore = useMainStore()
+const slidesStore = useSlidesStore()
 const { creatingElement, creatingCustomShape, showSelectPanel, showSearchPanel, showNotesPanel, showSymbolPanel } = storeToRefs(mainStore)
 const { canUndo, canRedo } = storeToRefs(useSnapshotStore())
+const { theme, viewportRatio, viewportSize } = storeToRefs(slidesStore)
 
 const { redo, undo } = useHistorySnapshot()
 
@@ -287,6 +302,7 @@ const {
   createLatexElement,
   createVideoElement,
   createAudioElement,
+  createShapeElement,
 } = useCreateElement()
 
 const insertImageElement = (files: FileList) => {
@@ -301,6 +317,7 @@ const chartPoolVisible = ref(false)
 const tableGeneratorVisible = ref(false)
 const mediaInputVisible = ref(false)
 const latexEditorVisible = ref(false)
+const svgPathEditorVisible = ref(false)
 const textTypeSelectVisible = ref(false)
 const shapeMenuVisible = ref(false)
 const imageMenuVisible = ref(false)
@@ -326,6 +343,34 @@ const drawShape = (shape: ShapePoolItem) => {
 const drawCustomShape = () => {
   mainStore.setCreatingCustomShapeState(true)
   shapePoolVisible.value = false
+}
+// 根据路径插入形状
+const insertSvgPath = (path: string) => {
+  const width = 400
+  const height = 400
+  const isClosedPath = /z\s*$/i.test(path)
+  const position = {
+    width,
+    height,
+    left: (viewportSize.value - width) / 2,
+    top: (viewportSize.value * viewportRatio.value - height) / 2,
+  }
+  const supplement: Partial<PPTShapeElement> = isClosedPath
+    ? { fill: theme.value.themeColors[0] }
+    : {
+      fill: 'rgba(0, 0, 0, 0)',
+      outline: {
+        width: 2,
+        color: theme.value.themeColors[0],
+        style: 'solid',
+      },
+    }
+
+  createShapeElement(position, {
+    path,
+    viewBox: [width, height],
+  }, supplement)
+  svgPathEditorVisible.value = false
 }
 
 // 绘制线条路径

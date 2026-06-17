@@ -33,7 +33,7 @@
           <RadioButton style="width: 50%;" value="image">{{ LL.export.pptx.modeImageOnly() }}</RadioButton>
         </RadioGroup>
       </div>
-      <div class="row" v-if="rangeType === 'custom'">
+      <div class="row" style="margin-bottom: 32px" v-if="rangeType === 'custom'">
         <div class="title" :data-range="customRangeHint">{{ LL.export.dialog.customRange() }}</div>
         <Slider
           class="config-item"

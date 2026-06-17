@@ -2175,6 +2175,10 @@ export type NamespaceEditorTranslation = {
 		 */
 		presetShapes: string
 		/**
+		 * P​a​t​h​ ​d​r​a​w
+		 */
+		pathDraw: string
+		/**
 		 * F​r​e​e​ ​d​r​a​w
 		 */
 		freeDraw: string
@@ -3137,6 +3141,38 @@ export type NamespaceEditorTranslation = {
 			 * C​o​l​u​m​n​s​:
 			 */
 			columns: string
+			/**
+			 * A​d​d​ ​r​o​w
+			 */
+			addRow: string
+			/**
+			 * A​d​d​ ​a​b​o​v​e
+			 */
+			addAbove: string
+			/**
+			 * A​d​d​ ​b​e​l​o​w
+			 */
+			addBelow: string
+			/**
+			 * D​e​l​e​t​e​ ​r​o​w
+			 */
+			deleteRow: string
+			/**
+			 * A​d​d​ ​c​o​l​u​m​n
+			 */
+			addColumn: string
+			/**
+			 * A​d​d​ ​l​e​f​t
+			 */
+			addLeft: string
+			/**
+			 * A​d​d​ ​r​i​g​h​t
+			 */
+			addRight: string
+			/**
+			 * D​e​l​e​t​e​ ​c​o​l​u​m​n
+			 */
+			deleteColumn: string
 			/**
 			 * E​n​a​b​l​e​ ​t​h​e​m​e​d​ ​t​a​b​l​e​:
 			 */
@@ -4120,7 +4156,7 @@ export type NamespaceExportTranslation = {
 		 */
 		overwriteMaster: string
 		/**
-		 * T​i​p​:​ ​1​.​ ​S​u​p​p​o​r​t​e​d​ ​f​o​r​m​a​t​s​:​ ​a​v​i​,​ ​m​p​4​,​ ​m​o​v​,​ ​w​m​v​,​ ​m​p​3​,​ ​w​a​v​;​ ​2​.​ ​C​r​o​s​s​-​o​r​i​g​i​n​ ​r​e​s​o​u​r​c​e​s​ ​c​a​n​n​o​t​ ​b​e​ ​e​x​p​o​r​t​e​d​.
+		 * T​i​p​:​ ​1​.​ ​S​u​p​p​o​r​t​e​d​ ​f​o​r​m​a​t​s​:​ ​a​v​i​,​ ​m​p​4​,​ ​m​o​v​,​ ​w​m​v​,​ ​m​p​3​,​ ​w​a​v​;​ ​2​.​ ​M​e​d​i​a​ ​f​r​o​m​ ​o​t​h​e​r​ ​o​r​i​g​i​n​s​ ​i​s​ ​f​e​t​c​h​e​d​ ​i​n​ ​y​o​u​r​ ​b​r​o​w​s​e​r​ ​b​e​f​o​r​e​ ​e​x​p​o​r​t​ ​—​ ​i​f​ ​a​ ​s​o​u​r​c​e​ ​b​l​o​c​k​s​ ​t​h​e​ ​f​e​t​c​h​,​ ​i​t​ ​w​i​l​l​ ​b​e​ ​s​k​i​p​p​e​d​.
 		 */
 		mediaExportTip: string
 		/**
@@ -6728,6 +6764,10 @@ export type TranslationFunctions = {
 			 */
 			presetShapes: () => LocalizedString
 			/**
+			 * Path draw
+			 */
+			pathDraw: () => LocalizedString
+			/**
 			 * Free draw
 			 */
 			freeDraw: () => LocalizedString
@@ -7682,6 +7722,38 @@ export type TranslationFunctions = {
 				 * Columns:
 				 */
 				columns: () => LocalizedString
+				/**
+				 * Add row
+				 */
+				addRow: () => LocalizedString
+				/**
+				 * Add above
+				 */
+				addAbove: () => LocalizedString
+				/**
+				 * Add below
+				 */
+				addBelow: () => LocalizedString
+				/**
+				 * Delete row
+				 */
+				deleteRow: () => LocalizedString
+				/**
+				 * Add column
+				 */
+				addColumn: () => LocalizedString
+				/**
+				 * Add left
+				 */
+				addLeft: () => LocalizedString
+				/**
+				 * Add right
+				 */
+				addRight: () => LocalizedString
+				/**
+				 * Delete column
+				 */
+				deleteColumn: () => LocalizedString
 				/**
 				 * Enable themed table:
 				 */
@@ -8652,7 +8724,7 @@ export type TranslationFunctions = {
 			 */
 			overwriteMaster: () => LocalizedString
 			/**
-			 * Tip: 1. Supported formats: avi, mp4, mov, wmv, mp3, wav; 2. Cross-origin resources cannot be exported.
+			 * Tip: 1. Supported formats: avi, mp4, mov, wmv, mp3, wav; 2. Media from other origins is fetched in your browser before export — if a source blocks the fetch, it will be skipped.
 			 */
 			mediaExportTip: () => LocalizedString
 			/**

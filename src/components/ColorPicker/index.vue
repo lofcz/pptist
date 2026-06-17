@@ -29,7 +29,7 @@
     <div class="picker-presets">
       <div
         class="picker-presets-color"
-        :class="{ 'white': c === '#ffffff' || c === '#fff' || c === 'rgb(255, 255, 255)' }"
+        :class="{ 'white': isPureWhiteColor(c) }"
         v-for="c in themeColors"
         :key="c"
         :style="{ background: c }"
@@ -66,7 +66,7 @@
     <div class="picker-presets">
       <div
         class="picker-presets-color alpha"
-        :class="{ 'white': c === '#ffffff' || c === '#fff' || c === 'rgb(255, 255, 255)' }"
+        :class="{ 'white': isPureWhiteColor(c) }"
         v-for="c in recentColors"
         :key="c"
         @click="selectPresetColor(c)"
@@ -310,6 +310,11 @@ const customEyeDropper = () => {
     message.error(LL.value.components.colorPicker.eyeDropperInitFailed())
     portalTarget.removeChild(maskRef)
   })
+}
+
+const isPureWhiteColor = (color?: string) => {
+  const rgba = tinycolor(color).toRgb()
+  return rgba.r === 255 && rgba.g === 255 && rgba.b === 255 && rgba.a === 1
 }
 </script>
 
