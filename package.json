@@ -1,6 +1,6 @@
 {
   "name": "@lofcz/pptist",
-  "version": "2.0.14",
+  "version": "2.0.15",
   "description": "PPTist presentation editor embed bundle with a typed agentic bridge.",
   "type": "module",
   "main": "dist/embed/pptist-embed.js",
