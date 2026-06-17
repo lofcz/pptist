@@ -17,9 +17,12 @@
  *
  * Builders are deterministic and pure (no store access): given a viewport, a
  * style preset, and slots, they return a `Partial<Slide>` that the bridge
- * normalizes and inserts. Text content is rendered to the small, safe HTML
- * subset PPTist stores (`<p>/<ul>/<li>/<span style>` with inline size and
- * color), with light inline markdown (`**bold**`, `_italic_`, `` `code` ``).
+ * normalizes and inserts. Slot text is wrapped in the small, safe HTML shell
+ * PPTist stores (`<p>/<ul>/<li>/<span style>` with inline size and color); the
+ * inline content of each line is rendered through the shared CommonMark + texmath
+ * pipeline (`utils/markdown.ts`), so markdown (`**bold**`, `_italic_`, `` `code` ``,
+ * links) and inline math (`$…$`, `$$…$$`) work identically to the `text.setMarkdown`
+ * path — any slot accepts mixed prose + formulas (e.g. a bullet `Příklad: $\\frac{3}{8} > \\frac{1}{8}$`).
  */
 import { layout as pretextLayout, prepare as pretextPrepare } from '@chenglou/pretext'
 import type {
@@ -35,6 +38,7 @@ import type {
   TableCell,
   TableCellStyle,
 } from '@/types/slides'
+import { containsMath, ensureInlineMathReady, renderInlineMarkdown } from '@/utils/markdown'
 import type { PptistStylePreset } from './styles'
 
 /**
@@ -77,16 +81,17 @@ export interface PptistLayout {
 
 const round = Math.round
 
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+/** True when a slot value (string, or nested array/object) carries inline math. */
+function valueContainsMath(value: unknown): boolean {
+  if (typeof value === 'string') return containsMath(value)
+  if (Array.isArray(value)) return value.some(valueContainsMath)
+  if (value && typeof value === 'object') return Object.values(value as Record<string, unknown>).some(valueContainsMath)
+  return false
 }
 
-/** Escape, then apply a tiny, safe inline-markdown subset. */
-function inlineFormat(value: string): string {
-  return escapeHtml(value)
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`([^`]+?)`/g, '<code>$1</code>')
-    .replace(/(^|[^_])_([^_]+?)_(?!_)/g, '$1<em>$2</em>')
+/** True when any layout slot carries inline math (so the parser must preload). */
+function slotsContainMath(slots: Slots): boolean {
+  return Object.values(slots).some(valueContainsMath)
 }
 
 interface SpanStyle {
@@ -97,7 +102,7 @@ interface SpanStyle {
 }
 
 function spanHtml(value: string, style: SpanStyle): string {
-  const inner = style.bold ? `<strong>${inlineFormat(value)}</strong>` : inlineFormat(value)
+  const inner = style.bold ? `<strong>${renderInlineMarkdown(value)}</strong>` : renderInlineMarkdown(value)
   return `<span style="font-size:${round(style.size)}px;color:${style.color};font-family:${style.font}">${inner}</span>`
 }
 
@@ -1053,18 +1058,22 @@ export interface PptistLayoutBuildResult {
  * non-fatal warnings (e.g. a missing optional image). Text is auto-fit to each
  * box via pretext, so content never overflows. Throws on missing required slots
  * or an unknown layout.
+ *
+ * Async because slots may carry inline math; KaTeX is lazy-loaded up front (only
+ * when math is present) so the otherwise-synchronous builders can render it.
  */
-export function buildLayoutSlide(
+export async function buildLayoutSlide(
   layoutId: string,
   slots: Slots,
   preset: PptistStylePreset,
   viewport: { width: number; height: number },
   backgroundMode: PptistLayoutBackgroundMode = 'auto',
-): PptistLayoutBuildResult {
+): Promise<PptistLayoutBuildResult> {
   const layout = LAYOUTS_BY_ID.get(layoutId)
   if (!layout) {
     throw new Error(`Unknown layout "${layoutId}". Call layouts.catalog to list available layouts.`)
   }
+  if (slotsContainMath(slots)) await ensureInlineMathReady()
   const builder = LAYOUT_BUILDERS[layoutId]
   const W = viewport.width
   const H = viewport.height

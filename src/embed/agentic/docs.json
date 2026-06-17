@@ -93,7 +93,7 @@
     },
     "slides.createFromLayout": {
       "summary": "Build + insert a themed slide from a layout id and content slots. The PREFERRED way to add a slide when building from scratch.",
-      "details": "The engine positions every element on the canvas, colors it from the active style preset (theme.styleId), and AUTO-FITS each text box's font size (responsive measurement) so text never overflows — you never pick coordinates, sizes, or colors. Author slot content as Markdown/plain text (titles, bullets, body) or structured values (arrays of strings for bullets; { labels, series, legends } for charts; rows for comparison). Returns the new slideId plus the created element ids.",
+      "details": "The engine positions every element on the canvas, colors it from the active style preset (theme.styleId), and AUTO-FITS each text box's font size (responsive measurement) so text never overflows — you never pick coordinates, sizes, or colors. Author slot content as Markdown/plain text (titles, bullets, body) or structured values (arrays of strings for bullets; { labels, series, legends } for charts; rows for comparison). Slot text supports inline math: wrap formulas in $…$ (inline) or $$…$$ (display) and they typeset via MathML (e.g. a bullet 'Příklad: $\\frac{3}{8} > \\frac{1}{8}$'). Write math this way inside the text — do NOT spell it as plain text and do NOT add a separate latex element for math that belongs in a sentence or bullet. Returns the new slideId plus the created element ids.",
       "params": [
         { "name": "layoutId", "type": "string", "required": true, "description": "Layout id from layouts.catalog (e.g. 'title', 'bullets', 'twoColumn', 'chart')." },
         { "name": "slots", "type": "Record<string, unknown>", "required": false, "description": "Content slots for the layout (keys + shapes per layouts.catalog)." },
@@ -230,7 +230,7 @@
     },
     "text.create": {
       "summary": "Create a text element (manual placement). Author content as Markdown via `markdown` (recommended) or plain text via `content`.",
-      "details": "Pass `markdown` for formatted copy (the bridge converts it to the HTML PPTist stores). `content` is treated as literal markup — pass plain text there, or intentional HTML only when you specifically want to render markup (e.g. a code snippet). Do NOT type raw HTML tags into `markdown`: they are escaped and appear as literal text (the bridge warns when it detects this). The fallback color/font come from defaultColor/defaultFontName.",
+      "details": "Pass `markdown` for formatted copy (the bridge converts it to the HTML PPTist stores). Markdown supports inline math: $…$ (inline) and $$…$$ (display) typeset via MathML, so mix prose and formulas freely (e.g. 'Plocha je $\\pi r^2$'). `content` is treated as literal markup — pass plain text there, or intentional HTML only when you specifically want to render markup (e.g. a code snippet). Do NOT type raw HTML tags into `markdown`: they are escaped and appear as literal text (the bridge warns when it detects this). The fallback color/font come from defaultColor/defaultFontName.",
       "params": [
         { "name": "slideId", "type": "string", "required": false, "description": "Target slide." },
         { "name": "markdown", "type": "string", "required": false, "description": "Markdown content (recommended). Converted to HTML." },

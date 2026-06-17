@@ -38,16 +38,18 @@ function createBaseParser() {
 }
 
 const markdownParser = createBaseParser()
-let mathMarkdownParser: Promise<MarkdownIt> | null = null
+let mathMarkdownParserPromise: Promise<MarkdownIt> | null = null
+let mathMarkdownParser: MarkdownIt | null = null
 
-function hasMath(source: string) {
+/** True when a string carries math delimiters the math parser should handle. */
+export function containsMath(source: string): boolean {
   return MATH_RE.test(source)
 }
 
-async function loadMathMarkdownParser() {
-  if (mathMarkdownParser) return mathMarkdownParser
+function loadMathMarkdownParser(): Promise<MarkdownIt> {
+  if (mathMarkdownParserPromise) return mathMarkdownParserPromise
 
-  mathMarkdownParser = Promise.all([
+  mathMarkdownParserPromise = Promise.all([
     import('markdown-it-texmath'),
     import('katex'),
   ]).then(([texmathModule, katex]) => {
@@ -62,10 +64,11 @@ async function loadMathMarkdownParser() {
         throwOnError: false,
       },
     })
+    mathMarkdownParser = parser
     return parser
   })
 
-  return mathMarkdownParser
+  return mathMarkdownParserPromise
 }
 
 export async function markdownToHtml(markdown: string): Promise<string> {
@@ -73,6 +76,30 @@ export async function markdownToHtml(markdown: string): Promise<string> {
   const source = String(markdown).trim()
   if (!source) return ''
 
-  const parser = hasMath(source) ? await loadMathMarkdownParser() : markdownParser
+  const parser = containsMath(source) ? await loadMathMarkdownParser() : markdownParser
   return parser.render(source).trim()
+}
+
+/**
+ * Preload the math-capable markdown parser (lazy KaTeX + texmath) so
+ * `renderInlineMarkdown` can render `$…$` math synchronously afterwards. No-op
+ * once loaded; call before rendering content that may contain math.
+ */
+export async function ensureInlineMathReady(): Promise<void> {
+  await loadMathMarkdownParser()
+}
+
+/**
+ * Render one line of markdown to inline HTML (no `<p>` wrapper) using the same
+ * CommonMark + texmath pipeline as {@link markdownToHtml}. Inline math (`$…$`)
+ * renders only when the math parser has been preloaded via
+ * {@link ensureInlineMathReady}; otherwise math delimiters read as literal text.
+ */
+export function renderInlineMarkdown(markdown: string): string {
+  if (markdown == null) return ''
+  const source = String(markdown).trim()
+  if (!source) return ''
+
+  const parser = containsMath(source) && mathMarkdownParser ? mathMarkdownParser : markdownParser
+  return parser.renderInline(source).trim()
 }

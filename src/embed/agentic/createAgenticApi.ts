@@ -1709,13 +1709,13 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     if (payload.select !== false) selectSlide(stores, index)
     return clonePlain(slide)
   })
-  register('slides.createFromLayout', (payload: { layoutId: string; slots?: Record<string, unknown>; index?: number; select?: boolean; backgroundMode?: PptistLayoutBackgroundMode } = { layoutId: '' }) => {
+  register('slides.createFromLayout', async (payload: { layoutId: string; slots?: Record<string, unknown>; index?: number; select?: boolean; backgroundMode?: PptistLayoutBackgroundMode } = { layoutId: '' }) => {
     if (!payload?.layoutId) {
       throw new AgenticCommandError('InvalidLayout', 'layoutId is required. Call layouts.catalog.', 'payload.layoutId')
     }
     const preset = resolveStylePreset(stores.slides.theme.styleId)
     const viewport = viewportFromStores(stores)
-    const built = buildLayoutSlide(
+    const built = await buildLayoutSlide(
       payload.layoutId,
       payload.slots ?? {},
       preset,
