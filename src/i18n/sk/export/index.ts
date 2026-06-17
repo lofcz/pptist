@@ -3,6 +3,7 @@ import type { NamespaceExportTranslation } from '../../i18n-types'
 const sk_export: NamespaceExportTranslation = {
   exportImageFailed: 'Nepodarilo sa exportovať obrázok',
   exportFailed: 'Nepodarilo sa exportovať',
+  exportPartial: 'Export prebehol, ale niektoré médiá sa nepodarilo vložiť',
   chartSeries: 'Séria {index}',
   dialog: {
     tabs: {
@@ -36,7 +37,7 @@ const sk_export: NamespaceExportTranslation = {
       'Audio a video sa pri exporte v predvolenom nastavení neexportujú. Ak ich chcete zahrnúť do súboru PPTX, vypnite túto možnosť — export potom výrazne potrvá.',
     overwriteMaster: 'Prepísať predvolený vzor snímok:',
     mediaExportTip:
-      'Tip: 1. Podporované formáty: avi, mp4, mov, wmv, mp3, wav; 2. Zdroje z iných domén nie je možné exportovať.',
+      'Tip: 1. Podporované formáty: avi, mp4, mov, wmv, mp3, wav; 2. Médiá z iných domén sa pred exportom stiahnu vo vašom prehliadači — ak zdroj stiahnutie zablokuje, bude preskočený.',
     exportButton: 'Exportovať PPTX',
   },
   pptist: {

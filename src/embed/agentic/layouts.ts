@@ -38,7 +38,7 @@ import type {
   TableCell,
   TableCellStyle,
 } from '@/types/slides'
-import { containsMath, ensureInlineMathReady, renderInlineMarkdown } from '@/utils/markdown'
+import { containsMath, ensureInlineMathReady, renderInlineMarkdown, splitLinesPreservingMath } from '@/utils/markdown'
 import type { PptistStylePreset } from './styles'
 
 /**
@@ -58,7 +58,7 @@ export type PptistLayoutBackgroundMode = 'auto' | 'feature' | 'plain'
 export interface PptistLayoutSlotDef {
   name: string
   /** Coarse shape of the value the agent should pass for this slot. */
-  type: 'text' | 'bullets' | 'image' | 'chart' | 'stats' | 'rows'
+  type: 'text' | 'bullets' | 'image' | 'chart' | 'stats' | 'rows' | 'cards' | 'steps'
   required: boolean
   description: string
 }
@@ -112,8 +112,7 @@ interface ParagraphStyle extends SpanStyle {
 
 /** Split a multi-line value into trimmed, non-empty blocks (paragraphs). */
 function blocksOf(value: string): string[] {
-  return String(value)
-    .split(/\r?\n/)
+  return splitLinesPreservingMath(value)
     .map(line => line.trim())
     .filter(Boolean)
 }
@@ -134,8 +133,7 @@ function bulletsHtml(items: string[], style: SpanStyle, ordered = false): string
 function toItems(value: unknown): string[] {
   if (Array.isArray(value)) return value.map(item => String(item).trim()).filter(Boolean)
   if (value == null) return []
-  return String(value)
-    .split(/\r?\n/)
+  return splitLinesPreservingMath(String(value))
     .map(line => line.replace(/^\s*(?:[-*•]\s+|\d+[.)]\s+)/, '').trim())
     .filter(Boolean)
 }
@@ -407,6 +405,22 @@ function imageElement(opts: { left: number; top: number; width: number; height: 
     rotate: 0,
     src: opts.src,
     fixedRatio: false,
+  }
+}
+
+/** A filled square "chip" with a vertically + horizontally centered label (e.g. a step number). */
+function badgeElement(opts: {
+  left: number; top: number; size: number; fill: string; text: string; color: string; font: string
+}): Partial<PPTShapeElement> & { type: 'shape' } {
+  const fontSize = Math.max(11, round(opts.size * 0.44))
+  return {
+    ...rectElement({ left: opts.left, top: opts.top, width: opts.size, height: opts.size, fill: opts.fill }),
+    text: {
+      content: `<p style="text-align:center"><span style="font-size:${fontSize}px;color:${opts.color};font-family:${opts.font}"><strong>${opts.text}</strong></span></p>`,
+      defaultFontName: opts.font,
+      defaultColor: opts.color,
+      align: 'middle',
+    },
   }
 }
 
@@ -889,6 +903,186 @@ function buildComparison(ctx: LayoutCtx, slots: Slots): PptistLayoutElementInput
   return elements
 }
 
+interface CardEntry {
+  heading?: string
+  body?: string
+}
+
+/** Parse a `cards`/`steps` slot: an array of { heading, body } objects or plain strings. */
+function readCardEntries(value: unknown): CardEntry[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((entry): CardEntry | null => {
+      if (entry == null) return null
+      if (typeof entry === 'string') {
+        const text = entry.trim()
+        return text ? { heading: text } : null
+      }
+      const rec = entry as Record<string, unknown>
+      const headingRaw = rec.heading ?? rec.title ?? rec.label ?? rec.term ?? rec.name
+      const bodyRaw = rec.body ?? rec.text ?? rec.description ?? rec.detail ?? rec.definition ?? rec.def
+      const heading = headingRaw == null ? '' : String(headingRaw).trim()
+      const body = bodyRaw == null ? '' : String(bodyRaw).trim()
+      if (!heading && !body) return null
+      return { heading: heading || undefined, body: body || undefined }
+    })
+    .filter((entry): entry is CardEntry => entry != null)
+}
+
+/** Title + a row/grid of up to 6 surface cards, each an accent-topped panel with a heading + blurb. */
+function buildCards(ctx: LayoutCtx, slots: Slots): PptistLayoutElementInput[] {
+  const { elements, contentTop } = buildHeader(ctx, slots, 'cards')
+  const cards = readCardEntries(slots.cards ?? slots.items ?? slots.columns)
+  if (!cards.length) {
+    throw new Error('Layout "cards" requires a non-empty "cards" array of { heading, body } (or strings).')
+  }
+  const c = roleColors(ctx)
+  const sc = ctx.preset.scale
+  const fonts = ctx.preset.fonts
+  const palette = ctx.preset.palette
+
+  const count = Math.min(cards.length, 6)
+  const visible = cards.slice(0, count)
+  const cols = count <= 3 ? count : Math.ceil(count / 2)
+  const rows = Math.ceil(count / cols)
+  const gutter = round(ctx.W * 0.025)
+  const regionH = ctx.H - ctx.m - contentTop
+  const cardW = round((ctx.cw - gutter * (cols - 1)) / cols)
+  const cardH = round((regionH - gutter * (rows - 1)) / rows)
+  const pad = Math.max(12, round(Math.min(cardW, cardH) * 0.1))
+
+  visible.forEach((card, index) => {
+    const col = index % cols
+    const row = Math.floor(index / cols)
+    const left = ctx.m + col * (cardW + gutter)
+    const top = contentTop + row * (cardH + gutter)
+    elements.push(rectElement({ left, top, width: cardW, height: cardH, fill: palette.surface }))
+    elements.push(rectElement({ left, top, width: cardW, height: 5, fill: c.accent }))
+
+    const innerLeft = left + pad
+    const innerW = cardW - pad * 2
+    let y = top + pad + 6
+    const bottom = top + cardH - pad
+
+    if (card.heading) {
+      const headingH = Math.min(regionHeight(sc.sectionHeader, 2, 1.18), bottom - y)
+      elements.push(
+        paragraphsElement(
+          { left: innerLeft, top: y, width: innerW, height: headingH },
+          card.heading,
+          { color: c.title, font: fonts.heading, bold: true, lineHeight: 1.18, maxSize: sc.sectionHeader, minSize: 14 },
+        ),
+      )
+      y += headingH + 4
+    }
+    if (card.body && bottom - y > sc.caption) {
+      elements.push(
+        paragraphsElement(
+          { left: innerLeft, top: y, width: innerW, height: bottom - y },
+          card.body,
+          { color: c.body, font: fonts.body, lineHeight: 1.4, maxSize: sc.body, minSize: 12 },
+        ),
+      )
+    }
+  })
+  return elements
+}
+
+/** Title + a vertical list of numbered steps, each with an accent number chip, bold lead and optional detail. */
+function buildNumbered(ctx: LayoutCtx, slots: Slots): PptistLayoutElementInput[] {
+  const { elements, contentTop } = buildHeader(ctx, slots, 'numbered')
+  const steps = readCardEntries(slots.steps ?? slots.items ?? slots.bullets)
+  if (!steps.length) {
+    throw new Error('Layout "numbered" requires a non-empty "steps" array of { heading, body } (or strings).')
+  }
+  const c = roleColors(ctx)
+  const sc = ctx.preset.scale
+  const fonts = ctx.preset.fonts
+
+  const count = Math.min(steps.length, 6)
+  const visible = steps.slice(0, count)
+  const regionH = ctx.H - ctx.m - contentTop
+  const gap = round(regionH * 0.035)
+  const rowH = round((regionH - gap * (count - 1)) / count)
+  const badge = Math.min(rowH, round(sc.title * 1.3))
+  const textLeft = ctx.m + badge + round(ctx.W * 0.022)
+  const textW = ctx.m + ctx.cw - textLeft
+
+  visible.forEach((step, index) => {
+    const top = contentTop + index * (rowH + gap)
+    elements.push(
+      badgeElement({ left: ctx.m, top, size: badge, fill: c.accent, text: String(index + 1), color: c.onAccent, font: fonts.heading }),
+    )
+    const lead = step.heading
+    const detail = step.body
+    let y = top
+    if (lead) {
+      const leadH = detail ? round(rowH * 0.46) : rowH
+      elements.push(
+        paragraphsElement(
+          { left: textLeft, top: y, width: textW, height: leadH },
+          lead,
+          { color: c.title, font: fonts.heading, bold: true, lineHeight: 1.2, maxSize: sc.sectionHeader, minSize: 15 },
+        ),
+      )
+      y += leadH
+    }
+    if (detail && top + rowH - y > sc.caption) {
+      elements.push(
+        paragraphsElement(
+          { left: textLeft, top: y, width: textW, height: top + rowH - y },
+          detail,
+          { color: c.body, font: fonts.body, lineHeight: 1.35, maxSize: sc.body, minSize: 12 },
+        ),
+      )
+    }
+  })
+  return elements
+}
+
+/** Full-bleed cover image with an opaque title band along the bottom for legibility. */
+function buildImageFull(ctx: LayoutCtx, slots: Slots, warnings: string[]): PptistLayoutElementInput[] {
+  const src = optStr(slots, 'image') ?? optStr(slots, 'imageSrc') ?? optStr(slots, 'src')
+  if (!src) {
+    warnings.push('Layout "imageFull" has no "image" src — falling back to a text-only feature slide. Add an image url for the full-bleed cover.')
+    return buildFeature(ctx, slots, 'section', round(ctx.preset.scale.display * 0.86))
+  }
+  const sc = ctx.preset.scale
+  const fonts = ctx.preset.fonts
+  const palette = ctx.preset.palette
+  const elements: PptistLayoutElementInput[] = []
+
+  elements.push(imageElement({ left: 0, top: 0, width: ctx.W, height: ctx.H, src }))
+
+  const title = reqStr(slots, 'title', 'imageFull')
+  const subtitle = optStr(slots, 'subtitle') ?? optStr(slots, 'caption')
+  const bandH = round(ctx.H * (subtitle ? 0.32 : 0.24))
+  const bandTop = ctx.H - bandH
+  elements.push(rectElement({ left: 0, top: bandTop, width: ctx.W, height: bandH, fill: palette.featureBackground }))
+  elements.push(rectElement({ left: ctx.m, top: bandTop + round(bandH * 0.12), width: 120, height: 5, fill: palette.featureAccent }))
+
+  let y = bandTop + round(bandH * 0.22)
+  const titleH = Math.min(regionHeight(sc.title, 2, 1.15), bandTop + bandH - round(bandH * 0.14) - y)
+  elements.push(
+    paragraphsElement(
+      { left: ctx.m, top: y, width: ctx.cw, height: titleH },
+      title,
+      { color: palette.featureTitle, font: fonts.heading, bold: true, lineHeight: 1.15, maxSize: sc.title, minSize: 20 },
+    ),
+  )
+  y += titleH + 4
+  if (subtitle && bandTop + bandH - round(bandH * 0.1) - y > sc.caption) {
+    elements.push(
+      paragraphsElement(
+        { left: ctx.m, top: y, width: ctx.cw, height: bandTop + bandH - round(bandH * 0.1) - y },
+        subtitle,
+        { color: palette.featureBody, font: fonts.body, lineHeight: 1.3, maxSize: sc.body, minSize: 12 },
+      ),
+    )
+  }
+  return elements
+}
+
 // ---------------------------------------------------------------------------
 // Catalog + dispatch
 // ---------------------------------------------------------------------------
@@ -904,6 +1098,9 @@ const LAYOUT_BUILDERS: Record<string, LayoutBuilder> = {
   quote: buildQuote,
   chart: buildChart,
   comparison: buildComparison,
+  cards: buildCards,
+  numbered: buildNumbered,
+  imageFull: buildImageFull,
 }
 
 export const PPTX_LAYOUTS: PptistLayout[] = [
@@ -1037,6 +1234,42 @@ export const PPTX_LAYOUTS: PptistLayout[] = [
       { name: 'title', type: 'text', required: true, description: 'Slide title.' },
       { name: 'headers', type: 'rows', required: false, description: 'Header row cells (array of strings).' },
       { name: 'rows', type: 'rows', required: true, description: 'Array of row arrays; first cell of each is the row label.' },
+    ],
+  },
+  {
+    id: 'cards',
+    label: 'Cards',
+    summary: 'Title + a row/grid of 2–6 surface cards, each an accent-topped panel with a heading and a short blurb.',
+    bestFor: 'Parallel items: features, pillars, categories, options, key takeaways. A livelier alternative to a single bullet list.',
+    feature: false,
+    slots: [
+      { name: 'title', type: 'text', required: true, description: 'Slide title.' },
+      { name: 'cards', type: 'cards', required: true, description: 'Array of { heading, body } (or plain strings). 2–6 items; laid out in a row, or a 2-row grid when there are 4+.' },
+      { name: 'eyebrow', type: 'text', required: false, description: 'Small kicker above the title.' },
+    ],
+  },
+  {
+    id: 'numbered',
+    label: 'Numbered steps',
+    summary: 'Title + a vertical list of numbered steps; each row has an accent number chip, a bold lead and optional detail.',
+    bestFor: 'Ordered sequences: processes, how-to steps, ranked priorities, a roadmap. Use when order matters.',
+    feature: false,
+    slots: [
+      { name: 'title', type: 'text', required: true, description: 'Slide title.' },
+      { name: 'steps', type: 'steps', required: true, description: 'Array of { heading, body } (or plain strings). 2–6 ordered steps; numbered automatically.' },
+      { name: 'eyebrow', type: 'text', required: false, description: 'Small kicker above the title.' },
+    ],
+  },
+  {
+    id: 'imageFull',
+    label: 'Full-bleed image',
+    summary: 'A full-bleed cover image with an opaque title band along the bottom for legibility.',
+    bestFor: 'A high-impact visual moment: a section opener, a hero photo, or a striking single image with a caption.',
+    feature: false,
+    slots: [
+      { name: 'image', type: 'image', required: true, description: 'Image url that fills the whole slide. Without it the slide falls back to a text-only feature layout.' },
+      { name: 'title', type: 'text', required: true, description: 'Overlaid title shown on the bottom band.' },
+      { name: 'subtitle', type: 'text', required: false, description: 'Supporting line under the title (or use caption).' },
     ],
   },
 ]

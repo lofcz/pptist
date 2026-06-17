@@ -481,10 +481,127 @@ export default () => {
     return isSVGBase64 || isSVGUrl
   }
 
+  // 判断是否为已内联的 data: URL（base64 图片 / SVG / 媒体），无需再抓取
+  const isInlineDataUrl = (url: string) => {
+    return /^data:/i.test(url)
+  }
+
+  // 判断是否为需要浏览器同源抓取的“外来”来源（http(s) 或 blob URL）
+  const isForeignSource = (url: string) => {
+    return /^(https?:|blob:)/i.test(url)
+  }
+
+  /**
+   * 将单个 Blob 读取为 data: URL（供 pptxgenjs 的 options.data / cover 使用）。
+   * 优先用响应自带的 mime，回落到 application/octet-stream（pptxgenjs 仍能识别）。
+   */
+  const blobToDataUrl = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const result = reader.result
+        if (typeof result === 'string') resolve(result)
+        else reject(new Error('FileReader produced non-string result'))
+      }
+      reader.onerror = () => reject(reader.error ?? new Error('FileReader error'))
+      reader.readAsDataURL(blob)
+    })
+  }
+
+  /**
+   * 在浏览器（编辑器所在 origin）内抓取任意“外来”来源（图片 / 视频 / 音频 /
+   * 视频海报 / 形状图案）并就地转成 base64 data: URL。
+   *
+   * pptxgenjs 的 writeFile() 会在内部 fetch 每个 `path` URL，但该 fetch 既不携带
+   * 凭据也不走宿主页面的 CORS 上下文：存储桶一旦返回 CORS/401/403/404 或网络抖动，
+   * 整次 export 都会被 reject 成笼统的 "Export failed"。这在 sciobot 这类把所有
+   * 媒体以托管 URL（而非 base64）写入 deck 的宿主上必然踩雷。
+   *
+   * 这里在导出前先于浏览器内同源抓取（`credentials: 'omit'`，避免把宿主 cookie
+   * 发给第三方 CDN），转成 data: URL。随后 image/background/pattern 走
+   * isBase64Image()/isSVGImage() 自动路由进 options.data；media/cover 则在各自分支
+   * 显式选择 data vs path。抓取失败的来源退回原值（交给 pptxgenjs 再试一次），并
+   * 计入失败列表以便在 toast 中提示。
+   */
+  const fetchSourceAsDataUrl = async (
+    src: string,
+    failed: Set<string>,
+  ): Promise<string> => {
+    if (!src) return src
+    // 已内联的 data: URL 直接放行
+    if (isInlineDataUrl(src)) return src
+    // 仅处理 http(s):/blob: 这类需要网络抓取的来源；其它（如相对路径）原样返回
+    if (!isForeignSource(src)) return src
+
+    try {
+      const res = await fetch(src, { credentials: 'omit' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const blob = await res.blob()
+      // 兜底：响应明显不是任何可嵌入二进制（HTML 错误页等）则放弃
+      if (!blob.type || /^(text\/html|text\/plain|application\/json)/i.test(blob.type)) {
+        throw new Error(`unexpected mime: ${blob.type || 'empty'}`)
+      }
+      return await blobToDataUrl(blob)
+    }
+    catch {
+      failed.add(src)
+      return src
+    }
+  }
+
+  /**
+   * 收集 _slides 中所有“外来”媒体来源（图片元素 / 图片背景 / 形状图案 /
+   * 视频 / 音频 / 视频海报），在导出构建循环前并发（带并发上限）解析为 data: URL，
+   * 返回 original→resolved 映射。失败的来源保留原值，由 pptxgenjs 的 path 分支
+   * 再试，并把失败计数累加到 `failed`。返回值统一供所有 data/path 分支查表。
+   */
+  const resolveSlideSources = async (
+    _slides: Slide[],
+    failed: Set<string>,
+  ): Promise<Map<string, string>> => {
+    const srcs = new Set<string>()
+    const collect = (src?: string) => {
+      if (src && isForeignSource(src)) srcs.add(src)
+    }
+    for (const slide of _slides) {
+      if (slide.background?.type === 'image') collect(slide.background.image?.src)
+      if (!slide.elements) continue
+      for (const el of slide.elements) {
+        if (el.type === 'image') collect(el.src)
+        else if (el.type === 'shape' && el.pattern) collect(el.pattern)
+        else if (el.type === 'video' || el.type === 'audio') {
+          collect(el.src)
+          if (el.type === 'video' && el.poster) collect(el.poster)
+        }
+      }
+    }
+    if (!srcs.size) return new Map()
+
+    // 限制并发，避免一次性轰炸存储桶触发限流
+    const CONCURRENCY = 6
+    const queue = Array.from(srcs)
+    const resolved = new Map<string, string>()
+    let cursor = 0
+    const workers: Promise<void>[] = []
+    const run = async () => {
+      while (cursor < queue.length) {
+        const src = queue[cursor++]
+        resolved.set(src, await fetchSourceAsDataUrl(src, failed))
+      }
+    }
+    for (let i = 0; i < Math.min(CONCURRENCY, queue.length); i++) workers.push(run())
+    await Promise.all(workers)
+    return resolved
+  }
+
   // 导出PPTX文件
-  const exportPPTX = (_slides: Slide[], masterOverwrite: boolean, ignoreMedia: boolean) => {
+  const exportPPTX = async (_slides: Slide[], masterOverwrite: boolean, ignoreMedia: boolean) => {
     exporting.value = true
     const pptx = new pptxgen()
+
+    // 在构建前把所有“外来”媒体来源就地转成 data: URL，绕过 pptxgenjs 的内部 fetch
+    const failedSources = new Set<string>()
+    const sources = await resolveSlideSources(_slides, failedSources)
 
     if (viewportRatio.value === 0.625) pptx.layout = 'LAYOUT_16x10'
     else if (viewportRatio.value === 0.75) pptx.layout = 'LAYOUT_4x3'
@@ -563,20 +680,22 @@ export default () => {
       if (slide.background) {
         const background = slide.background
         if (background.type === 'image' && background.image) {
-          if (isSVGImage(background.image.src)) {
+          // 用浏览器预抓取后的来源替换原 URL（成功时为 data: URL，失败时为原值）
+          const bgSrc = sources.get(background.image.src) ?? background.image.src
+          if (isSVGImage(bgSrc)) {
             pptxSlide.addImage({
-              data: background.image.src,
+              data: bgSrc,
               x: 0,
               y: 0,
               w: viewportSize.value / ratioPx2Inch.value,
               h: viewportSize.value * viewportRatio.value / ratioPx2Inch.value,
             })
           }
-          else if (isBase64Image(background.image.src)) {
-            pptxSlide.background = { data: background.image.src }
+          else if (isBase64Image(bgSrc)) {
+            pptxSlide.background = { data: bgSrc }
           }
           else {
-            pptxSlide.background = { path: background.image.src }
+            pptxSlide.background = { path: bgSrc }
           }
         }
         else if (background.type === 'solid' && background.color) {
@@ -659,8 +778,10 @@ export default () => {
             w: el.width / ratioPx2Inch.value,
             h: el.height / ratioPx2Inch.value,
           }
-          if (isBase64Image(el.src)) options.data = el.src
-          else options.path = el.src
+          // 用浏览器预抓取后的来源替换原 URL（成功时为 data: URL，失败时为原值）
+          const imgSrc = sources.get(el.src) ?? el.src
+          if (isBase64Image(imgSrc)) options.data = imgSrc
+          else options.path = imgSrc
 
           if (el.flipH) options.flipH = el.flipH
           if (el.flipV) options.flipV = el.flipV
@@ -790,8 +911,10 @@ export default () => {
               w: el.width / ratioPx2Inch.value,
               h: el.height / ratioPx2Inch.value,
             }
-            if (isBase64Image(el.pattern)) options.data = el.pattern
-            else options.path = el.pattern
+            // 用浏览器预抓取后的来源替换原 URL（成功时为 data: URL，失败时为原值）
+            const patternSrc = sources.get(el.pattern) ?? el.pattern
+            if (isBase64Image(patternSrc)) options.data = patternSrc
+            else options.path = patternSrc
   
             if (el.flipH) options.flipH = el.flipH
             if (el.flipV) options.flipV = el.flipV
@@ -1039,20 +1162,29 @@ export default () => {
         }
         
         else if (!ignoreMedia && (el.type === 'video' || el.type === 'audio')) {
+          // 用浏览器预抓取后的来源替换原 URL：成功时为 data: URL → 走 data，
+          // 否则退回原 URL → 走 path（pptxgenjs 内部 fetch 再试一次）
+          const mediaSrc = sources.get(el.src) ?? el.src
+          const isInline = isInlineDataUrl(mediaSrc)
           const options: pptxgen.MediaProps = {
             x: el.left / ratioPx2Inch.value,
             y: el.top / ratioPx2Inch.value,
             w: el.width / ratioPx2Inch.value,
             h: el.height / ratioPx2Inch.value,
-            path: el.src,
             type: el.type,
           }
-          if (el.type === 'video' && el.poster) options.cover = el.poster
+          if (isInline) options.data = mediaSrc
+          else options.path = mediaSrc
+          // 视频海报同样就地内联，避免 pptxgenjs 再 fetch 一次外部 URL
+          if (el.type === 'video' && el.poster) {
+            const posterSrc = sources.get(el.poster) ?? el.poster
+            options.cover = posterSrc
+          }
 
           const extMatch = el.src.match(/\.([a-zA-Z0-9]+)(?:[\?#]|$)/)
           if (extMatch && extMatch[1]) options.extn = extMatch[1]
           else if (el.ext) options.extn = el.ext
-          
+
           const videoExts = ['avi', 'mp4', 'm4v', 'mov', 'wmv']
           const audioExts = ['mp3', 'm4a', 'mp4', 'wav', 'wma']
           if (options.extn && [...videoExts, ...audioExts].includes(options.extn)) {
@@ -1063,9 +1195,17 @@ export default () => {
     }
 
     setTimeout(() => {
-      pptx.writeFile({ fileName: `${title.value}.pptx` }).then(() => exporting.value = false).catch(() => {
+      pptx.writeFile({ fileName: `${title.value}.pptx` }).then(() => {
         exporting.value = false
-        message.error(LL.export.exportFailed())
+        // 导出成功，但有部分外来来源无法就地内联（浏览器抓取失败），提示用户
+        if (failedSources.size) {
+          message.warning(`${LL.export.exportPartial()} (${failedSources.size})`)
+        }
+      }).catch(() => {
+        exporting.value = false
+        // write 本身失败时，若有来源未能内联，把计数附在消息上便于排查
+        const detail = failedSources.size ? ` (${failedSources.size})` : ''
+        message.error(`${LL.export.exportFailed()}${detail}`)
       })
     }, 200)
   }

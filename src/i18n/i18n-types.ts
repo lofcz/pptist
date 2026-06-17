@@ -4014,6 +4014,10 @@ export type NamespaceExportTranslation = {
 	 */
 	exportFailed: string
 	/**
+	 * E​x​p​o​r​t​ ​f​i​n​i​s​h​e​d​,​ ​b​u​t​ ​s​o​m​e​ ​m​e​d​i​a​ ​c​o​u​l​d​ ​n​o​t​ ​b​e​ ​e​m​b​e​d​d​e​d
+	 */
+	exportPartial: string
+	/**
 	 * S​e​r​i​e​s​ ​{​i​n​d​e​x​}
 	 * @param {number} index
 	 */
@@ -8544,6 +8548,10 @@ export type TranslationFunctions = {
 		 * Export failed
 		 */
 		exportFailed: () => LocalizedString
+		/**
+		 * Export finished, but some media could not be embedded
+		 */
+		exportPartial: () => LocalizedString
 		/**
 		 * Series {index}
 		 */

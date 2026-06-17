@@ -715,6 +715,8 @@ export interface PptistCreateFromLayoutInput {
 export interface PptistCreateFromLayoutResult {
   slideId: string
   layoutId: string
+  /** True when this slide replaced the deck's lone pristine blank starter. */
+  replacedStarter?: boolean
   elementIds: string[]
   textElementIds: string[]
 }

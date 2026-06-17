@@ -3,6 +3,7 @@ import type { BaseTranslation } from '../../i18n-types'
 const en_export: BaseTranslation = {
   exportImageFailed: 'Failed to export image',
   exportFailed: 'Export failed',
+  exportPartial: 'Export finished, but some media could not be embedded',
   chartSeries: 'Series {index:number}',
   dialog: {
     tabs: {
@@ -36,7 +37,7 @@ const en_export: BaseTranslation = {
       'Audio and video are ignored by default during export. If your slides contain media and you want it in the PPTX file, turn off this option — note that export will take much longer.',
     overwriteMaster: 'Overwrite default master:',
     mediaExportTip:
-      'Tip: 1. Supported formats: avi, mp4, mov, wmv, mp3, wav; 2. Cross-origin resources cannot be exported.',
+      'Tip: 1. Supported formats: avi, mp4, mov, wmv, mp3, wav; 2. Media from other origins is fetched in your browser before export — if a source blocks the fetch, it will be skipped.',
     exportButton: 'Export PPTX',
   },
   pptist: {

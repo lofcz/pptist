@@ -3,6 +3,7 @@ import type { NamespaceExportTranslation } from '../../i18n-types'
 const pl_export: NamespaceExportTranslation = {
   exportImageFailed: 'Nie udało się wyeksportować obrazu',
   exportFailed: 'Eksport nie powiódł się',
+  exportPartial: 'Eksport zakończony, ale nie udało się osadzić części multimediów',
   chartSeries: 'Seria {index}',
   dialog: {
     tabs: {
@@ -36,7 +37,7 @@ const pl_export: NamespaceExportTranslation = {
       'Podczas eksportu domyślnie ignorowane są audio i wideo. Jeśli slajdy zawierają multimedia i chcesz je mieć w pliku PPTX, wyłącz tę opcję — eksport potrwa znacznie dłużej.',
     overwriteMaster: 'Nadpisz domyślny szablon:',
     mediaExportTip:
-      'Wskazówka: 1. Obsługiwane formaty: avi, mp4, mov, wmv, mp3, wav; 2. Zasobów z innych domen nie można eksportować.',
+      'Wskazówka: 1. Obsługiwane formaty: avi, mp4, mov, wmv, mp3, wav; 2. Multimedia z innych domen są pobierane w przeglądarce przed eksportem — jeśli źródło zablokuje pobieranie, zostanie pominięte.',
     exportButton: 'Eksportuj PPTX',
   },
   pptist: {

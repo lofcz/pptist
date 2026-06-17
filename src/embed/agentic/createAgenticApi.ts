@@ -1251,6 +1251,33 @@ function normalizeSlidePatch(patch: Partial<Slide>): Partial<Slide> {
   return cloned
 }
 
+/** Strip tags/entities so empty text boxes (`<div></div>`, `&nbsp;`) read as ''. */
+function stripSlideText(html: string | undefined): string {
+  if (!html) return ''
+  return html
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * A slide is a "pristine starter" when the author has put nothing on it: either
+ * it has no elements, or only EMPTY text/placeholder boxes. PPTist's default
+ * deck opens with exactly one such cover slide (visually blank). The first
+ * `slides.createFromLayout` REPLACES that starter instead of appending after
+ * it, so a freshly built deck never carries a leading blank and the agent never
+ * needs to manually delete slide 0.
+ */
+function isPristineStarterSlide(slide: Slide | undefined | null): boolean {
+  const elements = slide?.elements ?? []
+  if (elements.length === 0) return true
+  return elements.every(
+    element => element.type === 'text' && stripSlideText(element.content) === '',
+  )
+}
+
 function ensureSlideIdAvailable(slides: Slide[], slideId: string, currentSlideId?: string) {
   if (slideId === currentSlideId) return
   if (slides.some(slide => slide.id === slideId)) {
@@ -1728,8 +1755,23 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     const slide = normalizeSlideForInsert(built.slide)
     const slides = clonePlain(stores.slides.slides)
     ensureSlideIdAvailable(slides, slide.id)
-    const index = insertIndex(payload.index, slides.length)
-    slides.splice(index, 0, slide)
+    // When the deck still holds only the pristine blank starter and the caller
+    // is appending (no explicit index), REPLACE that starter with this first
+    // real slide — never leave a leading blank, and don't make the agent delete
+    // slide 0. An explicit index means the agent is positioning deliberately,
+    // so respect it and insert normally.
+    const replaceStarter =
+      payload.index === undefined &&
+      slides.length === 1 &&
+      isPristineStarterSlide(slides[0])
+    let index: number
+    if (replaceStarter) {
+      index = 0
+      slides.splice(0, 1, slide)
+    } else {
+      index = insertIndex(payload.index, slides.length)
+      slides.splice(index, 0, slide)
+    }
     stores.slides.setSlides(slides)
     if (payload.select !== false) selectSlide(stores, index)
     const textElementIds = slide.elements
@@ -1738,6 +1780,7 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
     return {
       slideId: slide.id,
       layoutId: payload.layoutId,
+      replacedStarter: replaceStarter,
       elementIds: slide.elements.map(element => element.id),
       textElementIds,
     }
