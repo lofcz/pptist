@@ -5,7 +5,7 @@ export type { Locales }
 
 declare global {
   interface Window {
-    /** Set by sciobot-next (React host) before PPTist mount in embed mode */
+    /** Set by the embedding host (e.g. a React app) before PPTist mount in embed mode */
     __PPTIST_LOCALE__?: string
   }
 }

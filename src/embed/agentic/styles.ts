@@ -110,7 +110,7 @@ export const PPTX_STYLE_PRESETS: PptistStylePreset[] = [
     id: 'academic',
     label: 'Academic',
     description:
-      'Calm navy-on-white with a serif heading. Authoritative and readable — ideal for lessons, lectures, and reports.',
+      'Calm navy-on-white with a serif heading. Authoritative and readable — ideal for reports, research, and formal decks.',
     fonts: { heading: 'Georgia', body: 'Arial' },
     palette: {
       background: '#FFFFFF',

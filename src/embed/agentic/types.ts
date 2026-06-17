@@ -395,9 +395,13 @@ export interface PptistLatexElementSizing {
   rotate?: number
 }
 
+// `path` is OPTIONAL on purpose: it's the rendered SVG glyph data, which the
+// engine derives from `latex` via hfmath. Callers (and the agent) supply only
+// the formula string; pass `path` only when you already have pre-rendered glyph
+// data (e.g. importing an existing deck).
 export type PptistLatexElementInput = PptistLatexElementSizing
-  & Pick<PPTLatexElement, 'latex' | 'path'>
-  & Partial<Pick<PPTLatexElement, 'id' | 'color' | 'strokeWidth' | 'viewBox' | 'fixedRatio' | 'link' | 'name' | 'lock' | 'groupId'>>
+  & Pick<PPTLatexElement, 'latex'>
+  & Partial<Pick<PPTLatexElement, 'path' | 'id' | 'color' | 'strokeWidth' | 'viewBox' | 'fixedRatio' | 'link' | 'name' | 'lock' | 'groupId'>>
 
 export type PptistLatexElementPatch = Partial<PptistLatexElementSizing
   & Pick<PPTLatexElement, 'latex' | 'path' | 'color' | 'strokeWidth' | 'viewBox' | 'fixedRatio' | 'link' | 'name' | 'lock' | 'groupId'>>

@@ -64,6 +64,7 @@ import {
   normalizeAnimation,
   normalizeAudioElement,
   normalizeAudioPatch,
+  deriveLatexGeometry,
   normalizeElement,
   normalizeElementLink,
   normalizeLatexElement,
@@ -2165,7 +2166,19 @@ export function createAgenticApi(pinia: Pinia, app: App, options: { setLocale?: 
   })
   register('latex.update', (payload: { elementId: string; slideId?: string; patch: PptistLatexElementPatch }) => {
     const found = latexElement(payload.elementId, payload.slideId)
-    return updateElementAt(stores, found.slideIndex, found.elementIndex, { ...clonePatch(payload.patch), type: 'latex' }) as PPTLatexElement
+    const patch = { ...clonePatch(payload.patch), type: 'latex' as const }
+    // When the formula text changes but no fresh `path` is supplied, re-render
+    // it via hfmath — otherwise the element keeps the OLD glyph paths and the
+    // edit appears to do nothing (or shows the previous formula).
+    const nextLatex = typeof patch.latex === 'string' ? patch.latex.trim() : ''
+    const hasNewPath = typeof patch.path === 'string' && patch.path.trim().length > 0
+    if (nextLatex && nextLatex !== found.element.latex && !hasNewPath) {
+      const geometry = deriveLatexGeometry(nextLatex)
+      patch.latex = nextLatex
+      patch.path = geometry.path
+      if (patch.viewBox === undefined) patch.viewBox = geometry.viewBox
+    }
+    return updateElementAt(stores, found.slideIndex, found.elementIndex, patch) as PPTLatexElement
   })
   register('elements.setOutline', (payload: { elementId: string | string[]; slideId?: string; outline: PPTElementOutline }) => {
     return toIdList(payload.elementId).map(id => updateStyleElement<OutlineElement>(

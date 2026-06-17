@@ -4,7 +4,7 @@
  * recipes. The content lives in `docs.json` (single source) so it can be both
  * (a) bundled for the runtime `controller.describe()` / `controller.guides()`
  * helpers and (b) read at build time and merged into `agentic-manifest.json`
- * for server-side skill catalogs (sciobot-next).
+ * for server-side skill catalogs in an embedding host.
  */
 import docsJson from './docs.json'
 

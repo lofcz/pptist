@@ -2,7 +2,7 @@
  * Runtime asset base resolution.
  *
  * The standalone app serves runtime data (`mocks/`, `imgs/`, fonts) relative to
- * the page. When PPTist is embedded in a host (sciobot-next) those files are
+ * the page. When PPTist is embedded in a host those files are
  * served from a configurable location (`assetBaseUrl`, default `/pptist-assets`),
  * so any hard-coded `./mocks/...` / `./imgs/...` path resolves against the host
  * page and 404s — which is what leaves the template/style picker empty.

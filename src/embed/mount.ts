@@ -30,7 +30,7 @@ function resolveHostElement(target: HTMLElement | string): HTMLElement {
 }
 
 /**
- * Mount PPTist into a DOM node (for sciobot-next / other React hosts).
+ * Mount PPTist into a DOM node (for React / other embedding hosts).
  * Vue + Pinia are bundled in the embed build — the host does not need Vue installed.
  */
 export async function mountPptist(

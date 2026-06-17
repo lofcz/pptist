@@ -1,4 +1,5 @@
 import { nanoid } from 'nanoid'
+import { hfmath } from '@/components/LaTeXEditor/hfmath'
 import { CHART_DEFAULT_DATA } from '@/configs/chart'
 import { MIME_MAP } from '@/configs/mime'
 import { SHAPE_PATH_FORMULAS } from '@/configs/shapes'
@@ -663,12 +664,62 @@ export function mergeShapeElement(base: PPTShapeElement, patch: Partial<PPTShape
   return clonePlain(nextElement)
 }
 
+/** Extra padding hfmath's natural box gets in the interactive editor. */
+const LATEX_BOX_PADDING = 32
+
+export interface LatexGeometry {
+  path: string
+  viewBox: [number, number]
+  width: number
+  height: number
+}
+
+/**
+ * Render a LaTeX formula to its SVG path + intrinsic box via hfmath — the EXACT
+ * pipeline the interactive LaTeXEditor uses (`new hfmath(latex).pathd()/box()`).
+ *
+ * The agent supplies only the `latex` string; it cannot pre-compute the SVG
+ * `path`. Without a path the `<svg>` renders nothing, so a "latex" element from
+ * the agent shows up blank. Deriving the path here makes agent-authored formulas
+ * render identically to ones drawn through the editor UI.
+ */
+export function deriveLatexGeometry(latex: string): LatexGeometry {
+  const eq = new hfmath(latex)
+  const path = eq.pathd({})
+  const box = eq.box({})
+  const width = box.w + LATEX_BOX_PADDING
+  const height = box.h + LATEX_BOX_PADDING
+  return { path, viewBox: [width, height], width, height }
+}
+
 export function normalizeLatexElement(element: PptistLatexElementInput): PPTLatexElement {
   if (element.id !== undefined) assertId(element.id, 'element.id')
   assertElementDimensions(element, 'element')
   assertColorFields(element, 'element')
-  const width = element.width ?? 200
-  const height = element.height ?? 100
+
+  const latex = typeof element.latex === 'string' ? element.latex.trim() : ''
+  const providedPath = typeof element.path === 'string' ? element.path.trim() : ''
+
+  // Derive path + box from the formula whenever a usable path wasn't supplied
+  // (the agent never can). A bad formula must surface as a recoverable error,
+  // not a silent blank element.
+  let geometry: LatexGeometry | null = null
+  if (latex && !providedPath) {
+    if (typeof window === 'undefined') {
+      throw new Error('LaTeX rendering is only available in the browser runtime.')
+    }
+    try {
+      geometry = deriveLatexGeometry(latex)
+    }
+    catch (error) {
+      throw new Error(`Failed to render LaTeX "${latex}": ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  const width = element.width ?? geometry?.width ?? 200
+  const height = element.height ?? geometry?.height ?? 100
+  const path = providedPath || geometry?.path || ''
+  const viewBox = element.viewBox || geometry?.viewBox || [width, height]
 
   const normalized = clonePlain({
     ...element,
@@ -679,11 +730,11 @@ export function normalizeLatexElement(element: PptistLatexElementInput): PPTLate
     width,
     height,
     rotate: element.rotate ?? 0,
-    latex: element.latex,
-    path: element.path,
+    latex,
+    path,
     color: element.color ?? DEFAULT_LATEX_COLOR,
     strokeWidth: element.strokeWidth ?? DEFAULT_LATEX_STROKE_WIDTH,
-    viewBox: clonePlain(element.viewBox || [width, height]),
+    viewBox: clonePlain(viewBox),
     fixedRatio: element.fixedRatio ?? true,
   } as PPTLatexElement)
   assertElementCreateInput(normalized)

@@ -4,7 +4,7 @@ import { getPptistPortalTarget } from '@/utils/portal'
 
 // tippy.js core styles MUST ship in the bundle. Without them the floating box has
 // no layout/positioning rules of its own, so when PPTist is embedded in a host
-// (sciobot-next) the host's CSS reset (Tailwind Preflight, universal border, etc.)
+// the host's CSS reset (Tailwind Preflight, universal border, etc.)
 // leaks in and the tooltip renders unstyled/broken. Import the base before the
 // theme so the themed selectors win on the cascade.
 import 'tippy.js/dist/tippy.css'

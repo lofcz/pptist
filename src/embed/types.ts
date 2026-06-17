@@ -28,7 +28,7 @@ export interface PptistStarterPresentationOptions {
   backgroundColor?: string
 }
 
-/** Serializable deck passed between sciobot-next and PPTist. */
+/** Serializable deck passed between the embedding host and PPTist. */
 export interface PptistDocument {
   title: string
   slides: Slide[]
@@ -36,7 +36,7 @@ export interface PptistDocument {
 }
 
 export interface PptistMountOptions {
-  /** UI locale — same union as sciobot-next (`cs` | `en` | `sk` | `pl`). */
+  /** UI locale (`cs` | `en` | `sk` | `pl`). */
   locale?: Locales
   /** Initial deck; takes precedence over `loadDocument` and the starter slide. */
   document?: PptistDocument
