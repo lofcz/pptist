@@ -216,6 +216,24 @@ const result = await controller.execute<PptistDocument>({ type: 'export.json' })
 
 `export.json()` and the `export.json` command return the serializable `PptistDocument` model and do not require the editor DOM. PDF, PPTX, and image exports depend on rendered slide DOM, browser canvas/image loading, and the existing export dialogs/hooks, so they are intentionally outside the agentic bridge. Hosts that need those formats should drive PPTist's UI/export workflow in a browser context or add a dedicated DOM-aware integration boundary.
 
+### Export dialog tabs
+
+Hosts can hide export formats they do not want to expose. Pass `exportTabs` to `mountPptist()`; omitted keys stay enabled. The native `.pptist` tab also requires `PPTIST_EXTRAS_ENABLED=true` at build time.
+
+```ts
+await mountPptist(host, {
+  exportTabs: {
+    pptx: true,
+    image: false,
+    json: false,
+    pdf: false,
+    pptist: false,
+  },
+})
+```
+
+When only one tab is enabled, the tab bar is hidden and the export dialog opens directly to that format.
+
 ## sciobot-next wiring
 
 1. **package.json** — `"@lofcz/pptist": "^2.0.0"` after the package is published. During local development, sciobot's Vite config can fall back to the sibling `../PPTist/dist/embed` build.

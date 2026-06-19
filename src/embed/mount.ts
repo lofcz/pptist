@@ -13,6 +13,7 @@ import { i18nPlugin } from '@/i18n/i18n-vue'
 import { getPptistLocale, setPptistLocale, type Locales } from '@/i18n/locale'
 import { clearPptistPortalTarget, setPptistPortalTarget } from '@/utils/portal'
 import { setPptistAssetBase } from '@/utils/assetBase'
+import { setPptistExportTabs } from '@/configs/exportTabs'
 import { setCustomTemplateLoaders } from '@/configs/templates'
 import { applyLocale } from './localeBridge'
 import { createController } from './createController'
@@ -67,6 +68,7 @@ export async function mountPptist(
     // Resolve runtime data/assets (mocks, template covers, imgs) against the host
     // asset base so the style/template picker and other data lookups work embedded.
     setPptistAssetBase(options.assetBaseUrl)
+    setPptistExportTabs(options.exportTabs)
     setCustomTemplateLoaders(options.templateLoaders)
 
     const locale: Locales = options.locale ?? getPptistLocale()

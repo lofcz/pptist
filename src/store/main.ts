@@ -5,6 +5,7 @@ import type { CreatingElement, ShapeFormatPainter, TextFormatPainter } from '@/t
 import type { DialogForExportTypes } from '@/types/export'
 import { type TextAttrs, defaultRichTextAttrs } from '@/utils/prosemirror/utils'
 
+import { resolveExportDialogType } from '@/configs/exportTabs'
 import { useSlidesStore } from './slides'
 
 export interface MainState {
@@ -186,7 +187,7 @@ export const useMainStore = defineStore('main', {
     },
 
     setDialogForExport(type: DialogForExportTypes) {
-      this.dialogForExport = type
+      this.dialogForExport = resolveExportDialogType(type)
     },
 
     setTextFormatPainter(textFormatPainter: TextFormatPainter | null) {

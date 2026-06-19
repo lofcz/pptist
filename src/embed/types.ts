@@ -1,3 +1,4 @@
+import type { PptistExportTabsConfig } from '@/configs/exportTabs'
 import type { Locales } from '@/i18n/locale'
 import type { Slide, SlideTheme, SlideTemplate } from '@/types/slides'
 import type { PptistAgentApi, PptistSlideReference } from './agentic/types'
@@ -63,6 +64,11 @@ export interface PptistMountOptions {
   onChangeDebounceMs?: number
   /** Fired when PPTist enters or exits slideshow/presentation mode. */
   onPresentationModeChange?: (screening: boolean) => void
+  /**
+   * Toggle export dialog tabs (`pptx`, `image`, `json`, `pdf`, `pptist`).
+   * Omitted keys stay enabled. The `pptist` tab also requires `PPTIST_EXTRAS_ENABLED=true` at build time.
+   */
+  exportTabs?: PptistExportTabsConfig
 }
 
 /** Public embed controller: legacy host methods plus the generic command and domain APIs. */

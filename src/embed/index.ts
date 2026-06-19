@@ -9,6 +9,7 @@ export type {
   PptistTemplateLoader,
   PptistTemplatePayload,
 } from './types'
+export type { ExportTabId, PptistExportTabsConfig } from '@/configs/exportTabs'
 export type * from './agentic/types'
 export type { Locales as PptistLocales } from '@/i18n/locale'
 export type {

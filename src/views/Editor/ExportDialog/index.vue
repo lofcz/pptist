@@ -1,10 +1,11 @@
 <template>
   <div class="export-dialog">
-    <Tabs 
-      :tabs="tabs" 
-      :value="dialogForExport" 
+    <Tabs
+      v-if="tabs.length > 1"
+      :tabs="tabs"
+      :value="dialogForExport"
       card
-      @update:value="key => setDialogForExport(key as DialogForExportTypes)" 
+      @update:value="key => setDialogForExport(key as DialogForExportTypes)"
     />
     <div class="content">
       <component :is="currentDialogComponent" @close="setDialogForExport('')"></component>
@@ -17,6 +18,7 @@ import { computed, defineAsyncComponent } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMainStore } from '@/store'
 import type { DialogForExportTypes } from '@/types/export'
+import { isExportTabEnabled } from '@/configs/exportTabs'
 
 import ExportImage from './ExportImage.vue'
 import ExportJSON from './ExportJSON.vue'
@@ -40,13 +42,17 @@ const setDialogForExport = mainStore.setDialogForExport
 const EXPORT_PPTIST_ENABLED = __PPTIST_EXTRAS_ENABLED__
 const ExportSpecificFile = EXPORT_PPTIST_ENABLED ? defineAsyncComponent(() => import('./ExportSpecificFile.vue')) : null
 
-const tabs = computed<TabItem[]>(() => [
-  ...(EXPORT_PPTIST_ENABLED ? [{ key: 'pptist' as const, label: LL.value.export.dialog.tabs.pptist() }] : []),
-  { key: 'pptx', label: LL.value.export.dialog.tabs.pptx() },
-  { key: 'image', label: LL.value.export.dialog.tabs.image() },
-  { key: 'json', label: LL.value.export.dialog.tabs.json() },
-  { key: 'pdf', label: LL.value.export.dialog.tabs.pdf() },
+const allTabs = computed<TabItem[]>(() => [
+  ...(EXPORT_PPTIST_ENABLED && isExportTabEnabled('pptist')
+    ? [{ key: 'pptist' as const, label: LL.value.export.dialog.tabs.pptist() }]
+    : []),
+  ...(isExportTabEnabled('pptx') ? [{ key: 'pptx' as const, label: LL.value.export.dialog.tabs.pptx() }] : []),
+  ...(isExportTabEnabled('image') ? [{ key: 'image' as const, label: LL.value.export.dialog.tabs.image() }] : []),
+  ...(isExportTabEnabled('json') ? [{ key: 'json' as const, label: LL.value.export.dialog.tabs.json() }] : []),
+  ...(isExportTabEnabled('pdf') ? [{ key: 'pdf' as const, label: LL.value.export.dialog.tabs.pdf() }] : []),
 ])
+
+const tabs = allTabs
 
 const currentDialogComponent = computed<unknown>(() => {
   const dialogMap = {

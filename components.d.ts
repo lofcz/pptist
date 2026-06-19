@@ -112,7 +112,6 @@ declare module 'vue' {
     'IIconParkOutline:quote': typeof import('~icons/icon-park-outline/quote')['default']
     'IIconParkOutline:radarChart': typeof import('~icons/icon-park-outline/radar-chart')['default']
     'IIconParkOutline:reduce': typeof import('~icons/icon-park-outline/reduce')['default']
-    'IIconParkOutline:refresh': typeof import('~icons/icon-park-outline/refresh')['default']
     'IIconParkOutline:right': typeof import('~icons/icon-park-outline/right')['default']
     'IIconParkOutline:rotate': typeof import('~icons/icon-park-outline/rotate')['default']
     'IIconParkOutline:round': typeof import('~icons/icon-park-outline/round')['default']
