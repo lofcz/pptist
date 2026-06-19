@@ -353,6 +353,8 @@ const cs_configs: NamespaceConfigsTranslation = {
     wenDingPLSongTi: 'WenDing PL SongTi',
     zhuqueFangSong: 'Zhuque FangSong',
     lxgwwenKai: 'LXGW WenKai',
+    lxgwNeoZhiSong: 'LXGW Neo ZhiSong',
+    lxgwNeoXiHei: 'LXGW Neo XiHei',
     alibabaPuHuiTi: 'Alibaba PuHuiTi',
     miSans: 'MiSans',
     deYiHei: 'Smiley Sans',
@@ -375,6 +377,7 @@ const cs_configs: NamespaceConfigsTranslation = {
     montserrat: 'Montserrat',
     sourceSansPro: 'Source Sans Pro',
     merriweather: 'Merriweather',
+    lato: 'Lato',
   },
 }
 

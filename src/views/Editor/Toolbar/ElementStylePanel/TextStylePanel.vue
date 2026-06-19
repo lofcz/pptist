@@ -74,7 +74,7 @@
     </div>
 
     <Divider />
-    
+
     <div class="row">
       <NumberInput
         :min="0"
@@ -119,6 +119,27 @@
     </div>
 
     <Divider />
+    <div class="row">
+      <div style="width: 40%;">固定高度：</div>
+      <div class="switch-wrapper" style="width: 60%;">
+        <Switch
+          :value="fixedHeight"
+          @update:value="value => updateFixedHeight(value)"
+        />
+      </div>
+    </div>
+    <RadioGroup
+      class="row"
+      button-style="solid"
+      :value="vAlign"
+      @update:value="value => updateText({ vAlign: value as TextAlignVertical })"
+      v-if="fixedHeight"
+    >
+      <RadioButton value="top" v-tooltip="'顶对齐'" style="flex: 1;"><i-icon-park-outline:align-text-top-one /></RadioButton>
+      <RadioButton value="middle" v-tooltip="'垂直居中'" style="flex: 1;"><i-icon-park-outline:align-text-middle-one /></RadioButton>
+      <RadioButton value="bottom" v-tooltip="'底对齐'" style="flex: 1;"><i-icon-park-outline:align-text-bottom-one /></RadioButton>
+    </RadioGroup>
+    <Divider />
     <ElementOutline />
     <Divider />
     <ElementShadow />
@@ -132,7 +153,7 @@ import { computed, ref, watch } from 'vue'
 import { useI18nContext } from '@/i18n/useI18nContext'
 import { storeToRefs } from 'pinia'
 import { useMainStore, useSlidesStore } from '@/store'
-import type { PPTTextElement, TextInset } from '@/types/slides'
+import type { PPTTextElement, TextAlignVertical, TextInset } from '@/types/slides'
 import emitter, { EmitterEvents, type RichTextAction } from '@/utils/emitter'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 
@@ -144,7 +165,10 @@ import ColorButton from '@/components/ColorButton.vue'
 import ColorPicker from '@/components/ColorPicker/index.vue'
 import Divider from '@/components/Divider.vue'
 import NumberInput from '@/components/NumberInput.vue'
+import RadioButton from '@/components/RadioButton.vue'
+import RadioGroup from '@/components/RadioGroup.vue'
 import Select from '@/components/Select.vue'
+import Switch from '@/components/Switch.vue'
 import Popover from '@/components/Popover.vue'
 import FitText from '@/components/FitText.vue'
 
@@ -272,6 +296,8 @@ const lineHeight = ref<number>()
 const wordSpace = ref<number>()
 const paragraphSpace = ref<number>()
 const inset = ref<TextInset>([10, 10, 10, 10])
+const fixedHeight = ref(false)
+const vAlign = ref<TextAlignVertical>('top')
 
 watch(handleElement, () => {
   if (!handleElement.value || handleElement.value.type !== 'text') return
@@ -281,6 +307,8 @@ watch(handleElement, () => {
   wordSpace.value = handleElement.value.wordSpace || 0
   paragraphSpace.value = handleElement.value.paragraphSpace === undefined ? 5 : handleElement.value.paragraphSpace
   inset.value = handleElement.value.inset || [10, 10, 10, 10]
+  fixedHeight.value = !!handleElement.value.fixedHeight
+  vAlign.value = handleElement.value.vAlign || 'top'
   emitter.emit(EmitterEvents.SYNC_RICH_TEXT_ATTRS_TO_STORE)
 }, { deep: true, immediate: true })
 
@@ -317,6 +345,14 @@ const updateInset = (index: number, value: number) => {
   _inset[index] = value
   updateText({ inset: _inset })
 }
+
+const updateFixedHeight = (fixed: boolean) => {
+  if (fixed) updateText({ fixedHeight: true, vAlign: vAlign.value || 'top' })
+  else {
+    slidesStore.removeElementProps({ id: handleElementId.value, propName: ['fixedHeight', 'vAlign'] })
+    addHistorySnapshot()
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -328,6 +364,9 @@ const updateInset = (index: number, value: number) => {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
+}
+.switch-wrapper {
+  text-align: right;
 }
 .preset-style {
   display: flex;

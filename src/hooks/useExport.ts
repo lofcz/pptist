@@ -744,11 +744,10 @@ export default () => {
             fontSize: defaultFontSize / ratioPx2Pt.value,
             fontFace: pptxDefaultFontFace(),
             color: '#000000',
-            valign: 'top',
+            valign: el.vAlign || 'top',
             margin: [inset[3], inset[1], inset[2], inset[0]].map(item => item / ratioPx2Pt.value) as [number, number, number, number],
             paraSpaceBefore: 5 / ratioPx2Pt.value,
             lineSpacingMultiple: 1.5 / 1.25,
-            autoFit: true,
           }
           if (el.rotate) options.rotate = el.rotate
           if (el.wordSpace) options.charSpacing = el.wordSpace / ratioPx2Pt.value
@@ -767,6 +766,7 @@ export default () => {
           if (el.vertical) options.vert = 'eaVert'
           // 绑定到母版的标题/正文占位符，导出为带 <p:ph> 语义的占位元素
           if (phName) options.placeholder = phName
+          if (!el.fixedHeight) options.fit = 'resize'
 
           pptxSlide.addText(textProps, options)
         }

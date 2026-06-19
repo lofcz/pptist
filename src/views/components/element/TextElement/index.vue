@@ -18,8 +18,8 @@
         :class="{ 'placeholder-element': elementInfo.placeholder, 'show-placeholder': showPlaceholder }"
         ref="elementRef"
         :style="{
-          width: elementInfo.vertical ? 'auto' : elementInfo.width + 'px',
-          height: elementInfo.vertical ? elementInfo.height + 'px' : 'auto',
+          width: elementInfo.vertical && !elementInfo.fixedHeight ? 'auto' : elementInfo.width + 'px',
+          height: !elementInfo.vertical && !elementInfo.fixedHeight ? 'auto' : elementInfo.height + 'px',
           backgroundColor: elementInfo.fill,
           opacity: elementInfo.opacity,
           textShadow: shadowStyle,
@@ -32,6 +32,9 @@
           writingMode: elementInfo.vertical ? 'vertical-rl' : 'horizontal-tb',
           padding: `${inset[0]}px ${inset[1]}px ${inset[2]}px ${inset[3]}px`,
           minHeight: isEmptyPlaceholder ? elementInfo.height + 'px' : undefined,
+          display: elementInfo.fixedHeight ? 'flex' : undefined,
+          flexDirection: elementInfo.fixedHeight ? 'column' : undefined,
+          justifyContent: fixedContentJustify,
           '--paragraphSpace': `${elementInfo.paragraphSpace === undefined ? 5 : elementInfo.paragraphSpace}px`,
         }"
         v-contextmenu="contextmenus"
@@ -76,7 +79,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch, type CSSProperties } from 'vue'
 import { storeToRefs } from 'pinia'
 import { debounce } from 'lodash'
 import tinycolor from 'tinycolor2'
@@ -111,6 +114,18 @@ const editorFocused = ref(false)
 const shadow = computed(() => props.elementInfo.shadow)
 const { shadowStyle } = useElementShadow(shadow)
 const inset = computed(() => props.elementInfo.inset || [10, 10, 10, 10])
+
+const fixedContentJustify = computed<CSSProperties['justifyContent']>(() => {
+  if (!props.elementInfo.fixedHeight) return undefined
+
+  const vAlignMap: Record<NonNullable<PPTTextElement['vAlign']>, CSSProperties['justifyContent']> = {
+    top: 'flex-start',
+    middle: 'center',
+    bottom: 'flex-end',
+  }
+  return vAlignMap[props.elementInfo.vAlign || 'top']
+})
+
 const computeEmpty = (html: string) => {
   return !html.replace(/<br\s*\/?>/gi, '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim()
 }
@@ -204,14 +219,14 @@ watch(isScaling, () => {
   if (handleElementId.value !== props.elementInfo.id) return
 
   if (!isScaling.value) {
-    if (!props.elementInfo.vertical && realHeightCache.value !== -1) {
+    if (!props.elementInfo.fixedHeight && !props.elementInfo.vertical && realHeightCache.value !== -1) {
       slidesStore.updateElement({
         id: props.elementInfo.id,
         props: { height: realHeightCache.value },
       })
       realHeightCache.value = -1
     }
-    if (props.elementInfo.vertical && realWidthCache.value !== -1) {
+    if (!props.elementInfo.fixedHeight && props.elementInfo.vertical && realWidthCache.value !== -1) {
       slidesStore.updateElement({
         id: props.elementInfo.id,
         props: { width: realWidthCache.value },
@@ -225,14 +240,14 @@ watch(() => props.elementInfo.inset, () => {
   nextTick(() => {
     if (!elementRef.value) return
 
-    if (!props.elementInfo.vertical && props.elementInfo.height !== elementRef.value.offsetHeight) {
+    if (!props.elementInfo.fixedHeight && !props.elementInfo.vertical && props.elementInfo.height !== elementRef.value.offsetHeight) {
       if (isEmptyPlaceholder.value) return
       slidesStore.updateElement({
         id: props.elementInfo.id,
         props: { height: elementRef.value.offsetHeight },
       })
     }
-    if (props.elementInfo.vertical && props.elementInfo.width !== elementRef.value.offsetWidth) {
+    if (!props.elementInfo.fixedHeight && props.elementInfo.vertical && props.elementInfo.width !== elementRef.value.offsetWidth) {
       if (isEmptyPlaceholder.value) return
       slidesStore.updateElement({
         id: props.elementInfo.id,
@@ -250,7 +265,7 @@ const updateTextElementHeight = (entries: ResizeObserverEntry[]) => {
   const realWidth = contentRect.width + inset.value[1] + inset.value[3]
   if (isEmptyPlaceholder.value) return
 
-  if (!props.elementInfo.vertical && props.elementInfo.height !== realHeight) {
+  if (!props.elementInfo.fixedHeight && !props.elementInfo.vertical && props.elementInfo.height !== realHeight) {
     if (!isScaling.value) {
       slidesStore.updateElement({
         id: props.elementInfo.id,
@@ -259,7 +274,7 @@ const updateTextElementHeight = (entries: ResizeObserverEntry[]) => {
     }
     else realHeightCache.value = realHeight
   }
-  if (props.elementInfo.vertical && props.elementInfo.width !== realWidth) {
+  if (!props.elementInfo.fixedHeight && props.elementInfo.vertical && props.elementInfo.width !== realWidth) {
     if (!isScaling.value) {
       slidesStore.updateElement({
         id: props.elementInfo.id,

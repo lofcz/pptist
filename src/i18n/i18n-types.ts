@@ -1813,6 +1813,14 @@ export type NamespaceConfigsTranslation = {
 		 */
 		lxgwwenKai: string
 		/**
+		 * L​X​G​W​ ​N​e​o​ ​Z​h​i​S​o​n​g
+		 */
+		lxgwNeoZhiSong: string
+		/**
+		 * L​X​G​W​ ​N​e​o​ ​X​i​H​e​i
+		 */
+		lxgwNeoXiHei: string
+		/**
 		 * A​l​i​b​a​b​a​ ​P​u​H​u​i​T​i
 		 */
 		alibabaPuHuiTi: string
@@ -1900,6 +1908,10 @@ export type NamespaceConfigsTranslation = {
 		 * M​e​r​r​i​w​e​a​t​h​e​r
 		 */
 		merriweather: string
+		/**
+		 * L​a​t​o
+		 */
+		lato: string
 	}
 }
 
@@ -6404,6 +6416,14 @@ export type TranslationFunctions = {
 			 */
 			lxgwwenKai: () => LocalizedString
 			/**
+			 * LXGW Neo ZhiSong
+			 */
+			lxgwNeoZhiSong: () => LocalizedString
+			/**
+			 * LXGW Neo XiHei
+			 */
+			lxgwNeoXiHei: () => LocalizedString
+			/**
 			 * Alibaba PuHuiTi
 			 */
 			alibabaPuHuiTi: () => LocalizedString
@@ -6491,6 +6511,10 @@ export type TranslationFunctions = {
 			 * Merriweather
 			 */
 			merriweather: () => LocalizedString
+			/**
+			 * Lato
+			 */
+			lato: () => LocalizedString
 		}
 	}
 	editor: {

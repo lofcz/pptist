@@ -8,6 +8,31 @@ export interface FontOption {
   value: string
 }
 
+export const FONT_VALUES = [
+  '',
+  'SourceHanSans',
+  'SourceHanSerif',
+  'WenDingPLKaiTi',
+  'WenDingPLSongTi',
+  'ZhuqueFangSong',
+  'LXGWWenKai',
+  'LXGWNeoZhiSong',
+  'LXGWNeoXiHei',
+  'AlibabaPuHuiTi',
+  'MiSans',
+  'DeYiHei',
+  'SourceSerif4',
+  'JetBrainsMono',
+  'Literata',
+  'Inter',
+  'Roboto',
+  'OpenSans',
+  'Montserrat',
+  'SourceSansPro',
+  'Merriweather',
+  'Lato',
+] as const
+
 export const EASTERN_EXTRAS_FONT_VALUES = [
   'SourceHanSans',
   'SourceHanSerif',
@@ -15,20 +40,15 @@ export const EASTERN_EXTRAS_FONT_VALUES = [
   'WenDingPLSongTi',
   'ZhuqueFangSong',
   'LXGWWenKai',
+  'LXGWNeoZhiSong',
+  'LXGWNeoXiHei',
   'AlibabaPuHuiTi',
   'MiSans',
   'DeYiHei',
-  'CangerXiaowanzi',
-  'YousheTitleBlack',
-  'FengguangMingrui',
-  'ShetuModernSquare',
-  'ZcoolHappy',
-  'ZizhiQuXiMai',
-  'SucaiJishiKangkang',
-  'SucaiJishiCoolSquare',
-  'TuniuRounded',
-  'RuiziZhenyan',
 ]
+
+/** @deprecated Use FONT_VALUES — kept for loadGoogleFonts preset detection */
+export const FONTS: FontOption[] = FONT_VALUES.map(value => ({ label: value, value }))
 
 export function getFonts(): FontOption[] {
   const f = getLL().configs.fonts
@@ -44,28 +64,21 @@ export function getFonts(): FontOption[] {
     { label: f.montserrat(), value: 'Montserrat' },
     { label: f.sourceSansPro(), value: 'SourceSansPro' },
     { label: f.merriweather(), value: 'Merriweather' },
+    { label: f.lato(), value: 'Lato' },
   ]
 
   const easternExtrasFonts: FontOption[] = [
-    { label: f.sourceHanSans(), value: EASTERN_EXTRAS_FONT_VALUES[0] },
-    { label: f.sourceHanSerif(), value: EASTERN_EXTRAS_FONT_VALUES[1] },
-    { label: f.wenDingPLKaiTi(), value: EASTERN_EXTRAS_FONT_VALUES[2] },
-    { label: f.wenDingPLSongTi(), value: EASTERN_EXTRAS_FONT_VALUES[3] },
-    { label: f.zhuqueFangSong(), value: EASTERN_EXTRAS_FONT_VALUES[4] },
-    { label: f.lxgwwenKai(), value: EASTERN_EXTRAS_FONT_VALUES[5] },
-    { label: f.alibabaPuHuiTi(), value: EASTERN_EXTRAS_FONT_VALUES[6] },
-    { label: f.miSans(), value: EASTERN_EXTRAS_FONT_VALUES[7] },
-    { label: f.deYiHei(), value: EASTERN_EXTRAS_FONT_VALUES[8] },
-    { label: f.cangerXiaowanzi(), value: EASTERN_EXTRAS_FONT_VALUES[9] },
-    { label: f.yousheTitleBlack(), value: EASTERN_EXTRAS_FONT_VALUES[10] },
-    { label: f.fengguangMingrui(), value: EASTERN_EXTRAS_FONT_VALUES[11] },
-    { label: f.shetuModernSquare(), value: EASTERN_EXTRAS_FONT_VALUES[12] },
-    { label: f.zcoolHappy(), value: EASTERN_EXTRAS_FONT_VALUES[13] },
-    { label: f.zizhiQuXiMai(), value: EASTERN_EXTRAS_FONT_VALUES[14] },
-    { label: f.sucaiJishiKangkang(), value: EASTERN_EXTRAS_FONT_VALUES[15] },
-    { label: f.sucaiJishiCoolSquare(), value: EASTERN_EXTRAS_FONT_VALUES[16] },
-    { label: f.tuniuRounded(), value: EASTERN_EXTRAS_FONT_VALUES[17] },
-    { label: f.ruiziZhenyan(), value: EASTERN_EXTRAS_FONT_VALUES[18] },
+    { label: f.sourceHanSans(), value: 'SourceHanSans' },
+    { label: f.sourceHanSerif(), value: 'SourceHanSerif' },
+    { label: f.wenDingPLKaiTi(), value: 'WenDingPLKaiTi' },
+    { label: f.wenDingPLSongTi(), value: 'WenDingPLSongTi' },
+    { label: f.zhuqueFangSong(), value: 'ZhuqueFangSong' },
+    { label: f.lxgwwenKai(), value: 'LXGWWenKai' },
+    { label: f.lxgwNeoZhiSong(), value: 'LXGWNeoZhiSong' },
+    { label: f.lxgwNeoXiHei(), value: 'LXGWNeoXiHei' },
+    { label: f.alibabaPuHuiTi(), value: 'AlibabaPuHuiTi' },
+    { label: f.miSans(), value: 'MiSans' },
+    { label: f.deYiHei(), value: 'DeYiHei' },
   ]
 
   return EXTRAS_ENABLED
