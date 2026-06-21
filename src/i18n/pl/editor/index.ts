@@ -373,6 +373,7 @@ const pl_editor: NamespaceEditorTranslation = {
     },
     text: {
       textBoxFill: 'Wypełnienie pola tekstowego:',
+      fixedHeight: 'Stała wysokość:',
       presetLargeTitle: 'Duży tytuł',
       presetSmallTitle: 'Mały tytuł',
       presetBody: 'Tekst główny',

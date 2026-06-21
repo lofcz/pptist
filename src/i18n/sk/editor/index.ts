@@ -373,6 +373,7 @@ const sk_editor: NamespaceEditorTranslation = {
     },
     text: {
       textBoxFill: 'Výplň textového poľa:',
+      fixedHeight: 'Pevná výška:',
       presetLargeTitle: 'Veľký nadpis',
       presetSmallTitle: 'Malý nadpis',
       presetBody: 'Hlavný text',

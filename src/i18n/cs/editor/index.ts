@@ -401,6 +401,7 @@ const cs_editor: NamespaceEditorTranslation = {
     },
     text: {
       textBoxFill: 'Výplň textového pole:',
+      fixedHeight: 'Pevná výška:',
       presetLargeTitle: 'Velký nadpis',
       presetSmallTitle: 'Malý nadpis',
       presetBody: 'Hlavní text',

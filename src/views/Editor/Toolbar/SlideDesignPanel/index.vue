@@ -193,8 +193,8 @@
         <div style="width: 40%;">{{ LL.editor.slideDesign.horizontalShadow() }}</div>
         <Slider 
           style="width: 60%;"
-          :min="-10" 
-          :max="10" 
+          :min="-20" 
+          :max="20" 
           :step="1" 
           :value="theme.shadow.h" 
           @update:value="value => updateTheme({ shadow: { ...theme.shadow, h: value as number } })"
@@ -204,8 +204,8 @@
         <div style="width: 40%;">{{ LL.editor.slideDesign.verticalShadow() }}</div>
         <Slider
           style="width: 60%;"
-          :min="-10"
-          :max="10"
+          :min="-20"
+          :max="20"
           :step="1"
           :value="theme.shadow.v"
           @update:value="value => updateTheme({ shadow: { ...theme.shadow, v: value as number } })"
@@ -216,7 +216,7 @@
         <Slider
           style="width: 60%;"
           :min="1"
-          :max="20"
+          :max="30"
           :step="1"
           :value="theme.shadow.blur"
           @update:value="value => updateTheme({ shadow: { ...theme.shadow, blur: value as number } })"

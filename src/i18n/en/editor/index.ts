@@ -378,6 +378,7 @@ const en_editor: BaseTranslation = {
     },
     text: {
       textBoxFill: 'Text box fill:',
+      fixedHeight: 'Fixed height:',
       presetLargeTitle: 'Large title',
       presetSmallTitle: 'Small title',
       presetBody: 'Body',

@@ -3216,6 +3216,10 @@ export type NamespaceEditorTranslation = {
 			 */
 			textBoxFill: string
 			/**
+			 * F​i​x​e​d​ ​h​e​i​g​h​t​:
+			 */
+			fixedHeight: string
+			/**
 			 * L​a​r​g​e​ ​t​i​t​l​e
 			 */
 			presetLargeTitle: string
@@ -7808,6 +7812,10 @@ export type TranslationFunctions = {
 				 * Text box fill:
 				 */
 				textBoxFill: () => LocalizedString
+				/**
+				 * Fixed height:
+				 */
+				fixedHeight: () => LocalizedString
 				/**
 				 * Large title
 				 */
