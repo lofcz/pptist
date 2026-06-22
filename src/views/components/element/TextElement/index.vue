@@ -37,6 +37,7 @@
           justifyContent: fixedContentJustify,
           overflow: elementInfo.fixedHeight ? 'hidden' : undefined,
           '--paragraphSpace': `${elementInfo.paragraphSpace === undefined ? 5 : elementInfo.paragraphSpace}px`,
+          ...fitVars,
         }"
         v-contextmenu="contextmenus"
         @mousedown="$event => handleSelectElement($event)"
@@ -49,7 +50,6 @@
         />
         <ProsemirrorEditor
           class="text"
-          :style="fitStyle"
           :elementId="elementInfo.id"
           :defaultColor="elementInfo.defaultColor"
           :defaultFontName="elementInfo.defaultFontName"
@@ -119,7 +119,7 @@ const { shadowStyle } = useElementShadow(shadow)
 const inset = computed(() => props.elementInfo.inset || [10, 10, 10, 10])
 
 const elementInfoRef = computed(() => props.elementInfo)
-const { fitStyle } = useTextFit(elementInfoRef)
+const { fitVars } = useTextFit(elementInfoRef)
 
 const fixedContentJustify = computed<CSSProperties['justifyContent']>(() => {
   if (!props.elementInfo.fixedHeight) return undefined

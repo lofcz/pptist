@@ -1,7 +1,9 @@
 .ProseMirror, .ProseMirror-static {
   outline: 0;
   border: 0;
-  font-size: 16px;
+  // Default text size. For fixed-height boxes that must auto-fit, the renderer
+  // overrides this var with the px size pretext computed (no CSS transform).
+  font-size: var(--text-fit-base-size, 16px);
   overflow-wrap: break-word;
   word-break: normal;
   white-space: normal;

@@ -2,28 +2,37 @@ import { computed, onMounted, ref, watch, type CSSProperties, type Ref } from 'v
 import { setLocale as setPretextLocale } from '@chenglou/pretext'
 import type { PPTTextElement, TextInset } from '@/types/slides'
 import { useI18nContext } from '@/i18n/useI18nContext'
-import { BULLET_INDENT, extractFitBlocksFromHtml, fitScaleForBlocks, type TextFitAlign } from '@/utils/textFit'
+import { BULLET_INDENT, DEFAULT_TEXT_FONT_SIZE, extractFitBlocksFromHtml, fitFontScaleForBlocks, scaleHtmlFontSizes } from '@/utils/textFit'
 
 const DEFAULT_INSET: TextInset = [10, 10, 10, 10]
 const DEFAULT_LINE_HEIGHT = 1.5
 const DEFAULT_PARAGRAPH_SPACE = 5
 const MIN_FIT_SCALE = 0.2
 
+function roundTo(value: number, decimals = 1): number {
+  const factor = 10 ** decimals
+  return Math.round(value * factor) / factor
+}
+
 /**
- * Auto-fit a fixed-size text box so its content never overflows.
+ * Auto-fit a fixed-size text box so its content never overflows — by computing a
+ * real font size with pretext, not a CSS transform.
  *
- * Only fixed-height (`fixedHeight`) text boxes are constrained — they have a
- * locked region instead of growing to fit. We measure the rendered content with
- * pretext (the same engine the agentic layout builder uses) and return a uniform
- * scale (<= 1) plus a transform-origin that respects the box's horizontal
- * alignment and `vAlign`. The renderer applies these to the text node as a CSS
- * transform, shrinking the type down from its authored size only as far as
- * needed. Vertical (top-to-bottom) text is left unscaled.
+ * Only fixed-height (`fixedHeight`) boxes are constrained; normal boxes grow to
+ * fit. We measure the wrapped content with pretext (the same engine the agentic
+ * layout builder uses) and binary-search the largest uniform font factor at which
+ * it still fits. The renderer then applies that factor as actual font sizes:
+ *   - text with an explicit inline size renders from `fittedContent` (sizes
+ *     rewritten to `size * factor`);
+ *   - text using the default size shrinks via the `--text-fit-base-size` CSS
+ *     variable (the computed px value), since `.ProseMirror` hardcodes 16px.
+ * Vertical (top-to-bottom) text is left untouched.
  */
 export default (elementInfo: Ref<PPTTextElement>) => {
   const { locale } = useI18nContext()
   const fitScale = ref(1)
-  const fitAlign = ref<TextFitAlign>('left')
+
+  const enabled = computed(() => !!elementInfo.value.fixedHeight && !elementInfo.value.vertical && !!elementInfo.value.content)
 
   const compute = () => {
     const el = elementInfo.value
@@ -37,11 +46,10 @@ export default (elementInfo: Ref<PPTTextElement>) => {
     const innerHeight = el.height - inset[0] - inset[2]
 
     setPretextLocale(locale.value)
-    const { blocks, align } = extractFitBlocksFromHtml(el.content, {
+    const { blocks } = extractFitBlocksFromHtml(el.content, {
       defaultFontFamily: el.defaultFontName || 'inherit',
     })
-    fitAlign.value = align
-    fitScale.value = fitScaleForBlocks(blocks, {
+    fitScale.value = fitFontScaleForBlocks(blocks, {
       innerWidth,
       innerHeight,
       lineHeight: el.lineHeight ?? DEFAULT_LINE_HEIGHT,
@@ -76,21 +84,22 @@ export default (elementInfo: Ref<PPTTextElement>) => {
     }
   })
 
-  const fitStyle = computed<CSSProperties>(() => {
-    if (fitScale.value >= 1) return {}
-    const vAlign = elementInfo.value.vAlign
-    // Anchor the shrink so the box's alignment is preserved: text stays pinned to
-    // its horizontal edge and its `vAlign` corner as it scales below 1.
-    const vertical = vAlign === 'middle' ? 'center' : vAlign === 'bottom' ? 'bottom' : 'top'
-    const horizontal = fitAlign.value === 'center' ? 'center' : fitAlign.value === 'right' ? 'right' : 'left'
-    return {
-      transform: `scale(${fitScale.value})`,
-      transformOrigin: `${horizontal} ${vertical}`,
-    }
+  // Content with inline sizes rewritten to the fitted size (for static renders).
+  const fittedContent = computed(() => {
+    if (!enabled.value || fitScale.value >= 1) return elementInfo.value.content
+    return scaleHtmlFontSizes(elementInfo.value.content, fitScale.value)
+  })
+
+  // CSS variable holding the fitted *default* size in px. `.ProseMirror` reads
+  // it (with a 16px fallback) so default-size text shrinks without a transform.
+  const fitVars = computed<CSSProperties>(() => {
+    if (!enabled.value || fitScale.value >= 1) return {}
+    return { '--text-fit-base-size': `${roundTo(DEFAULT_TEXT_FONT_SIZE * fitScale.value)}px` }
   })
 
   return {
     fitScale,
-    fitStyle,
+    fittedContent,
+    fitVars,
   }
 }
