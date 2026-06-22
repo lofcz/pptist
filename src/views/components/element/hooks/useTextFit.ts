@@ -8,6 +8,11 @@ const DEFAULT_INSET: TextInset = [10, 10, 10, 10]
 const DEFAULT_LINE_HEIGHT = 1.5
 const DEFAULT_PARAGRAPH_SPACE = 5
 const MIN_FIT_SCALE = 0.2
+// The real stack a text element renders with when no font is set ($textElementFont
+// in variable.scss). pretext feeds this to `ctx.font`, which silently rejects an
+// invalid family (e.g. `inherit`) and would freeze measurement at 10px — so the
+// fallback must be a concrete, valid font stack.
+const DEFAULT_TEXT_FONT_FAMILY = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif'
 
 function roundTo(value: number, decimals = 1): number {
   const factor = 10 ** decimals
@@ -47,7 +52,7 @@ export default (elementInfo: Ref<PPTTextElement>) => {
 
     setPretextLocale(locale.value)
     const { blocks } = extractFitBlocksFromHtml(el.content, {
-      defaultFontFamily: el.defaultFontName || 'inherit',
+      defaultFontFamily: el.defaultFontName || DEFAULT_TEXT_FONT_FAMILY,
     })
     fitScale.value = fitFontScaleForBlocks(blocks, {
       innerWidth,

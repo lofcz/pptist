@@ -145,12 +145,21 @@ function blockFontSize(block: Element, defaultSize: number): number {
   return max || defaultSize
 }
 
-/** First inline font-family declared on `block` or a descendant, else default. */
+// `inherit`/`initial`/`unset` are valid CSS but not valid `ctx.font` families;
+// canvas would reject the whole font string and measure at its 10px default.
+function usableFamily(family: string | undefined | null): string | null {
+  if (!family) return null
+  const trimmed = family.trim()
+  if (!trimmed || trimmed === 'inherit' || trimmed === 'initial' || trimmed === 'unset') return null
+  return trimmed
+}
+
+/** First usable inline font-family declared on `block` or a descendant, else default. */
 function blockFontFamily(block: Element, defaultFamily: string): string {
-  const own = (block as HTMLElement).style?.fontFamily
+  const own = usableFamily((block as HTMLElement).style?.fontFamily)
   if (own) return own
   const withFamily = block.querySelector<HTMLElement>('[style*="font-family"]')
-  return withFamily?.style.fontFamily || defaultFamily
+  return usableFamily(withFamily?.style.fontFamily) || defaultFamily
 }
 
 export interface ExtractedContent {
