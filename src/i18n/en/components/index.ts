@@ -47,6 +47,11 @@ const en_components: BaseTranslation = {
     tabFormulas: 'Preset formulas',
     formulaEmpty: 'Formula cannot be empty',
   },
+  inlineMathEditor: {
+    title: 'Edit formula',
+    inputPlaceholder: 'Enter a formula',
+    empty: 'Formula cannot be empty',
+  },
 }
 
 export default en_components

@@ -47,6 +47,11 @@ const sk_components: NamespaceComponentsTranslation = {
     tabFormulas: 'Vzorce',
     formulaEmpty: 'Vzorec nesmie byť prázdny',
   },
+  inlineMathEditor: {
+    title: 'Upraviť vzorec',
+    inputPlaceholder: 'Zadajte vzorec',
+    empty: 'Vzorec nesmie byť prázdny',
+  },
 }
 
 export default sk_components

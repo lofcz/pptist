@@ -9,11 +9,14 @@
  * need to hand-place boxes or hand-pick colors/sizes, and it never emits raw
  * authoring HTML the agent has to reason about.
  *
- * Text never overflows: every text box is **auto-fit** with `@chenglou/pretext`
- * (the same measurement engine the editor's FitText uses). Each box has a fixed
- * region; the builder measures the content and picks the largest font size from
- * the style scale that still fits the box, shrinking gracefully toward a legible
- * minimum instead of clipping. The agent fills content; sizing is automatic.
+ * Text never overflows: every text box is emitted as a **fixed-height**,
+ * vertically-aligned element and is **auto-fit** with `@chenglou/pretext` (the
+ * shared measurement engine in `utils/textFit.ts`). At build time the builder
+ * measures the content and bakes the largest font size from the style scale that
+ * still fits the locked region; at render time that same engine measures the
+ * real wrapped lines and scales the type down further if needed, so a box can
+ * never spill — even after edits or once webfonts load. The agent fills content;
+ * sizing and vertical placement are automatic.
  *
  * Builders are deterministic and pure (no store access): given a viewport, a
  * style preset, and slots, they return a `Partial<Slide>` that the bridge
@@ -24,7 +27,7 @@
  * links) and inline math (`$…$`, `$$…$$`) work identically to the `text.setMarkdown`
  * path — any slot accepts mixed prose + formulas (e.g. a bullet `Příklad: $\\frac{3}{8} > \\frac{1}{8}$`).
  */
-import { layout as pretextLayout, prepare as pretextPrepare } from '@chenglou/pretext'
+import { measureTextBlocksHeight } from '@/utils/textFit'
 import type {
   ChartData,
   ChartType,
@@ -37,6 +40,7 @@ import type {
   SlideBackground,
   TableCell,
   TableCellStyle,
+  TextAlignVertical,
 } from '@/types/slides'
 import { containsMath, ensureInlineMathReady, renderInlineMarkdown, splitLinesPreservingMath } from '@/utils/markdown'
 import type { PptistStylePreset } from './styles'
@@ -186,15 +190,12 @@ interface FitInput {
 }
 
 function measureBlocksHeight(blocks: string[], size: number, innerWidth: number, input: FitInput): number {
-  const lineHeightPx = Math.ceil(size * input.lineHeight)
-  const font = `${input.italic ? 'italic' : 'normal'} ${input.bold ? 700 : 400} ${size}px ${input.fontFamily}`
-  let total = 0
-  for (const block of blocks) {
-    const prepared = pretextPrepare(block, font)
-    total += pretextLayout(prepared, innerWidth, lineHeightPx).height
-  }
-  total += Math.max(0, blocks.length - 1) * (input.blockSpace ?? 0)
-  return total
+  // `innerWidth` already has inset + bullet indent removed by the caller, so each
+  // block is measured at the same width via the shared pretext measurement engine.
+  return measureTextBlocksHeight(
+    blocks.map(text => ({ text, size, bold: input.bold, italic: input.italic, fontFamily: input.fontFamily })),
+    { innerWidth, lineHeight: input.lineHeight, blockSpace: input.blockSpace },
+  )
 }
 
 /**
@@ -295,8 +296,15 @@ interface TextBox extends Box {
   color: string
   font: string
   lineHeight?: number
+  vAlign?: TextAlignVertical
 }
 
+/**
+ * Every layout text box is emitted as a **fixed-height** element: it owns its
+ * region (it never grows to fit) and is vertically aligned within it. Combined
+ * with the renderer's pretext auto-fit, the type shrinks from the baked size if
+ * a box would ever overflow, so layouts stay pixel-stable and never spill.
+ */
 function textElement(box: TextBox): Partial<PPTTextElement> & { type: 'text' } {
   return {
     type: 'text',
@@ -309,6 +317,8 @@ function textElement(box: TextBox): Partial<PPTTextElement> & { type: 'text' } {
     defaultColor: box.color,
     defaultFontName: box.font,
     lineHeight: box.lineHeight ?? 1.35,
+    fixedHeight: true,
+    vAlign: box.vAlign ?? 'top',
   }
 }
 
@@ -318,6 +328,7 @@ interface ParagraphFit {
   bold?: boolean
   italic?: boolean
   align?: 'left' | 'center' | 'right'
+  vAlign?: TextAlignVertical
   lineHeight: number
   maxSize: number
   minSize?: number
@@ -343,6 +354,7 @@ function paragraphsElement(box: Box, text: string, style: ParagraphFit): Partial
     color: style.color,
     font: style.font,
     lineHeight: style.lineHeight,
+    vAlign: style.vAlign,
   })
 }
 
@@ -353,6 +365,7 @@ interface BulletFit {
   maxSize: number
   minSize?: number
   ordered?: boolean
+  vAlign?: TextAlignVertical
 }
 
 /** Emit a bulleted text element whose font is auto-fit to the box. */
@@ -374,6 +387,7 @@ function bulletsElement(box: Box, items: string[], style: BulletFit): Partial<PP
     color: style.color,
     font: style.font,
     lineHeight: style.lineHeight,
+    vAlign: style.vAlign,
   })
 }
 

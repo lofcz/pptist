@@ -9,6 +9,7 @@ import type { PPTElementOutline, PPTElementShadow, PPTElementLink, PPTTextElemen
 import { getElementRange, getLineElementPath, getTableSubThemeColor } from '@/utils/element'
 import { type AST, toAST } from '@/utils/htmlParser'
 import { type SvgPoints, toPoints } from '@/utils/svgPathParser'
+import { ensureMathliveReady, htmlContainsMath } from '@/utils/math'
 import { encrypt } from '@/utils/crypto'
 import { svg2Base64 } from '@/utils/svg2Base64'
 import message from '@/utils/message'
@@ -595,6 +596,47 @@ export default () => {
   }
 
   // 导出PPTX文件
+  // 将含行内公式的文本/形状文本框离屏渲染为 PNG。pptxgenjs 的文本运行无法呈现
+  // 数学排版，因此把含公式的整个文本框作为图片导出，保留公式的视觉效果。
+  // 代价：该文本框在导出的 PPTX 中变为图片，失去在 PowerPoint 内的文本可编辑性。
+  const renderMathBoxToImage = async (
+    content: string,
+    opts: { width: number; color?: string; fontFace?: string; fontSize?: number; lineHeight?: number; align?: string; inset?: number[] },
+  ): Promise<{ data: string; width: number; height: number } | null> => {
+    try {
+      await ensureMathliveReady()
+      const inset = opts.inset || [10, 10, 10, 10]
+      const box = document.createElement('div')
+      box.style.cssText = [
+        'position:fixed', 'left:-99999px', 'top:0', 'box-sizing:border-box',
+        `width:${opts.width}px`,
+        `padding:${inset[0]}px ${inset[1]}px ${inset[2]}px ${inset[3]}px`,
+        `color:${opts.color || '#000000'}`,
+        opts.fontFace ? `font-family:${opts.fontFace}` : '',
+        `font-size:${opts.fontSize || defaultFontSize}px`,
+        `line-height:${opts.lineHeight || 1.5}`,
+        `text-align:${opts.align || 'left'}`,
+        'white-space:normal', 'word-break:break-word', 'background:transparent',
+      ].filter(Boolean).join(';')
+      box.innerHTML = content
+      document.body.appendChild(box)
+      // 等待字体与 MathLive 标记完成布局后再截图
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(null))))
+      const width = box.offsetWidth || opts.width
+      const height = box.offsetHeight || 0
+      if (!height) {
+        box.remove()
+        return null
+      }
+      const data = await toPng(box, { pixelRatio: 2, width, height })
+      box.remove()
+      return { data, width, height }
+    }
+    catch {
+      return null
+    }
+  }
+
   const exportPPTX = async (_slides: Slide[], masterOverwrite: boolean, ignoreMedia: boolean) => {
     exporting.value = true
     const pptx = new pptxgen()
@@ -602,6 +644,33 @@ export default () => {
     // 在构建前把所有“外来”媒体来源就地转成 data: URL，绕过 pptxgenjs 的内部 fetch
     const failedSources = new Set<string>()
     const sources = await resolveSlideSources(_slides, failedSources)
+
+    // 预渲染含行内公式的文本/形状文本为图片，按元素引用缓存供构建阶段取用
+    const mathImages = new Map<object, { data: string; width: number; height: number }>()
+    for (const slide of _slides) {
+      if (!slide.elements) continue
+      for (const el of slide.elements) {
+        if (el.type === 'text' && !isEmptyHTMLText(el.content) && htmlContainsMath(el.content)) {
+          const img = await renderMathBoxToImage(el.content, {
+            width: el.width,
+            color: el.defaultColor,
+            fontFace: el.defaultFontName,
+            lineHeight: el.lineHeight,
+            inset: el.inset,
+          })
+          if (img) mathImages.set(el, img)
+        }
+        else if (el.type === 'shape' && el.text && htmlContainsMath(el.text.content)) {
+          const img = await renderMathBoxToImage(el.text.content, {
+            width: el.width,
+            color: el.text.defaultColor,
+            fontFace: el.text.defaultFontName,
+            align: el.text.align,
+          })
+          if (img) mathImages.set(el, img)
+        }
+      }
+    }
 
     if (viewportRatio.value === 0.625) pptx.layout = 'LAYOUT_16x10'
     else if (viewportRatio.value === 0.75) pptx.layout = 'LAYOUT_4x3'
@@ -732,6 +801,25 @@ export default () => {
           // - 绑定了占位符的空元素：不显式写入，交给 pptxgenjs 依据母版自动补齐为原生空占位符（显示"单击此处添加…"提示）
           // - 其它纯提示性空占位元素：直接跳过，避免导出为多余的空文本框/段落
           if (isEmptyHTMLText(el.content) && (phName || el.placeholder)) continue
+
+          // 含行内公式的文本：以预渲染图片导出，保留数学排版的视觉效果
+          const mathImg = mathImages.get(el)
+          if (mathImg) {
+            const imgOptions: pptxgen.ImageProps = {
+              data: mathImg.data,
+              x: el.left / ratioPx2Inch.value,
+              y: el.top / ratioPx2Inch.value,
+              w: el.width / ratioPx2Inch.value,
+              h: mathImg.height / ratioPx2Inch.value,
+            }
+            if (el.rotate) imgOptions.rotate = el.rotate
+            if (el.link) {
+              const linkOption = getLinkOption(el.link)
+              if (linkOption) imgOptions.hyperlink = linkOption
+            }
+            pptxSlide.addImage(imgOptions)
+            continue
+          }
 
           const textProps = formatHTML(el.content)
           const inset = el.inset || [10, 10, 10, 10]
@@ -883,26 +971,41 @@ export default () => {
             pptxSlide.addShape('custGeom' as pptxgen.ShapeType, options)
           }
           if (el.text) {
-            const textProps = formatHTML(el.text.content)
-            const inset = el.text.inset || [10, 10, 10, 10]
-
-            const options: pptxgen.TextPropsOptions = {
-              x: el.left / ratioPx2Inch.value,
-              y: el.top / ratioPx2Inch.value,
-              w: el.width / ratioPx2Inch.value,
-              h: el.height / ratioPx2Inch.value,
-              fontSize: defaultFontSize / ratioPx2Pt.value,
-              fontFace: pptxDefaultFontFace(),
-              color: '#000000',
-              paraSpaceBefore: 5 / ratioPx2Pt.value,
-              margin: [inset[3], inset[1], inset[2], inset[0]].map(item => item / ratioPx2Pt.value) as [number, number, number, number],
-              valign: el.text.align,
+            // 含行内公式的形状文本：以预渲染图片覆盖文本区域导出
+            const mathImg = mathImages.get(el)
+            if (mathImg) {
+              const imgOptions: pptxgen.ImageProps = {
+                data: mathImg.data,
+                x: el.left / ratioPx2Inch.value,
+                y: el.top / ratioPx2Inch.value,
+                w: el.width / ratioPx2Inch.value,
+                h: mathImg.height / ratioPx2Inch.value,
+              }
+              if (el.rotate) imgOptions.rotate = el.rotate
+              pptxSlide.addImage(imgOptions)
             }
-            if (el.rotate) options.rotate = el.rotate
-            if (el.text.defaultColor) options.color = formatColor(el.text.defaultColor).color
-            if (el.text.defaultFontName) options.fontFace = el.text.defaultFontName
+            else {
+              const textProps = formatHTML(el.text.content)
+              const inset = el.text.inset || [10, 10, 10, 10]
 
-            pptxSlide.addText(textProps, options)
+              const options: pptxgen.TextPropsOptions = {
+                x: el.left / ratioPx2Inch.value,
+                y: el.top / ratioPx2Inch.value,
+                w: el.width / ratioPx2Inch.value,
+                h: el.height / ratioPx2Inch.value,
+                fontSize: defaultFontSize / ratioPx2Pt.value,
+                fontFace: pptxDefaultFontFace(),
+                color: '#000000',
+                paraSpaceBefore: 5 / ratioPx2Pt.value,
+                margin: [inset[3], inset[1], inset[2], inset[0]].map(item => item / ratioPx2Pt.value) as [number, number, number, number],
+                valign: el.text.align,
+              }
+              if (el.rotate) options.rotate = el.rotate
+              if (el.text.defaultColor) options.color = formatColor(el.text.defaultColor).color
+              if (el.text.defaultFontName) options.fontFace = el.text.defaultFontName
+
+              pptxSlide.addText(textProps, options)
+            }
           }
           if (el.pattern) {
             const options: pptxgen.ImageProps = {

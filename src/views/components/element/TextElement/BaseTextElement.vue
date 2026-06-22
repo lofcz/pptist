@@ -32,6 +32,7 @@
           display: elementInfo.fixedHeight ? 'flex' : undefined,
           flexDirection: elementInfo.fixedHeight ? 'column' : undefined,
           justifyContent: fixedContentJustify,
+          overflow: elementInfo.fixedHeight ? 'hidden' : undefined,
           '--paragraphSpace': `${elementInfo.paragraphSpace === undefined ? 5 : elementInfo.paragraphSpace}px`,
         }"
       >
@@ -44,6 +45,7 @@
         <div
           class="text ProseMirror-static"
           :class="{ 'thumbnail': target === 'thumbnail' }"
+          :style="fitStyle"
           v-html="elementInfo.content"
         ></div>
       </div>
@@ -57,6 +59,7 @@ import type { PPTTextElement } from '@/types/slides'
 import ElementOutline from '@/views/components/element/ElementOutline.vue'
 
 import useElementShadow from '@/views/components/element/hooks/useElementShadow'
+import useTextFit from '@/views/components/element/hooks/useTextFit'
 
 const props = defineProps<{
   elementInfo: PPTTextElement
@@ -66,6 +69,9 @@ const props = defineProps<{
 const shadow = computed(() => props.elementInfo.shadow)
 const { shadowStyle } = useElementShadow(shadow)
 const inset = computed(() => props.elementInfo.inset || [10, 10, 10, 10])
+
+const elementInfoRef = computed(() => props.elementInfo)
+const { fitStyle } = useTextFit(elementInfoRef)
 const fixedContentJustify = computed<CSSProperties['justifyContent']>(() => {
   if (!props.elementInfo.fixedHeight) return undefined
 

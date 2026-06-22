@@ -1,18 +1,23 @@
 import MarkdownIt from 'markdown-it'
-import type { KatexOptions } from 'katex'
+import { ensureMathliveReady, texmathEngine } from './math'
 
 /**
  * PPTist stores text-like content as HTML (`text.content`, shape
  * `text.content`, slide remarks, notes). Markdown inputs use a real CommonMark
  * parser here; callers that already have trusted HTML should pass `content`.
+ *
+ * Math is typeset with MathLive (`utils/math.ts`): `markdown-it-texmath` parses
+ * the `$…$` / `$$…$$` / `\(…\)` / `\[…\]` / `\begin{}` delimiters and delegates
+ * rendering to the MathLive engine adapter, which emits the canonical
+ * `span.pptist-math` wrapper that the editor, tables and export all understand.
  */
 const MATH_RE = /(?:\$\$[\s\S]+?\$\$|\$[^$\n]+\$|\\\(|\\\[|\\begin\{[a-zA-Z*]+\})/
 const MATH_DELIMITERS = ['dollars', 'brackets', 'beg_end'] as const
 
 type TexMathPluginOptions = {
-  engine: typeof import('katex')
+  engine: typeof texmathEngine
   delimiters: typeof MATH_DELIMITERS[number][]
-  katexOptions: KatexOptions
+  katexOptions: { strict?: boolean; throwOnError?: boolean }
 }
 
 type TexMathPlugin = (md: MarkdownIt, options: TexMathPluginOptions) => void
@@ -224,15 +229,14 @@ function loadMathMarkdownParser(): Promise<MarkdownIt> {
 
   mathMarkdownParserPromise = Promise.all([
     import('markdown-it-texmath'),
-    import('katex'),
-  ]).then(([texmathModule, katex]) => {
+    ensureMathliveReady(),
+  ]).then(([texmathModule]) => {
     const parser = createBaseParser()
     const texmath = (texmathModule.default ?? texmathModule) as TexMathPlugin
     parser.use(texmath, {
-      engine: katex,
+      engine: texmathEngine,
       delimiters: [...MATH_DELIMITERS],
       katexOptions: {
-        output: 'mathml',
         strict: false,
         throwOnError: false,
       },
@@ -254,7 +258,7 @@ export async function markdownToHtml(markdown: string): Promise<string> {
 }
 
 /**
- * Preload the math-capable markdown parser (lazy KaTeX + texmath) so
+ * Preload the math-capable markdown parser (lazy MathLive + texmath) so
  * `renderInlineMarkdown` can render `$…$` math synchronously afterwards. No-op
  * once loaded; call before rendering content that may contain math.
  */

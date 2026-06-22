@@ -566,6 +566,20 @@ export type NamespaceComponentsTranslation = {
 		 */
 		formulaEmpty: string
 	}
+	inlineMathEditor: {
+		/**
+		 * E​d​i​t​ ​f​o​r​m​u​l​a
+		 */
+		title: string
+		/**
+		 * E​n​t​e​r​ ​a​ ​f​o​r​m​u​l​a
+		 */
+		inputPlaceholder: string
+		/**
+		 * F​o​r​m​u​l​a​ ​c​a​n​n​o​t​ ​b​e​ ​e​m​p​t​y
+		 */
+		empty: string
+	}
 }
 
 export type NamespaceConfigsTranslation = {
@@ -5173,6 +5187,20 @@ export type TranslationFunctions = {
 			 * Formula cannot be empty
 			 */
 			formulaEmpty: () => LocalizedString
+		}
+		inlineMathEditor: {
+			/**
+			 * Edit formula
+			 */
+			title: () => LocalizedString
+			/**
+			 * Enter a formula
+			 */
+			inputPlaceholder: () => LocalizedString
+			/**
+			 * Formula cannot be empty
+			 */
+			empty: () => LocalizedString
 		}
 	}
 	configs: {

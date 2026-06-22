@@ -1,6 +1,7 @@
 import { nodes } from 'prosemirror-schema-basic'
 import type { Node, NodeSpec } from 'prosemirror-model'
 import { listItem as _listItem } from 'prosemirror-schema-list'
+import { buildMathElement } from '@/utils/math'
 
 type Attr = Record<string, number | string>
 
@@ -159,6 +160,66 @@ const paragraph: NodeSpec = {
   },
 }
 
+// Inline atomic math node. LaTeX is the source of truth (`latex`); `html` holds
+// the preserved MathLive markup so it renders without re-typesetting; `display`
+// distinguishes `$$…$$` (block style) from inline `$…$`. Treated as a single
+// uneditable unit so the editor never flattens math into literal text.
+const math: NodeSpec = {
+  attrs: {
+    latex: { default: '' },
+    html: { default: '' },
+    display: { default: false },
+  },
+  inline: true,
+  group: 'inline',
+  atom: true,
+  selectable: true,
+  draggable: false,
+  parseDOM: [
+    {
+      tag: `span.pptist-math`,
+      getAttrs: dom => {
+        const el = dom as HTMLElement
+        return {
+          latex: el.getAttribute('data-latex') || '',
+          html: el.innerHTML,
+          display: el.getAttribute('data-display') === 'true',
+        }
+      },
+    },
+    // Back-compat: legacy KaTeX MathML output from older decks (markdown-it-texmath
+    // wrapped inline math in <eq> and block math in <section><eqn>). Recover the
+    // LaTeX source from the embedded TeX annotation.
+    //
+    // The MathLive engine still nests our `span.pptist-math` inside texmath's
+    // <eq>/<eqn> wrappers, so when such a span is present we return `false` to let
+    // the parser descend to it instead of capturing the wrapper as empty math.
+    {
+      tag: 'eq',
+      getAttrs: dom => {
+        const el = dom as HTMLElement
+        if (el.querySelector('.pptist-math')) return false
+        const annotation = el.querySelector('annotation[encoding="application/x-tex"]')
+        const latex = (annotation?.textContent || el.getAttribute('data-latex') || '').trim()
+        if (!latex) return false
+        return { latex, html: el.innerHTML, display: false }
+      },
+    },
+    {
+      tag: 'eqn',
+      getAttrs: dom => {
+        const el = dom as HTMLElement
+        if (el.querySelector('.pptist-math')) return false
+        const annotation = el.querySelector('annotation[encoding="application/x-tex"]')
+        const latex = (annotation?.textContent || el.getAttribute('data-latex') || '').trim()
+        if (!latex) return false
+        return { latex, html: el.innerHTML, display: true }
+      },
+    },
+  ],
+  toDOM: (node: Node) => buildMathElement(node.attrs.latex as string, node.attrs.html as string, !!node.attrs.display),
+}
+
 const {
   doc,
   blockquote,
@@ -170,6 +231,7 @@ export default {
   paragraph,
   blockquote,
   text,
+  math,
   'ordered_list': orderedList,
   'bullet_list': bulletList,
   'list_item': listItem,

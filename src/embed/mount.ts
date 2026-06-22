@@ -4,6 +4,8 @@ import EmbedRoot from './EmbedRoot.vue'
 
 import 'prosemirror-view/style/prosemirror.css'
 import 'animate.css'
+import 'mathlive/static.css'
+import 'mathlive/fonts.css'
 import '@/assets/styles/prosemirror.scss'
 import '@/assets/styles/global.scss'
 import '@/assets/styles/font.scss'

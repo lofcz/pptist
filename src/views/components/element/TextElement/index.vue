@@ -35,6 +35,7 @@
           display: elementInfo.fixedHeight ? 'flex' : undefined,
           flexDirection: elementInfo.fixedHeight ? 'column' : undefined,
           justifyContent: fixedContentJustify,
+          overflow: elementInfo.fixedHeight ? 'hidden' : undefined,
           '--paragraphSpace': `${elementInfo.paragraphSpace === undefined ? 5 : elementInfo.paragraphSpace}px`,
         }"
         v-contextmenu="contextmenus"
@@ -48,6 +49,7 @@
         />
         <ProsemirrorEditor
           class="text"
+          :style="fitStyle"
           :elementId="elementInfo.id"
           :defaultColor="elementInfo.defaultColor"
           :defaultFontName="elementInfo.defaultFontName"
@@ -87,6 +89,7 @@ import { useMainStore, useSlidesStore } from '@/store'
 import type { PPTTextElement } from '@/types/slides'
 import type { ContextmenuItem } from '@/components/Contextmenu/types'
 import useElementShadow from '@/views/components/element/hooks/useElementShadow'
+import useTextFit from '@/views/components/element/hooks/useTextFit'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 import emitter, { EmitterEvents } from '@/utils/emitter'
 
@@ -114,6 +117,9 @@ const editorFocused = ref(false)
 const shadow = computed(() => props.elementInfo.shadow)
 const { shadowStyle } = useElementShadow(shadow)
 const inset = computed(() => props.elementInfo.inset || [10, 10, 10, 10])
+
+const elementInfoRef = computed(() => props.elementInfo)
+const { fitStyle } = useTextFit(elementInfoRef)
 
 const fixedContentJustify = computed<CSSProperties['justifyContent']>(() => {
   if (!props.elementInfo.fixedHeight) return undefined

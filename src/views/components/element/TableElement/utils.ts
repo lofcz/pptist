@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'vue'
 import type { PPTElementOutline, TableCellStyle } from '@/types/slides'
+import { containsMath, tokenizeMath } from '@/utils/markdown'
+import { ensureMathliveReady, mathReady, renderMathToHtml } from '@/utils/math'
 
 /**
  * Compute table cell box styles from outline and optional cell style.
@@ -53,6 +55,27 @@ export const getTextStyle = (cellMinHeight: number, style?: TableCellStyle): CSS
   }
 }
 
+const escapeCellText = (text: string) => text.replace(/\n/g, '</br>').replace(/ /g, '&nbsp;')
+
+/**
+ * Render a table cell's stored source for display. Plain text keeps the legacy
+ * newline/space escaping; cells whose source contains math (`$…$`, `$$…$$`,
+ * `\(…\)`, …) get each formula typeset with MathLive into the canonical
+ * `span.pptist-math` wrapper while the surrounding text stays escaped.
+ *
+ * Reads the reactive {@link mathReady} flag so the cell re-renders the moment
+ * MathLive finishes loading (kicked off lazily here on first math encounter);
+ * until then math segments fall back to their literal LaTeX source.
+ */
 export const formatText = (text: string) => {
-  return text.replace(/\n/g, '</br>').replace(/ /g, '&nbsp;')
+  if (!text) return ''
+  if (!containsMath(text)) return escapeCellText(text)
+
+  if (!mathReady.value) void ensureMathliveReady()
+
+  return tokenizeMath(text)
+    .map(segment => (segment.type === 'math'
+      ? renderMathToHtml(segment.value, segment.display)
+      : escapeCellText(segment.value)))
+    .join('')
 }

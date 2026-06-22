@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createHash } from 'node:crypto'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const cssPath = join(root, 'dist/embed/pptist-embed.css')
@@ -17,13 +18,22 @@ const css = readFileSync(cssPath, 'utf8')
 let count = 0
 let extractedBytes = 0
 
+const safeToken = value => (value || '').trim().replace(/^['"]|['"]$/g, '').replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '')
+
 const rewritten = css.replace(
   /@font-face\{([^{}]*?font-family:([^;{}]+);[^{}]*?)src:url\(data:font\/([^;,{}]+);base64,([^){}]+)\)([^{}]*?)\}/g,
   (match, beforeSrc, rawFamily, ext, base64, afterSrc) => {
-    const family = rawFamily.trim().replace(/^['"]|['"]$/g, '')
-    const safeFamily = family.replace(/[^a-z0-9_-]+/gi, '-')
-    const fileName = `${safeFamily}.${ext === 'woff' ? 'woff' : 'woff2'}`
+    const family = safeToken(rawFamily)
+    // A single font-family commonly ships multiple variants (e.g. KaTeX_Main in
+    // Regular/Bold/Italic/BoldItalic). Disambiguate by weight + style so the
+    // variants don't collide on one filename, and append a short content hash to
+    // guarantee uniqueness regardless of declaration shape.
+    const declaration = `${beforeSrc}${afterSrc}`
+    const weight = safeToken((declaration.match(/font-weight:([^;{}]+)/) || [])[1])
+    const style = safeToken((declaration.match(/font-style:([^;{}]+)/) || [])[1])
     const fontBuffer = Buffer.from(base64, 'base64')
+    const hash = createHash('sha1').update(fontBuffer).digest('hex').slice(0, 8)
+    const fileName = [family, weight, style, hash].filter(Boolean).join('-') + `.${ext === 'woff' ? 'woff' : 'woff2'}`
     writeFileSync(join(fontsDir, fileName), fontBuffer)
     count++
     extractedBytes += fontBuffer.length

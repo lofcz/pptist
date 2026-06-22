@@ -47,6 +47,11 @@ const pl_components: NamespaceComponentsTranslation = {
     tabFormulas: 'Gotowe wzory',
     formulaEmpty: 'Wzór nie może być pusty',
   },
+  inlineMathEditor: {
+    title: 'Edytuj wzór',
+    inputPlaceholder: 'Wpisz wzór',
+    empty: 'Wzór nie może być pusty',
+  },
 }
 
 export default pl_components

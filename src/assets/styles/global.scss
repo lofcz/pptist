@@ -111,6 +111,27 @@ section.eqno > eqn {
   flex: 1;
 }
 
+// Canonical in-text math wrapper (MathLive markup; LaTeX source on data-latex).
+// Rendered by the markdown pipeline, ProseMirror math node, and table cells.
+.pptist-math {
+  display: inline-block;
+  vertical-align: middle;
+  line-height: normal;
+  user-select: none;
+
+  &[data-display='true'] {
+    display: block;
+    text-align: center;
+    margin: 0.25em 0;
+  }
+
+  // Until MathLive has loaded, the wrapper carries the raw LaTeX source.
+  &[data-pending='true'] {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    opacity: 0.7;
+  }
+}
+
 input,
 button,
 select,

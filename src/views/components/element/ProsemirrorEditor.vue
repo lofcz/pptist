@@ -13,10 +13,11 @@ import { debounce } from 'lodash'
 import { storeToRefs } from 'pinia'
 import { useKeyboardStore, useMainStore } from '@/store'
 import type { EditorView } from 'prosemirror-view'
+import type { Node as ProsemirrorNode } from 'prosemirror-model'
 import { toggleMark, wrapIn, lift } from 'prosemirror-commands'
 import { initProsemirrorEditor, createDocument } from '@/utils/prosemirror'
 import { isActiveOfParentNodeType, findNodesWithSameMark, getTextAttrs, autoSelectAll, addMark, markActive, getFontsize } from '@/utils/prosemirror/utils'
-import emitter, { EmitterEvents, type RichTextAction, type RichTextCommand } from '@/utils/emitter'
+import emitter, { EmitterEvents, type RichTextAction, type RichTextCommand, type ApplyInlineMathPayload } from '@/utils/emitter'
 import { alignmentCommand } from '@/utils/prosemirror/commands/setTextAlign'
 import { indentCommand, textIndentCommand } from '@/utils/prosemirror/commands/setTextIndent'
 import { toggleList } from '@/utils/prosemirror/commands/toggleList'
@@ -296,6 +297,29 @@ const execCommand = ({ target, action }: RichTextCommand) => {
   handleClick()
 }
 
+// 双击行内公式节点时，打开 MathLive 行内公式编辑器
+const handleDoubleClickOn = (_view: EditorView, _pos: number, node: ProsemirrorNode, nodePos: number) => {
+  if (node.type.name !== 'math') return false
+  emitter.emit(EmitterEvents.OPEN_INLINE_MATH_EDITOR, {
+    elementId: props.elementId,
+    pos: nodePos,
+    latex: node.attrs.latex as string,
+    display: !!node.attrs.display,
+  })
+  return true
+}
+
+// 应用行内公式编辑结果：更新对应位置的公式节点并立即持久化
+const applyInlineMath = ({ elementId, pos, latex, html, display }: ApplyInlineMathPayload) => {
+  if (elementId !== props.elementId || !editorView) return
+  const node = editorView.state.doc.nodeAt(pos)
+  if (!node || node.type.name !== 'math') return
+  const tr = editorView.state.tr.setNodeMarkup(pos, undefined, { latex, html, display })
+  editorView.dispatch(tr)
+  handleInput()
+  handleInput.flush()
+}
+
 // 鼠标抬起时，执行格式刷命令
 const handleMouseup = () => {
   if (!textFormatPainter.value) return
@@ -322,6 +346,7 @@ onMounted(() => {
       click: handleClick,
       mouseup: handleMouseup,
     },
+    handleDoubleClickOn,
     editable: () => props.editable,
     dispatchTransaction(tr) {
       const newState = editorView.state.apply(tr)
@@ -347,9 +372,11 @@ const syncAttrsToStore = () => {
 
 emitter.on(EmitterEvents.RICH_TEXT_COMMAND, execCommand)
 emitter.on(EmitterEvents.SYNC_RICH_TEXT_ATTRS_TO_STORE, syncAttrsToStore)
+emitter.on(EmitterEvents.APPLY_INLINE_MATH, applyInlineMath)
 onUnmounted(() => {
   emitter.off(EmitterEvents.RICH_TEXT_COMMAND, execCommand)
   emitter.off(EmitterEvents.SYNC_RICH_TEXT_ATTRS_TO_STORE, syncAttrsToStore)
+  emitter.off(EmitterEvents.APPLY_INLINE_MATH, applyInlineMath)
 })
 </script>
 

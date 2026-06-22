@@ -119,6 +119,9 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       vuedraggable: fileURLToPath(new URL('./node_modules/vuedraggable/src/vuedraggable.js', import.meta.url)),
+      // markdown-it-texmath statically requires katex as a fallback engine; PPTist
+      // renders math via MathLive, so resolve it to a stub instead of bundling KaTeX.
+      katex: fileURLToPath(new URL('./src/utils/katex-stub.ts', import.meta.url)),
     },
   },
 })
