@@ -239,13 +239,14 @@
         { "name": "slideId", "type": "string", "required": false, "description": "Target slide." },
         { "name": "markdown", "type": "string", "required": false, "description": "Markdown content (recommended). Converted to HTML." },
         { "name": "content", "type": "string", "required": false, "description": "Literal content (plain text, or intentional HTML for code-like markup). Wins over markdown." },
-        { "name": "element", "type": "Partial<PPTTextElement>", "required": false, "description": "Geometry/styling: left, top, width, height, rotate, defaultColor, defaultFontName, lineHeight, wordSpace, fill." }
+        { "name": "element", "type": "Partial<PPTTextElement>", "required": false, "description": "Geometry/styling: left, top, width, height, rotate, defaultColor, defaultFontName, lineHeight, wordSpace, fill. Set fixedHeight:true (optionally vAlign:'top'|'middle'|'bottom') to lock the box to its height: the font then auto-fits (shrinks) so the text never overflows the region — the same guarantee layouts give." }
       ],
       "examples": [
         "controller.text.create({ slideId, markdown: '**Key finding:** treated group improved 18%', element: { left:520, top:130, width:440, height:300, rotate:0, defaultColor:'#2D2D2D' } })",
-        "controller.text.create({ slideId, markdown: '- First point\\n- Second point\\n- Third point', element:{ left:40, top:140, width:920, height:300, rotate:0 } })"
+        "controller.text.create({ slideId, markdown: '- First point\\n- Second point\\n- Third point', element:{ left:40, top:140, width:920, height:300, rotate:0 } })",
+        "controller.text.create({ slideId, markdown: 'Vertically centered, never overflows', element:{ left:80, top:120, width:360, height:200, rotate:0, fixedHeight:true, vAlign:'middle' } })"
       ],
-      "tips": ["Prefer slides.insertFromTemplate for whole slides. Markdown flavor: markdown-it + markdown-it-texmath (KaTeX). Write Markdown, not HTML."],
+      "tips": ["Prefer slides.insertFromTemplate for whole slides. Markdown flavor: markdown-it + markdown-it-texmath (KaTeX). Write Markdown, not HTML.", "For a box that must stay a fixed size, set fixedHeight:true so the text auto-shrinks to fit instead of overflowing."],
       "related": ["text.setMarkdown", "text.setContent", "richText.setContent", "slides.insertFromTemplate"]
     },
     "text.setMarkdown": {
