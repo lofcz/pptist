@@ -1,9 +1,27 @@
 <template>
-  <div class="pptist-screen">
-    <AudienceView v-if="isAudienceMode" />
-    <BaseView :changeViewMode="changeViewMode" v-else-if="viewMode === 'base'" />
-    <PresenterView :changeViewMode="changeViewMode" v-else-if="viewMode === 'presenter'" />
-  </div>
+  <!--
+    Teleport the slideshow to <body> so it escapes the embed host's stacking
+    context and `overflow: hidden`, covering the full viewport above the host
+    app's chrome (chat, toolbars, etc.) instead of being trapped inside the
+    editor pane.
+
+    The wrapper keeps the `pptist-embed-root` class: the embed build scopes every
+    CSS selector under `.pptist-embed-root`, so the teleported subtree needs that
+    class for the slideshow's scoped styles to keep matching. In the standalone
+    app the class is inert and the inline fixed/inset positioning still supplies
+    the viewport box. Positioning is inline (not a scoped class) on purpose — the
+    scoping script would rewrite a wrapper class into a `.pptist-embed-root <x>`
+    descendant selector that can't match the wrapper element itself.
+  -->
+  <Teleport to="body">
+    <div class="pptist-embed-root" style="position: fixed; inset: 0; z-index: 2147483000">
+      <div class="pptist-screen">
+        <AudienceView v-if="isAudienceMode" />
+        <BaseView :changeViewMode="changeViewMode" v-else-if="viewMode === 'base'" />
+        <PresenterView :changeViewMode="changeViewMode" v-else-if="viewMode === 'presenter'" />
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script lang="ts" setup>
