@@ -33,15 +33,25 @@ function roundTo(value: number, decimals = 1): number {
  *     variable (the computed px value), since `.ProseMirror` hardcodes 16px.
  * Vertical (top-to-bottom) text is left untouched.
  */
-export default (elementInfo: Ref<PPTTextElement>) => {
+export default (elementInfo: Ref<PPTTextElement>, liveContent?: Ref<string | null>) => {
   const { locale } = useI18nContext()
   const fitScale = ref(1)
 
-  const enabled = computed(() => !!elementInfo.value.fixedHeight && !elementInfo.value.vertical && !!elementInfo.value.content)
+  // While editing, measure the live editor HTML; otherwise the committed content.
+  const measuredContent = () => {
+    const live = liveContent?.value
+    return live !== null && live !== undefined ? live : elementInfo.value.content
+  }
+
+  const enabled = computed(() => {
+    const el = elementInfo.value
+    return !!el.fixedHeight && !el.vertical && !!measuredContent()
+  })
 
   const compute = () => {
     const el = elementInfo.value
-    if (!el.fixedHeight || el.vertical || !el.content) {
+    const content = measuredContent()
+    if (!el.fixedHeight || el.vertical || !content) {
       fitScale.value = 1
       return
     }
@@ -51,7 +61,7 @@ export default (elementInfo: Ref<PPTTextElement>) => {
     const innerHeight = el.height - inset[0] - inset[2]
 
     setPretextLocale(locale.value)
-    const { blocks } = extractFitBlocksFromHtml(el.content, {
+    const { blocks } = extractFitBlocksFromHtml(content, {
       defaultFontFamily: el.defaultFontName || DEFAULT_TEXT_FONT_FAMILY,
     })
     fitScale.value = fitFontScaleForBlocks(blocks, {
@@ -67,6 +77,7 @@ export default (elementInfo: Ref<PPTTextElement>) => {
   watch(
     () => [
       elementInfo.value.content,
+      liveContent?.value,
       elementInfo.value.width,
       elementInfo.value.height,
       elementInfo.value.fixedHeight,
@@ -91,8 +102,9 @@ export default (elementInfo: Ref<PPTTextElement>) => {
 
   // Content with inline sizes rewritten to the fitted size (for static renders).
   const fittedContent = computed(() => {
-    if (!enabled.value || fitScale.value >= 1) return elementInfo.value.content
-    return scaleHtmlFontSizes(elementInfo.value.content, fitScale.value)
+    const content = measuredContent()
+    if (!enabled.value || fitScale.value >= 1) return content
+    return scaleHtmlFontSizes(content, fitScale.value)
   })
 
   // CSS variable holding the fitted *default* size in px. `.ProseMirror` reads

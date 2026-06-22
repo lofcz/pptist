@@ -48,6 +48,7 @@ const emit = defineEmits<{
   (event: 'blur'): void
   (event: 'mousedown', payload: MouseEvent): void
   (event: 'emptyChange', empty: boolean): void
+  (event: 'docChange', html: string): void
 }>()
 
 const mainStore = useMainStore()
@@ -61,6 +62,17 @@ let editorView: EditorView
 const emitEmptyState = () => {
   if (!editorView) return
   emit('emptyChange', editorView.state.doc.textContent.trim().length === 0)
+}
+
+// 实时（非防抖）回传当前正文 HTML，按帧合并，供固定框自动缩放即时生效——
+// 不走 300ms 防抖的 update（那是给 vuex/历史记录批量提交用的）
+let docChangeRaf = 0
+const emitDocChange = () => {
+  if (docChangeRaf || typeof requestAnimationFrame === 'undefined') return
+  docChangeRaf = requestAnimationFrame(() => {
+    docChangeRaf = 0
+    if (editorView) emit('docChange', editorView.dom.innerHTML)
+  })
 }
 
 // 富文本的各种交互事件监听：
@@ -352,12 +364,14 @@ onMounted(() => {
       const newState = editorView.state.apply(tr)
       editorView.updateState(newState)
       emitEmptyState()
+      if (tr.docChanged) emitDocChange()
     },
   })
   if (props.autoFocus) editorView.focus()
   emitEmptyState()
 })
 onUnmounted(() => {
+  if (docChangeRaf) cancelAnimationFrame(docChangeRaf)
   // 卸载前（如切换幻灯片导致元素卸载）排空待提交的防抖输入，避免刚输入的内容丢失
   if (editorView) {
     if (editorView.state.doc.textContent.trim().length !== 0) handleInput.flush()

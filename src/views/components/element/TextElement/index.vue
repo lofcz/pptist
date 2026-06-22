@@ -59,8 +59,9 @@
           @update="({ value, ignore }) => updateContent(value, ignore)"
           @mousedown="$event => handleSelectElement($event, false)"
           @focus="editorFocused = true"
-          @blur="editorFocused = false"
+          @blur="() => { editorFocused = false; liveContent = null }"
           @emptyChange="empty => editorEmpty = empty"
+          @docChange="html => liveContent = html"
         />
         <TextPlaceholder
           v-if="showPlaceholder"
@@ -113,13 +114,17 @@ const { addHistorySnapshot } = useHistorySnapshot()
 const elementRef = ref<HTMLElement | null>(null)
 const prosemirrorEditorRef = ref<InstanceType<typeof ProsemirrorEditor> | null>(null)
 const editorFocused = ref(false)
+// Live (non-debounced) editor HTML while typing, so the fixed-box auto-fit runs
+// on input instead of waiting for the 300ms store/history debounce. Null when not
+// editing → the fit falls back to the committed store content.
+const liveContent = ref<string | null>(null)
 
 const shadow = computed(() => props.elementInfo.shadow)
 const { shadowStyle } = useElementShadow(shadow)
 const inset = computed(() => props.elementInfo.inset || [10, 10, 10, 10])
 
 const elementInfoRef = computed(() => props.elementInfo)
-const { fitVars } = useTextFit(elementInfoRef)
+const { fitVars } = useTextFit(elementInfoRef, liveContent)
 
 const fixedContentJustify = computed<CSSProperties['justifyContent']>(() => {
   if (!props.elementInfo.fixedHeight) return undefined
