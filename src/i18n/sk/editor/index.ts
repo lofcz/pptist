@@ -462,6 +462,7 @@ const sk_editor: NamespaceEditorTranslation = {
     borderStyle: 'Štýl obrysu:',
     borderColor: 'Farba obrysu:',
     borderWidth: 'Hrúbka obrysu:',
+    borderRadius: 'Polomer obrysu:',
     searchFont: 'Hľadať písmo',
     searchFontSize: 'Hľadať veľkosť písma',
     textColor: 'Farba textu',

@@ -40,6 +40,16 @@
             @update:value="value => updateOutline({ width: value })"
           />
         </div>
+        <div class="row">
+          <div class="label">{{ LL.canvas.floatingToolbar.border.radiusLabel() }}</div>
+          <NumberInput
+            class="control"
+            :min="0"
+            :max="200"
+            :value="outline?.radius || 0"
+            @update:value="value => updateOutline({ radius: value })"
+          />
+        </div>
       </div>
     </template>
     <div class="toolbar-btn">

@@ -10,13 +10,14 @@
       :is="currentElementComponent"
       :elementInfo="elementInfo"
       target="thumbnail"
+      :slideType="slideType"
     ></component>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { ElementTypes, type PPTElement } from '@/types/slides'
+import { ElementTypes, type PPTElement, type Slide } from '@/types/slides'
 
 import BaseImageElement from '@/views/components/element/ImageElement/BaseImageElement.vue'
 import BaseTextElement from '@/views/components/element/TextElement/BaseTextElement.vue'
@@ -31,6 +32,7 @@ import BaseAudioElement from '@/views/components/element/AudioElement/BaseAudioE
 const props = defineProps<{
   elementInfo: PPTElement
   elementIndex: number
+  slideType?: Slide['type']
 }>()
 
 const currentElementComponent = computed<unknown>(() => {

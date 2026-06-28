@@ -13,6 +13,7 @@ const en_canvas: BaseTranslation = {
       styleLabel: 'Border style:',
       colorLabel: 'Border color:',
       widthLabel: 'Border width:',
+      radiusLabel: 'Border radius:',
     },
     chart: {
       editData: 'Edit data',

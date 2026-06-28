@@ -13,6 +13,7 @@ const pl_canvas: NamespaceCanvasTranslation = {
       styleLabel: 'Styl obramowania:',
       colorLabel: 'Kolor obramowania:',
       widthLabel: 'Grubość obramowania:',
+      radiusLabel: 'Promień obramowania:',
     },
     chart: {
       editData: 'Edytuj dane',

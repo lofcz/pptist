@@ -16,6 +16,8 @@
         class="element-content"
         :style="{
           backgroundColor: elementInfo.fill,
+          borderRadius: outlineBorderRadius,
+          overflow: outlineBorderRadius ? 'hidden' : undefined,
         }"
       >
         <ElementOutline
@@ -39,15 +41,22 @@
 </template>
 
 <script lang="ts" setup>
+import { computed } from 'vue'
 import type { PPTChartElement } from '@/types/slides'
+import { useOutlineRadiusCss } from '@/views/components/element/hooks/useElementOutline'
 
 import ElementOutline from '@/views/components/element/ElementOutline.vue'
 import Chart from './Chart.vue'
 
-defineProps<{
+const props = defineProps<{
   elementInfo: PPTChartElement
   target?: string
 }>()
+
+const outlineRef = computed(() => props.elementInfo.outline)
+const elementWidthRef = computed(() => props.elementInfo.width)
+const elementHeightRef = computed(() => props.elementInfo.height)
+const outlineBorderRadius = useOutlineRadiusCss(outlineRef, elementWidthRef, elementHeightRef)
 </script>
 
 <style lang="scss" scoped>

@@ -70,6 +70,10 @@ export type NamespaceCanvasTranslation = {
 			 * B​o​r​d​e​r​ ​w​i​d​t​h​:
 			 */
 			widthLabel: string
+			/**
+			 * B​o​r​d​e​r​ ​r​a​d​i​u​s​:
+			 */
+			radiusLabel: string
 		}
 		chart: {
 			/**
@@ -2492,6 +2496,10 @@ export type NamespaceEditorTranslation = {
 		 */
 		borderWidth: string
 		/**
+		 * B​o​r​d​e​r​ ​r​a​d​i​u​s​:
+		 */
+		borderRadius: string
+		/**
 		 * S​e​a​r​c​h​ ​f​o​n​t​s
 		 */
 		searchFont: string
@@ -4698,6 +4706,10 @@ export type TranslationFunctions = {
 				 * Border width:
 				 */
 				widthLabel: () => LocalizedString
+				/**
+				 * Border radius:
+				 */
+				radiusLabel: () => LocalizedString
 			}
 			chart: {
 				/**
@@ -7107,6 +7119,10 @@ export type TranslationFunctions = {
 			 * Border width:
 			 */
 			borderWidth: () => LocalizedString
+			/**
+			 * Border radius:
+			 */
+			borderRadius: () => LocalizedString
 			/**
 			 * Search fonts
 			 */

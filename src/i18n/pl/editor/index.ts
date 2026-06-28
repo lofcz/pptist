@@ -462,6 +462,7 @@ const pl_editor: NamespaceEditorTranslation = {
     borderStyle: 'Styl obramowania:',
     borderColor: 'Kolor obramowania:',
     borderWidth: 'Grubość obramowania:',
+    borderRadius: 'Promień obramowania:',
     searchFont: 'Szukaj czcionki',
     searchFontSize: 'Szukaj rozmiaru czcionki',
     textColor: 'Kolor tekstu',

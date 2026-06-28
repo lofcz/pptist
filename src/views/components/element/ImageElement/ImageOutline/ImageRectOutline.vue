@@ -11,8 +11,8 @@
       stroke-linecap="butt" 
       stroke-miterlimit="8"
       fill="transparent"
-      :rx="radius" 
-      :ry="radius"
+      :rx="effectiveRadius" 
+      :ry="effectiveRadius"
       :width="width"
       :height="height"
       :stroke="outlineColor"
@@ -23,8 +23,9 @@
 </template>
 
 <script lang="ts" setup>
-import { toRef } from 'vue'
+import { computed, toRef } from 'vue'
 import type { PPTElementOutline } from '@/types/slides'
+import { clampOutlineRadius } from '@/utils/elementOutline'
 import useElementOutline from '@/views/components/element/hooks/useElementOutline'
 
 const props = withDefaults(defineProps<{
@@ -41,6 +42,14 @@ const {
   outlineColor,
   strokeDashArray,
 } = useElementOutline(toRef(props, 'outline'))
+
+const effectiveRadius = computed(() => {
+  if (props.outline?.radius) {
+    return clampOutlineRadius(props.outline.radius, props.width, props.height)
+  }
+  const parsed = parseFloat(String(props.radius).replace('px', ''))
+  return Number.isFinite(parsed) ? parsed : 0
+})
 </script>
 
 <style lang="scss" scoped>

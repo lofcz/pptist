@@ -14,6 +14,7 @@ import message from '@/utils/message'
 import { getLL } from '@/i18n/getLL'
 import { getSvgPathRange, toPoints } from '@/utils/svgPathParser'
 import { loadGoogleFonts } from '@/utils/font'
+import { importOutlineFromPptx } from '@/utils/elementOutline'
 
 const LL = getLL()
 import type {
@@ -773,11 +774,7 @@ export default () => {
                 defaultColor: theme.value.fontColor,
                 content: convertTextContent(el.content, textRatio),
                 lineHeight: 1,
-                outline: {
-                  color: el.borderColor,
-                  width: +(el.borderWidth * ratio).toFixed(2),
-                  style: el.borderType,
-                },
+                outline: importOutlineFromPptx(el, ratio),
                 fill: el.fill?.type === 'color' ? el.fill.value : '',
                 vertical: el.isVertical,
               }
@@ -814,11 +811,7 @@ export default () => {
                 flipV: el.isFlipV,
               }
               if (el.borderWidth) {
-                element.outline = {
-                  color: el.borderColor,
-                  width: +(el.borderWidth * ratio).toFixed(2),
-                  style: el.borderType,
-                }
+                element.outline = importOutlineFromPptx(el, ratio)
               }
               const clipShapeTypes = [
                 'rect',
@@ -947,11 +940,7 @@ export default () => {
                   pattern,
                   fixedRatio: false,
                   rotate: el.rotate,
-                  outline: {
-                    color: el.borderColor,
-                    width: +(el.borderWidth * ratio).toFixed(2),
-                    style: el.borderType,
-                  },
+                  outline: importOutlineFromPptx(el, ratio, { includeCornerRadius: false }),
                   text: {
                     content: convertTextContent(el.content, ratio),
                     defaultFontName: theme.value.fontName,

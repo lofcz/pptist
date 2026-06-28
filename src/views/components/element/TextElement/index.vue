@@ -15,11 +15,15 @@
     >
       <div 
         class="element-content"
-        :class="{ 'placeholder-element': elementInfo.placeholder, 'show-placeholder': showPlaceholder }"
+        :class="{
+          'placeholder-element': elementInfo.placeholder,
+          'content-title-placeholder': textBoxLayout.flexCenterInLayoutBox,
+          'show-placeholder': showPlaceholder,
+        }"
         ref="elementRef"
         :style="{
-          width: elementInfo.vertical && !elementInfo.fixedHeight ? 'auto' : elementInfo.width + 'px',
-          height: !elementInfo.vertical && !elementInfo.fixedHeight ? 'auto' : elementInfo.height + 'px',
+          width: elementInfo.vertical && !textBoxLayout.fixedHeight ? 'auto' : elementInfo.width + 'px',
+          height: !elementInfo.vertical && !textBoxLayout.fixedHeight ? 'auto' : elementInfo.height + 'px',
           backgroundColor: elementInfo.fill,
           opacity: elementInfo.opacity,
           textShadow: shadowStyle,
@@ -27,15 +31,15 @@
           letterSpacing: (elementInfo.wordSpace || 0) + 'px',
           color: elementInfo.defaultColor,
           fontFamily: elementInfo.defaultFontName,
-          fontSize: editorFontSize,
-          textAlign: isEmptyPlaceholder ? (elementInfo.placeholderAlign ?? 'center') : undefined,
+          ...placeholderTypography,
           writingMode: elementInfo.vertical ? 'vertical-rl' : 'horizontal-tb',
           padding: `${inset[0]}px ${inset[1]}px ${inset[2]}px ${inset[3]}px`,
-          minHeight: isEmptyPlaceholder ? elementInfo.height + 'px' : undefined,
-          display: elementInfo.fixedHeight ? 'flex' : undefined,
-          flexDirection: elementInfo.fixedHeight ? 'column' : undefined,
-          justifyContent: fixedContentJustify,
-          overflow: elementInfo.fixedHeight ? 'hidden' : undefined,
+          minHeight: contentTitleLayoutMinHeight ?? placeholderLayoutMinHeight,
+          display: textBoxLayout.fixedHeight || textBoxLayout.flexCenterInLayoutBox ? 'flex' : undefined,
+          flexDirection: textBoxLayout.fixedHeight || textBoxLayout.flexCenterInLayoutBox ? 'column' : undefined,
+          justifyContent: contentBoxJustify,
+          overflow: textBoxLayout.fixedHeight || outlineBorderRadius ? 'hidden' : undefined,
+          borderRadius: outlineBorderRadius,
           '--paragraphSpace': `${elementInfo.paragraphSpace === undefined ? 5 : elementInfo.paragraphSpace}px`,
           ...fitVars,
         }"
@@ -53,14 +57,16 @@
           :elementId="elementInfo.id"
           :defaultColor="elementInfo.defaultColor"
           :defaultFontName="elementInfo.defaultFontName"
+          :defaultFontSize="placeholderEditorDefaults.defaultFontSize"
+          :defaultAlign="placeholderEditorDefaults.defaultAlign"
           :editable="!elementInfo.lock"
           :value="elementInfo.content"
           ref="prosemirrorEditorRef"
           @update="({ value, ignore }) => updateContent(value, ignore)"
           @mousedown="$event => handleSelectElement($event, false)"
-          @focus="editorFocused = true"
-          @blur="() => { editorFocused = false; liveContent = null }"
-          @emptyChange="empty => editorEmpty = empty"
+          @focus="handleEditorFocus"
+          @blur="handleEditorBlur"
+          @emptyChange="handleEmptyChange"
           @docChange="html => liveContent = html"
         />
         <TextPlaceholder
@@ -91,8 +97,14 @@ import type { PPTTextElement } from '@/types/slides'
 import type { ContextmenuItem } from '@/components/Contextmenu/types'
 import useElementShadow from '@/views/components/element/hooks/useElementShadow'
 import useTextFit from '@/views/components/element/hooks/useTextFit'
+import { useOutlineRadiusCss } from '@/views/components/element/hooks/useElementOutline'
 import useHistorySnapshot from '@/hooks/useHistorySnapshot'
 import emitter, { EmitterEvents } from '@/utils/emitter'
+import {
+  getPlaceholderBaselineHeight,
+  resolveTextBoxLayout,
+  shouldBlockPlaceholderHeightShrink,
+} from '@/utils/placeholderLayout'
 
 import ElementOutline from '@/views/components/element/ElementOutline.vue'
 import ProsemirrorEditor from '@/views/components/element/ProsemirrorEditor.vue'
@@ -114,6 +126,9 @@ const { addHistorySnapshot } = useHistorySnapshot()
 const elementRef = ref<HTMLElement | null>(null)
 const prosemirrorEditorRef = ref<InstanceType<typeof ProsemirrorEditor> | null>(null)
 const editorFocused = ref(false)
+// 占位符“编辑会话”：与 DOM focus 解耦，只在点击进入编辑或元素被选中时结束。
+// 避免 F1/截图/工具栏导致的瞬时 blur 让 ghost 与空编辑器来回切换。
+const placeholderTextEditing = ref(false)
 // Live (non-debounced) editor HTML while typing, so the fixed-box auto-fit runs
 // on input instead of waiting for the 300ms store/history debounce. Null when not
 // editing → the fit falls back to the committed store content.
@@ -126,15 +141,32 @@ const inset = computed(() => props.elementInfo.inset || [10, 10, 10, 10])
 const elementInfoRef = computed(() => props.elementInfo)
 const { fitVars } = useTextFit(elementInfoRef, liveContent)
 
+const outlineRef = computed(() => props.elementInfo.outline)
+const elementWidthRef = computed(() => props.elementInfo.width)
+const elementHeightRef = computed(() => props.elementInfo.height)
+const outlineBorderRadius = useOutlineRadiusCss(outlineRef, elementWidthRef, elementHeightRef)
+
+const textBoxLayout = computed(() => resolveTextBoxLayout(props.elementInfo, currentSlide.value?.type))
+
 const fixedContentJustify = computed<CSSProperties['justifyContent']>(() => {
-  if (!props.elementInfo.fixedHeight) return undefined
+  if (!textBoxLayout.value.fixedHeight) return undefined
 
   const vAlignMap: Record<NonNullable<PPTTextElement['vAlign']>, CSSProperties['justifyContent']> = {
     top: 'flex-start',
     middle: 'center',
     bottom: 'flex-end',
   }
-  return vAlignMap[props.elementInfo.vAlign || 'top']
+  return vAlignMap[textBoxLayout.value.vAlign]
+})
+
+const contentBoxJustify = computed<CSSProperties['justifyContent']>(() => {
+  if (textBoxLayout.value.flexCenterInLayoutBox) return 'center'
+  return fixedContentJustify.value
+})
+
+const contentTitleLayoutMinHeight = computed(() => {
+  if (!textBoxLayout.value.flexCenterInLayoutBox) return undefined
+  return `${props.elementInfo.height}px`
 })
 
 const computeEmpty = (html: string) => {
@@ -149,13 +181,101 @@ watch(() => props.elementInfo.content, content => {
 })
 // 是否为“空占位”元素：仅用于布局（保持设计高度、跳过自动测高），与聚焦状态无关
 const isEmptyPlaceholder = computed(() => !!props.elementInfo.placeholder && editorEmpty.value)
-// 与 PowerPoint/LibreOffice 一致：只在“这个占位符本身为空”时显示提示。
-// 其他元素有内容不影响当前空占位符；当前占位符被填充后提示立即消失。
-const showPlaceholder = computed(() => isEmptyPlaceholder.value && !editorFocused.value)
-const editorFontSize = computed(() => {
-  if (isEmptyPlaceholder.value) return `${props.elementInfo.placeholderFontSize ?? 20}px`
-  return undefined
+// 空占位且未进入编辑会话时显示 ghost；进入编辑后保持空编辑器可见直至取消选中或输入内容。
+const showPlaceholder = computed(() => isEmptyPlaceholder.value && !placeholderTextEditing.value)
+
+const handleEditorFocus = () => {
+  editorFocused.value = true
+  if (props.elementInfo.placeholder && editorEmpty.value) {
+    placeholderTextEditing.value = true
+  }
+}
+
+const handleEditorBlur = () => {
+  editorFocused.value = false
+  liveContent.value = null
+}
+
+const placeholderLayoutMinHeight = computed(() => {
+  if (!props.elementInfo.placeholder || !isEmptyPlaceholder.value) return undefined
+  return `${getPlaceholderBaselineHeight(props.elementInfo)}px`
 })
+
+const syncPlaceholderHeightToBaseline = () => {
+  if (!props.elementInfo.placeholder || !editorEmpty.value) return
+  const baseline = getPlaceholderBaselineHeight(props.elementInfo)
+  if (props.elementInfo.height === baseline) return
+  slidesStore.updateElement({
+    id: props.elementInfo.id,
+    props: { height: baseline },
+  })
+}
+
+// 与 BaseTextElement 一致：占位元素始终提供 placeholderFontSize / placeholderAlign。
+// ProseMirror 通过 --text-fit-base-size 读取字号（见 prosemirror.scss），不能只靠 inherit。
+const placeholderTypography = computed((): CSSProperties => {
+  if (!props.elementInfo.placeholder) return {}
+
+  const fontSize = `${props.elementInfo.placeholderFontSize ?? 20}px`
+  const align = props.elementInfo.placeholderAlign ?? 'center'
+
+  return {
+    fontSize,
+    textAlign: align,
+    '--text-fit-base-size': fontSize,
+  }
+})
+
+const placeholderEditorDefaults = computed(() => {
+  if (!props.elementInfo.placeholder) {
+    return {
+      defaultFontSize: undefined as string | undefined,
+      defaultAlign: undefined as 'left' | 'center' | 'right' | undefined,
+    }
+  }
+
+  const fontSize = `${props.elementInfo.placeholderFontSize ?? 20}px`
+  const align = props.elementInfo.placeholderAlign ?? 'center'
+
+  return {
+    defaultFontSize: fontSize,
+    defaultAlign: align,
+  }
+})
+
+// 首字输入后把占位样式写入 ProseMirror 文档（marks + paragraph align），
+// 否则仅有 CSS 时 ProseMirror 仍按 16px / 左对齐渲染。
+const placeholderSeeded = ref(false)
+
+const seedPlaceholderContentStyles = () => {
+  if (!props.elementInfo.placeholder || placeholderSeeded.value) return
+
+  placeholderSeeded.value = true
+  const fontSize = `${props.elementInfo.placeholderFontSize ?? 20}px`
+  const align = props.elementInfo.placeholderAlign ?? 'center'
+
+  nextTick(() => {
+    prosemirrorEditorRef.value?.seedPlaceholderStyles({
+      fontSize,
+      align,
+      color: props.elementInfo.defaultColor,
+      fontName: props.elementInfo.defaultFontName || undefined,
+    })
+  })
+}
+
+const handleEmptyChange = (empty: boolean) => {
+  if (empty) {
+    editorEmpty.value = true
+    placeholderSeeded.value = false
+    nextTick(syncPlaceholderHeightToBaseline)
+    return
+  }
+
+  editorEmpty.value = false
+  placeholderTextEditing.value = true
+  seedPlaceholderContentStyles()
+}
 
 // 占位提示颜色自适应：占位“幽灵文字”需在任意主题/背景下保持可读。
 // 取当前页有效背景色（纯色/渐变中点，缺省回退主题背景），若作者预设的占位
@@ -208,7 +328,7 @@ const handleSelectElement = (e: MouseEvent | TouchEvent, canMove = true) => {
 
 const activatePlaceholder = (e: MouseEvent) => {
   handleSelectElement(e, false)
-  editorFocused.value = true
+  placeholderTextEditing.value = true
   nextTick(() => {
     prosemirrorEditorRef.value?.focus()
     // 与 PowerPoint 一致：点进内容占位符立即进入无序列表（光标停在首个项目符号处）
@@ -230,14 +350,14 @@ watch(isScaling, () => {
   if (handleElementId.value !== props.elementInfo.id) return
 
   if (!isScaling.value) {
-    if (!props.elementInfo.fixedHeight && !props.elementInfo.vertical && realHeightCache.value !== -1) {
+    if (!textBoxLayout.value.fixedHeight && !props.elementInfo.vertical && realHeightCache.value !== -1) {
       slidesStore.updateElement({
         id: props.elementInfo.id,
         props: { height: realHeightCache.value },
       })
       realHeightCache.value = -1
     }
-    if (!props.elementInfo.fixedHeight && props.elementInfo.vertical && realWidthCache.value !== -1) {
+    if (!textBoxLayout.value.fixedHeight && props.elementInfo.vertical && realWidthCache.value !== -1) {
       slidesStore.updateElement({
         id: props.elementInfo.id,
         props: { width: realWidthCache.value },
@@ -251,15 +371,15 @@ watch(() => props.elementInfo.inset, () => {
   nextTick(() => {
     if (!elementRef.value) return
 
-    if (!props.elementInfo.fixedHeight && !props.elementInfo.vertical && props.elementInfo.height !== elementRef.value.offsetHeight) {
-      if (isEmptyPlaceholder.value) return
+    if (!textBoxLayout.value.fixedHeight && !props.elementInfo.vertical && props.elementInfo.height !== elementRef.value.offsetHeight) {
+      if (shouldBlockPlaceholderHeightShrink(props.elementInfo, elementRef.value.offsetHeight, editorEmpty.value)) return
       slidesStore.updateElement({
         id: props.elementInfo.id,
         props: { height: elementRef.value.offsetHeight },
       })
     }
-    if (!props.elementInfo.fixedHeight && props.elementInfo.vertical && props.elementInfo.width !== elementRef.value.offsetWidth) {
-      if (isEmptyPlaceholder.value) return
+    if (!textBoxLayout.value.fixedHeight && props.elementInfo.vertical && props.elementInfo.width !== elementRef.value.offsetWidth) {
+      if (props.elementInfo.placeholder && editorEmpty.value) return
       slidesStore.updateElement({
         id: props.elementInfo.id,
         props: { width: elementRef.value.offsetWidth },
@@ -274,9 +394,9 @@ const updateTextElementHeight = (entries: ResizeObserverEntry[]) => {
 
   const realHeight = contentRect.height + inset.value[0] + inset.value[2]
   const realWidth = contentRect.width + inset.value[1] + inset.value[3]
-  if (isEmptyPlaceholder.value) return
+  if (shouldBlockPlaceholderHeightShrink(props.elementInfo, realHeight, editorEmpty.value)) return
 
-  if (!props.elementInfo.fixedHeight && !props.elementInfo.vertical && props.elementInfo.height !== realHeight) {
+  if (!textBoxLayout.value.fixedHeight && !props.elementInfo.vertical && props.elementInfo.height !== realHeight) {
     if (!isScaling.value) {
       slidesStore.updateElement({
         id: props.elementInfo.id,
@@ -285,7 +405,7 @@ const updateTextElementHeight = (entries: ResizeObserverEntry[]) => {
     }
     else realHeightCache.value = realHeight
   }
-  if (!props.elementInfo.fixedHeight && props.elementInfo.vertical && props.elementInfo.width !== realWidth) {
+  if (!textBoxLayout.value.fixedHeight && props.elementInfo.vertical && props.elementInfo.width !== realWidth) {
     if (!isScaling.value) {
       slidesStore.updateElement({
         id: props.elementInfo.id,
@@ -321,7 +441,10 @@ const checkEmptyText = debounce(function() {
 
 const isHandleElement = computed(() => handleElementId.value === props.elementInfo.id)
 watch(isHandleElement, () => {
-  if (!isHandleElement.value) checkEmptyText()
+  if (!isHandleElement.value) {
+    placeholderTextEditing.value = false
+    checkEmptyText()
+  }
 })
 </script>
 
@@ -356,16 +479,21 @@ watch(isHandleElement, () => {
       min-height: 100%;
     }
 
+    &.content-title-placeholder .text {
+      min-height: 0;
+      flex: 0 0 auto;
+    }
+
     ::v-deep(.ProseMirror) {
       width: 100%;
       min-height: 1.2em;
-      font-size: inherit;
+      text-align: inherit;
       caret-color: currentColor;
     }
   }
 
-  // 占位提示浮层显示时（未聚焦且为空），隐藏富文本编辑器本体，
-  // 确保任何残留的空列表/段落标记都不会与占位浮层叠加出现“重影”
+  // 显示 ghost 浮层时隐藏 ProseMirror，避免空段落/列表标记与 ghost 叠加。
+  // ghost 显隐由 placeholderTextEditing（编辑会话）控制，而非 DOM focus。
   &.show-placeholder .text {
     visibility: hidden;
   }

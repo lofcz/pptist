@@ -23,6 +23,7 @@ import { indentCommand, textIndentCommand } from '@/utils/prosemirror/commands/s
 import { toggleList } from '@/utils/prosemirror/commands/toggleList'
 import { setListStyle } from '@/utils/prosemirror/commands/setListStyle'
 import { replaceText } from '@/utils/prosemirror/commands/replaceText'
+import { applyPlaceholderStyles, type PlaceholderStyleOptions } from '@/utils/prosemirror/commands/applyPlaceholderStyles'
 import type { TextFormatPainterKeys } from '@/types/edit'
 import message from '@/utils/message'
 import { KEYS } from '@/configs/hotkey'
@@ -34,6 +35,8 @@ const props = withDefaults(defineProps<{
   elementId: string
   defaultColor: string
   defaultFontName: string
+  defaultFontSize?: string
+  defaultAlign?: 'left' | 'center' | 'right'
   value: string
   editable?: boolean
   autoFocus?: boolean
@@ -87,10 +90,20 @@ const handleInput = debounce(function(isHanldeHistory = false) {
   })
 }, 300, { trailing: true })
 
+const readTextAttrs = () => getTextAttrs(editorView, {
+  color: props.defaultColor,
+  fontname: props.defaultFontName,
+  ...(props.defaultFontSize ? { fontsize: props.defaultFontSize } : {}),
+  ...(props.defaultAlign ? { align: props.defaultAlign } : {}),
+})
+
 const handleFocus = () => {
   // 多选且按下了ctrl或shift键时，不禁用全局快捷键
   if (!ctrlOrShiftKeyActive.value || activeElementIdList.value.length <= 1) {
     mainStore.setDisableHotkeysState(true)
+  }
+  if (handleElementId.value === props.elementId) {
+    mainStore.setRichtextAttrs(readTextAttrs())
   }
   emit('focus')
 }
@@ -118,11 +131,7 @@ const handleBlur = () => {
 }
 
 const handleClick = debounce(function() {
-  const attrs = getTextAttrs(editorView, {
-    color: props.defaultColor,
-    fontname: props.defaultFontName,
-  })
-  mainStore.setRichtextAttrs(attrs)
+  mainStore.setRichtextAttrs(readTextAttrs())
 }, 30, { trailing: true })
 
 const handleKeydown = (editorView: EditorView, e: KeyboardEvent) => {
@@ -151,9 +160,17 @@ watch(() => props.editable, () => {
   editorView.setProps({ editable: () => props.editable })
 })
 
-// 暴露 focus 方法
+// 暴露 focus / seedPlaceholderStyles 方法
 const focus = () => editorView.focus()
-defineExpose({ focus })
+
+const seedPlaceholderStyles = (options: PlaceholderStyleOptions) => {
+  if (!editorView || editorView.state.doc.textContent.trim().length === 0) return
+  applyPlaceholderStyles(editorView, options)
+  handleInput()
+  handleClick()
+}
+
+defineExpose({ focus, seedPlaceholderStyles })
 
 // 执行富文本命令（可以是一个或多个）
 // 部分命令在执行前先判断当前选区是否为空，如果选区为空先进行全选操作

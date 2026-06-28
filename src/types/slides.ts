@@ -82,11 +82,14 @@ export interface PPTElementShadow {
  * width?: 边框宽度
  * 
  * color?: 边框颜色
+ *
+ * radius?: 圆角半径（px）
  */
 export interface PPTElementOutline {
   style?: LineStyleType
   width?: number
   color?: string
+  radius?: number
 }
 
 export type ElementLinkType = 'web' | 'slide'
@@ -192,6 +195,8 @@ export interface PPTTextElement extends PPTBaseElement {
   placeholderFontSize?: number
   placeholderColor?: string
   placeholderAlign?: TextAlign
+  /** Empty-state layout height; frozen at creation, not updated when content grows. */
+  placeholderLayoutHeight?: number
   outline?: PPTElementOutline
   fill?: string
   lineHeight?: number

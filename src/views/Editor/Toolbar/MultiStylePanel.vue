@@ -48,6 +48,16 @@
         style="width: 60%;" 
       />
     </div>
+    <div class="row">
+      <div style="width: 40%;">{{ LL.editor.multiStyle.borderRadius() }}</div>
+      <NumberInput
+        :min="0"
+        :max="200"
+        :value="outline.radius || 0"
+        @update:value="value => updateOutline({ radius: value })"
+        style="width: 60%;"
+      />
+    </div>
 
     <Divider />
 

@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid'
 import type { TranslationFunctions } from '@/i18n/i18n-types'
-import type { PPTTextElement, Slide, SlideTheme, TextAlign } from '@/types/slides'
+import type { PPTTextElement, Slide, SlideTheme, TextAlign, TextInset } from '@/types/slides'
+import { computePlaceholderMinBoxHeight } from '@/utils/placeholderLayout'
 
 export interface StarterPresentationOptions {
   title?: string
@@ -27,6 +28,9 @@ export interface StarterPresentationDocument {
   theme?: Partial<SlideTheme>
 }
 
+const DEFAULT_PLACEHOLDER_INSET: TextInset = [10, 10, 10, 10]
+const DEFAULT_PLACEHOLDER_LINE_HEIGHT = 1.2
+
 const textPlaceholder = (
   textType: 'title' | 'subtitle' | 'content',
   placeholder: string,
@@ -34,32 +38,49 @@ const textPlaceholder = (
     left: number
     top: number
     width: number
-    height: number
+    height?: number
+    lines?: number
     fontSize: number
     color: string
     fontColor: string
     fontName: string
     align?: TextAlign
+    fixedHeight?: boolean
+    vAlign?: PPTTextElement['vAlign']
   },
-): PPTTextElement => ({
-  type: 'text',
-  id: nanoid(10),
-  left: props.left,
-  top: props.top,
-  width: props.width,
-  height: props.height,
-  rotate: 0,
-  content: '',
-  defaultFontName: props.fontName,
-  defaultColor: props.fontColor,
-  placeholder,
-  placeholderFontSize: props.fontSize,
-  placeholderColor: props.color,
-  placeholderAlign: props.align ?? 'center',
-  textType,
-  lineHeight: 1.2,
-  inset: [10, 10, 10, 10],
-})
+): PPTTextElement => {
+  const inset = DEFAULT_PLACEHOLDER_INSET
+  const lineHeight = DEFAULT_PLACEHOLDER_LINE_HEIGHT
+  const height = props.height ?? computePlaceholderMinBoxHeight({
+    placeholderFontSize: props.fontSize,
+    lineHeight,
+    inset,
+    lines: props.lines ?? 1,
+  })
+
+  return {
+    type: 'text',
+    id: nanoid(10),
+    left: props.left,
+    top: props.top,
+    width: props.width,
+    height,
+    rotate: 0,
+    content: '',
+    defaultFontName: props.fontName,
+    defaultColor: props.fontColor,
+    placeholder,
+    placeholderFontSize: props.fontSize,
+    placeholderColor: props.color,
+    placeholderAlign: props.align ?? 'center',
+    textType,
+    lineHeight,
+    inset,
+    placeholderLayoutHeight: height,
+    ...(props.fixedHeight !== undefined ? { fixedHeight: props.fixedHeight } : {}),
+    ...(props.vAlign !== undefined ? { vAlign: props.vAlign } : {}),
+  }
+}
 
 const defaultThemeColors = ['#5b9bd5', '#ed7d31', '#a5a5a5', '#ffc000', '#4472c4', '#70ad47']
 
@@ -100,7 +121,6 @@ export const buildTitleSlide = (
         left: 120,
         top: 155,
         width: 760,
-        height: 95,
         fontSize: normalized.titleFontSize,
         color: normalized.placeholderColor,
         fontColor: normalized.fontColor,
@@ -110,7 +130,6 @@ export const buildTitleSlide = (
         left: 160,
         top: 275,
         width: 680,
-        height: 65,
         fontSize: normalized.subtitleFontSize,
         color: normalized.placeholderColor,
         fontColor: normalized.fontColor,
@@ -135,18 +154,19 @@ export const buildContentSlide = (
         left: 85,
         top: 55,
         width: 830,
-        height: 90,
+        lines: 2,
         fontSize: normalized.contentTitleFontSize,
         color: normalized.placeholderColor,
         fontColor: normalized.fontColor,
         fontName: normalized.fontName,
         align: 'left',
+        vAlign: 'middle',
       }),
       textPlaceholder('content', normalized.bodyPlaceholder, {
         left: 85,
         top: 165,
         width: 830,
-        height: 305,
+        lines: 11,
         fontSize: normalized.bodyFontSize,
         color: normalized.placeholderColor,
         fontColor: normalized.fontColor,

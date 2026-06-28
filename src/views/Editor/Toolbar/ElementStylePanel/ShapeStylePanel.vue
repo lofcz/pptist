@@ -144,8 +144,11 @@
           :value="inset[0]"
           @update:value="value => updateInset(0, value)"
           style="width: 45%;"
+          fitPrefix
         >
-          <template #prefix>{{ LL.editor.stylePanel.shared.paddingTop() }}</template>
+          <template #prefix>
+            <FitText :text="LL.editor.stylePanel.shared.paddingTop()" :max-font-size="13" :min-font-size="8" />
+          </template>
         </NumberInput>
         <div style="width: 10%;"></div>
         <NumberInput
@@ -154,8 +157,11 @@
           :value="inset[2]"
           @update:value="value => updateInset(2, value)"
           style="width: 45%;"
+          fitPrefix
         >
-          <template #prefix>{{ LL.editor.stylePanel.shared.paddingBottom() }}</template>
+          <template #prefix>
+            <FitText :text="LL.editor.stylePanel.shared.paddingBottom()" :max-font-size="13" :min-font-size="8" />
+          </template>
         </NumberInput>
       </div>
       <div class="row">
@@ -165,8 +171,11 @@
           :value="inset[3]"
           @update:value="value => updateInset(3, value)"
           style="width: 45%;"
+          fitPrefix
         >
-          <template #prefix>{{ LL.editor.stylePanel.shared.paddingLeft() }}</template>
+          <template #prefix>
+            <FitText :text="LL.editor.stylePanel.shared.paddingLeft()" :max-font-size="13" :min-font-size="8" />
+          </template>
         </NumberInput>
         <div style="width: 10%;"></div>
         <NumberInput
@@ -175,8 +184,11 @@
           :value="inset[1]"
           @update:value="value => updateInset(1, value)"
           style="width: 45%;"
+          fitPrefix
         >
-          <template #prefix>{{ LL.editor.stylePanel.shared.paddingRight() }}</template>
+          <template #prefix>
+            <FitText :text="LL.editor.stylePanel.shared.paddingRight()" :max-font-size="13" :min-font-size="8" />
+          </template>
         </NumberInput>
       </div>
 
@@ -245,6 +257,7 @@ import Select from '@/components/Select.vue'
 import Popover from '@/components/Popover.vue'
 import GradientBar from '@/components/GradientBar.vue'
 import FileInput from '@/components/FileInput.vue'
+import FitText from '@/components/FitText.vue'
 
 const { LL } = useI18nContext()
 

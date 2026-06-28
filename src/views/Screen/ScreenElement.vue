@@ -15,6 +15,7 @@
     <component
       :is="currentElementComponent"
       :elementInfo="elementInfo"
+      :slideType="slideType"
     ></component>
   </div>
 </template>
@@ -23,7 +24,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSlidesStore } from '@/store'
-import { ElementTypes, type PPTElement } from '@/types/slides'
+import { ElementTypes, type PPTElement, type Slide } from '@/types/slides'
 
 import BaseImageElement from '@/views/components/element/ImageElement/BaseImageElement.vue'
 import BaseTextElement from '@/views/components/element/TextElement/BaseTextElement.vue'
@@ -39,6 +40,7 @@ const props = defineProps<{
   elementInfo: PPTElement
   elementIndex: number
   animationIndex: number
+  slideType?: Slide['type']
   turnSlideToId: (id: string) => void
   manualExitFullscreen: () => void
 }>()

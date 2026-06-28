@@ -16,6 +16,8 @@
         class="element-content" 
         :style="{
           backgroundColor: elementInfo.fill,
+          borderRadius: outlineBorderRadius,
+          overflow: outlineBorderRadius ? 'hidden' : undefined,
         }"
         v-contextmenu="contextmenus"
         @mousedown="$event => handleSelectElement($event)"
@@ -43,9 +45,11 @@
 </template>
 
 <script lang="ts" setup>
+import { computed } from 'vue'
 import type { PPTChartElement } from '@/types/slides'
 import type { ContextmenuItem } from '@/components/Contextmenu/types'
 import emitter, { EmitterEvents } from '@/utils/emitter'
+import { useOutlineRadiusCss } from '@/views/components/element/hooks/useElementOutline'
 
 import ElementOutline from '@/views/components/element/ElementOutline.vue'
 import Chart from './Chart.vue'
@@ -55,6 +59,11 @@ const props = defineProps<{
   selectElement: (e: MouseEvent | TouchEvent, element: PPTChartElement, canMove?: boolean) => void
   contextmenus: () => ContextmenuItem[] | null
 }>()
+
+const outlineRef = computed(() => props.elementInfo.outline)
+const elementWidthRef = computed(() => props.elementInfo.width)
+const elementHeightRef = computed(() => props.elementInfo.height)
+const outlineBorderRadius = useOutlineRadiusCss(outlineRef, elementWidthRef, elementHeightRef)
 
 const handleSelectElement = (e: MouseEvent | TouchEvent) => {
   if (props.elementInfo.lock) return

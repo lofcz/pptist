@@ -6,6 +6,7 @@ import tinycolor from 'tinycolor2'
 import { toPng, toJpeg } from 'html-to-image'
 import { useSlidesStore } from '@/store'
 import type { PPTElementOutline, PPTElementShadow, PPTElementLink, PPTTextElement, Slide } from '@/types/slides'
+import { outlineRadiusToPptxRectRadius } from '@/utils/elementOutline'
 import { getElementRange, getLineElementPath, getTableSubThemeColor } from '@/utils/element'
 import { type AST, toAST } from '@/utils/htmlParser'
 import { type SvgPoints, toPoints } from '@/utils/svgPathParser'
@@ -849,6 +850,9 @@ export default () => {
           if (el.defaultFontName) options.fontFace = el.defaultFontName
           if (el.shadow) options.shadow = getShadowOption(el.shadow)
           if (el.outline?.width) options.line = getOutlineOption(el.outline)
+          if (el.outline?.radius) {
+            options.rectRadius = outlineRadiusToPptxRectRadius(el.outline.radius, el.width, el.height)
+          }
           if (el.opacity !== undefined) options.transparency = (1 - el.opacity) * 100
           if (el.paragraphSpace !== undefined) options.paraSpaceBefore = el.paragraphSpace / ratioPx2Pt.value
           if (el.vertical) options.vert = 'eaVert'

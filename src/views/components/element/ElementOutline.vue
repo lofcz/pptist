@@ -11,7 +11,7 @@
       stroke-linecap="butt" 
       stroke-miterlimit="8"
       fill="transparent"
-      :d="`M0,0 L${width},0 L${width},${height} L0,${height} Z`" 
+      :d="outlinePath" 
       :stroke="outlineColor"
       :stroke-width="outlineWidth" 
       :stroke-dasharray="strokeDashArray" 
@@ -20,10 +20,10 @@
 </template>
 
 <script lang="ts" setup>
-import { toRef } from 'vue'
+import { computed, toRef } from 'vue'
 import type { PPTElementOutline } from '@/types/slides'
 
-import useElementOutline from '@/views/components/element/hooks/useElementOutline'
+import useElementOutline, { useOutlinePath } from '@/views/components/element/hooks/useElementOutline'
 
 const props = defineProps<{
   width: number
@@ -31,11 +31,17 @@ const props = defineProps<{
   outline?: PPTElementOutline
 }>()
 
+const outlineRef = toRef(props, 'outline')
+const widthRef = computed(() => props.width)
+const heightRef = computed(() => props.height)
+
 const {
   outlineWidth,
   outlineColor,
   strokeDashArray,
-} = useElementOutline(toRef(props, 'outline'))
+} = useElementOutline(outlineRef)
+
+const outlinePath = useOutlinePath(outlineRef, widthRef, heightRef)
 </script>
 
 <style lang="scss" scoped>

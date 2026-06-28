@@ -6,7 +6,7 @@
       'focused': focused,
     }"
   >
-    <span class="prefix">
+    <span class="prefix" :class="{ 'prefix--fit': fitPrefix }">
       <slot name="prefix"></slot>
     </span>
     <div class="input-wrap">
@@ -46,12 +46,15 @@ const props = withDefaults(defineProps<{
   min?: number
   max?: number
   step?: number
+  /** Shrink prefix label to one line via FitText in the prefix slot. */
+  fitPrefix?: boolean
 }>(), {
   disabled: false,
   placeholder: '',
   min: 0,
   max: Infinity,
   step: 1,
+  fitPrefix: false,
 })
 
 const emit = defineEmits<{
@@ -197,6 +200,19 @@ const handleFocus = (e: Event) => {
     align-items: center;
     line-height: 30px;
     user-select: none;
+  }
+
+  .prefix--fit {
+    flex: 0 1 auto;
+    max-width: 62%;
+    min-width: 0;
+    height: 30px;
+    overflow: hidden;
+
+    :deep(.fit-text) {
+      width: 100%;
+      height: 100%;
+    }
   }
 }
 </style>

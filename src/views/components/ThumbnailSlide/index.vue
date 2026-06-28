@@ -20,6 +20,7 @@
         :key="element.id"
         :elementInfo="element"
         :elementIndex="index + 1"
+        :slideType="slide.type"
       />
     </div>
     <div class="placeholder" v-else>{{ LL.common.loading() }}</div>

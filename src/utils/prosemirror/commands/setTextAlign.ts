@@ -6,7 +6,9 @@ export const setTextAlign = (tr: Transaction, schema: Schema, alignment: string)
   const { selection, doc } = tr
   if (!selection || !doc) return tr
 
-  const { from, to } = selection
+  const { $from, $to } = selection
+  const from = $from.start()
+  const to = $to.end()
   const { nodes } = schema
 
   const blockquote = nodes.blockquote

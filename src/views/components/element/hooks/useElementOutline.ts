@@ -1,11 +1,13 @@
 import { computed, type Ref } from 'vue'
 import type { PPTElementOutline } from '@/types/slides'
+import { clampOutlineRadius, roundedRectOutlinePath } from '@/utils/elementOutline'
 
 // Compute outline props with defaults for width, style, and dash array
 export default (outline: Ref<PPTElementOutline | undefined>) => {
   const outlineWidth = computed(() => outline.value?.width ?? 0)
   const outlineStyle = computed(() => outline.value?.style || 'solid')
   const outlineColor = computed(() => outline.value?.color || '#d14424')
+  const outlineRadius = computed(() => outline.value?.radius ?? 0)
 
   const strokeDashArray = computed(() => {
     const size = outlineWidth.value
@@ -18,6 +20,33 @@ export default (outline: Ref<PPTElementOutline | undefined>) => {
     outlineWidth,
     outlineStyle,
     outlineColor,
+    outlineRadius,
     strokeDashArray,
   }
+}
+
+export const useOutlinePath = (
+  outline: Ref<PPTElementOutline | undefined>,
+  width: Ref<number>,
+  height: Ref<number>,
+) => {
+  return computed(() => {
+    return roundedRectOutlinePath(
+      width.value,
+      height.value,
+      outline.value?.radius ?? 0,
+    )
+  })
+}
+
+export const useOutlineRadiusCss = (
+  outline: Ref<PPTElementOutline | undefined>,
+  width: Ref<number>,
+  height: Ref<number>,
+) => {
+  return computed(() => {
+    const radius = outline.value?.radius
+    if (!radius) return undefined
+    return `${clampOutlineRadius(radius, width.value, height.value)}px`
+  })
 }

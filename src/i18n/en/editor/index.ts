@@ -164,6 +164,7 @@ const en_editor: BaseTranslation = {
     borderStyle: 'Border style:',
     borderColor: 'Border color:',
     borderWidth: 'Border width:',
+    borderRadius: 'Border radius:',
     searchFont: 'Search fonts',
     searchFontSize: 'Search font size',
     textColor: 'Text color',

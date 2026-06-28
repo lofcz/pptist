@@ -10,12 +10,13 @@
         <FitText
           :text="item.label"
           :max-font-size="item.preview.maxFontSize"
-          :min-font-size="11"
+          :min-font-size="item.preview.minFontSize"
           :font-weight="item.preview.fontWeight"
           :font-style="item.preview.fontStyle"
           :text-decoration="item.preview.textDecoration"
           :max-lines="1"
-          :line-height="1.15"
+          :line-height="1.2"
+          :measure-height-slack="2"
         />
       </div>
     </div>
@@ -82,8 +83,11 @@
         :value="inset[0]"
         @update:value="value => updateInset(0, value)"
         style="width: 45%;"
+        fitPrefix
       >
-        <template #prefix>{{ LL.editor.stylePanel.shared.paddingTop() }}</template>
+        <template #prefix>
+          <FitText :text="LL.editor.stylePanel.shared.paddingTop()" :max-font-size="13" :min-font-size="8" />
+        </template>
       </NumberInput>
       <div style="width: 10%;"></div>
       <NumberInput
@@ -92,8 +96,11 @@
         :value="inset[2]"
         @update:value="value => updateInset(2, value)"
         style="width: 45%;"
+        fitPrefix
       >
-        <template #prefix>{{ LL.editor.stylePanel.shared.paddingBottom() }}</template>
+        <template #prefix>
+          <FitText :text="LL.editor.stylePanel.shared.paddingBottom()" :max-font-size="13" :min-font-size="8" />
+        </template>
       </NumberInput>
     </div>
     <div class="row">
@@ -103,8 +110,11 @@
         :value="inset[3]"
         @update:value="value => updateInset(3, value)"
         style="width: 45%;"
+        fitPrefix
       >
-        <template #prefix>{{ LL.editor.stylePanel.shared.paddingLeft() }}</template>
+        <template #prefix>
+          <FitText :text="LL.editor.stylePanel.shared.paddingLeft()" :max-font-size="13" :min-font-size="8" />
+        </template>
       </NumberInput>
       <div style="width: 10%;"></div>
       <NumberInput
@@ -113,8 +123,11 @@
         :value="inset[1]"
         @update:value="value => updateInset(1, value)"
         style="width: 45%;"
+        fitPrefix
       >
-        <template #prefix>{{ LL.editor.stylePanel.shared.paddingRight() }}</template>
+        <template #prefix>
+          <FitText :text="LL.editor.stylePanel.shared.paddingRight()" :max-font-size="13" :min-font-size="8" />
+        </template>
       </NumberInput>
     </div>
 
@@ -181,6 +194,7 @@ const presetStyleDefs = [
     key: 'largeTitle',
     preview: {
       maxFontSize: 24,
+      minFontSize: 18,
       fontWeight: 700,
       fontStyle: 'normal',
       textDecoration: 'none',
@@ -196,6 +210,7 @@ const presetStyleDefs = [
     key: 'smallTitle',
     preview: {
       maxFontSize: 18,
+      minFontSize: 15,
       fontWeight: 700,
       fontStyle: 'normal',
       textDecoration: 'none',
@@ -210,7 +225,8 @@ const presetStyleDefs = [
   {
     key: 'body',
     preview: {
-      maxFontSize: 18,
+      maxFontSize: 17,
+      minFontSize: 14,
       fontWeight: 400,
       fontStyle: 'normal',
       textDecoration: 'none',
@@ -223,7 +239,8 @@ const presetStyleDefs = [
   {
     key: 'bodySmall',
     preview: {
-      maxFontSize: 16,
+      maxFontSize: 15,
+      minFontSize: 12,
       fontWeight: 400,
       fontStyle: 'normal',
       textDecoration: 'none',
@@ -236,7 +253,8 @@ const presetStyleDefs = [
   {
     key: 'note1',
     preview: {
-      maxFontSize: 15,
+      maxFontSize: 13,
+      minFontSize: 10,
       fontWeight: 400,
       fontStyle: 'italic',
       textDecoration: 'none',
@@ -250,7 +268,8 @@ const presetStyleDefs = [
   {
     key: 'note2',
     preview: {
-      maxFontSize: 15,
+      maxFontSize: 13,
+      minFontSize: 10,
       fontWeight: 400,
       fontStyle: 'normal',
       textDecoration: 'underline',
@@ -375,16 +394,26 @@ const updateFixedHeight = (fixed: boolean) => {
 }
 .preset-style-item {
   width: 50%;
-  height: 50px;
+  height: 54px;
   border: solid 1px #d6d6d6;
   box-sizing: border-box;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 6px 8px;
+  padding: 5px 8px;
   position: relative;
   cursor: pointer;
   transition: all $transitionDelay;
+  overflow: hidden;
+
+  :deep(.fit-text) {
+    width: 100%;
+    height: 100%;
+  }
+
+  :deep(.fit-text-content.single-line) {
+    padding-bottom: 2px;
+  }
 
   &:hover {
     border-color: $themeColor;

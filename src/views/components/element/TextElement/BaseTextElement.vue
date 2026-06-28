@@ -14,9 +14,10 @@
     >
       <div 
         class="element-content"
+        :class="{ 'content-title-placeholder': textBoxLayout.flexCenterInLayoutBox }"
         :style="{
-          width: elementInfo.vertical && !elementInfo.fixedHeight ? 'auto' : elementInfo.width + 'px',
-          height: !elementInfo.vertical && !elementInfo.fixedHeight ? 'auto' : elementInfo.height + 'px',
+          width: elementInfo.vertical && !textBoxLayout.fixedHeight ? 'auto' : elementInfo.width + 'px',
+          height: !elementInfo.vertical && !textBoxLayout.fixedHeight ? 'auto' : elementInfo.height + 'px',
           backgroundColor: elementInfo.fill,
           opacity: elementInfo.opacity,
           textShadow: shadowStyle,
@@ -26,13 +27,15 @@
           fontFamily: elementInfo.defaultFontName,
           fontSize: elementInfo.placeholder ? `${elementInfo.placeholderFontSize ?? 20}px` : undefined,
           textAlign: elementInfo.placeholder ? (elementInfo.placeholderAlign ?? 'center') : undefined,
+          ...(elementInfo.placeholder ? { '--text-fit-base-size': `${elementInfo.placeholderFontSize ?? 20}px` } : {}),
           writingMode: elementInfo.vertical ? 'vertical-rl' : 'horizontal-tb',
           padding: `${inset[0]}px ${inset[1]}px ${inset[2]}px ${inset[3]}px`,
-          minHeight: elementInfo.placeholder ? elementInfo.height + 'px' : undefined,
-          display: elementInfo.fixedHeight ? 'flex' : undefined,
-          flexDirection: elementInfo.fixedHeight ? 'column' : undefined,
-          justifyContent: fixedContentJustify,
-          overflow: elementInfo.fixedHeight ? 'hidden' : undefined,
+          minHeight: contentTitleLayoutMinHeight ?? placeholderMinHeight,
+          display: textBoxLayout.fixedHeight || textBoxLayout.flexCenterInLayoutBox ? 'flex' : undefined,
+          flexDirection: textBoxLayout.fixedHeight || textBoxLayout.flexCenterInLayoutBox ? 'column' : undefined,
+          justifyContent: contentBoxJustify,
+          overflow: textBoxLayout.fixedHeight || outlineBorderRadius ? 'hidden' : undefined,
+          borderRadius: outlineBorderRadius,
           '--paragraphSpace': `${elementInfo.paragraphSpace === undefined ? 5 : elementInfo.paragraphSpace}px`,
           ...fitVars,
         }"
@@ -55,16 +58,28 @@
 
 <script lang="ts" setup>
 import { computed, type CSSProperties } from 'vue'
-import type { PPTTextElement } from '@/types/slides'
+import type { PPTTextElement, Slide } from '@/types/slides'
 import ElementOutline from '@/views/components/element/ElementOutline.vue'
 
 import useElementShadow from '@/views/components/element/hooks/useElementShadow'
 import useTextFit from '@/views/components/element/hooks/useTextFit'
+import { useOutlineRadiusCss } from '@/views/components/element/hooks/useElementOutline'
+import { getPlaceholderBaselineHeight, resolveTextBoxLayout } from '@/utils/placeholderLayout'
 
 const props = defineProps<{
   elementInfo: PPTTextElement
   target?: string
+  slideType?: Slide['type']
 }>()
+
+const isEmptyContent = computed(() => {
+  return !props.elementInfo.content.replace(/<br\s*\/?>/gi, '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim()
+})
+
+const placeholderMinHeight = computed(() => {
+  if (!props.elementInfo.placeholder || !isEmptyContent.value) return undefined
+  return `${getPlaceholderBaselineHeight(props.elementInfo)}px`
+})
 
 const shadow = computed(() => props.elementInfo.shadow)
 const { shadowStyle } = useElementShadow(shadow)
@@ -72,15 +87,32 @@ const inset = computed(() => props.elementInfo.inset || [10, 10, 10, 10])
 
 const elementInfoRef = computed(() => props.elementInfo)
 const { fittedContent, fitVars } = useTextFit(elementInfoRef)
+
+const outlineRef = computed(() => props.elementInfo.outline)
+const elementWidthRef = computed(() => props.elementInfo.width)
+const elementHeightRef = computed(() => props.elementInfo.height)
+const outlineBorderRadius = useOutlineRadiusCss(outlineRef, elementWidthRef, elementHeightRef)
+const textBoxLayout = computed(() => resolveTextBoxLayout(props.elementInfo, props.slideType))
+
 const fixedContentJustify = computed<CSSProperties['justifyContent']>(() => {
-  if (!props.elementInfo.fixedHeight) return undefined
+  if (!textBoxLayout.value.fixedHeight) return undefined
 
   const vAlignMap: Record<NonNullable<PPTTextElement['vAlign']>, CSSProperties['justifyContent']> = {
     top: 'flex-start',
     middle: 'center',
     bottom: 'flex-end',
   }
-  return vAlignMap[props.elementInfo.vAlign || 'top']
+  return vAlignMap[textBoxLayout.value.vAlign]
+})
+
+const contentBoxJustify = computed<CSSProperties['justifyContent']>(() => {
+  if (textBoxLayout.value.flexCenterInLayoutBox) return 'center'
+  return fixedContentJustify.value
+})
+
+const contentTitleLayoutMinHeight = computed(() => {
+  if (!textBoxLayout.value.flexCenterInLayoutBox) return undefined
+  return `${props.elementInfo.height}px`
 })
 </script>
 
@@ -104,6 +136,11 @@ const fixedContentJustify = computed<CSSProperties['justifyContent']>(() => {
     &.thumbnail {
       pointer-events: none;
     }
+  }
+
+  &.content-title-placeholder .text {
+    flex: 0 0 auto;
+    width: 100%;
   }
 
   ::v-deep(.ProseMirror-static) {

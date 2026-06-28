@@ -13,6 +13,7 @@ const cs_canvas: NamespaceCanvasTranslation = {
       styleLabel: 'Styl ohraničení:',
       colorLabel: 'Barva ohraničení:',
       widthLabel: 'Tloušťka ohraničení:',
+      radiusLabel: 'Poloměr ohraničení:',
     },
     chart: {
       editData: 'Upravit údaje',

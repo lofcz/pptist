@@ -234,6 +234,7 @@ const cs_editor: NamespaceEditorTranslation = {
     borderStyle: 'Styl ohraničení:',
     borderColor: 'Barva ohraničení:',
     borderWidth: 'Tloušťka ohraničení:',
+    borderRadius: 'Poloměr ohraničení:',
     searchFont: 'Hledat písmo',
     searchFontSize: 'Hledat velikost písma',
     textColor: 'Barva textu',

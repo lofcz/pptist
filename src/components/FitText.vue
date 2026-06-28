@@ -30,6 +30,8 @@ const props = withDefaults(defineProps<{
   lineHeight?: number
   letterSpacing?: number
   maxLines?: number
+  /** Extra px allowed in the height fit check (underline / descenders). */
+  measureHeightSlack?: number
 }>(), {
   maxFontSize: 13,
   minFontSize: 10,
@@ -40,6 +42,7 @@ const props = withDefaults(defineProps<{
   lineHeight: 1.25,
   letterSpacing: 0,
   maxLines: 1,
+  measureHeightSlack: 0,
 })
 
 const { locale } = useI18nContext()
@@ -67,7 +70,7 @@ const fit = () => {
   }
 
   const width = el.clientWidth
-  const height = el.clientHeight
+  const height = el.clientHeight + (props.measureHeightSlack ?? 0)
   if (width <= 0 || height <= 0) return
 
   setPretextLocale(locale.value)
@@ -112,6 +115,7 @@ watch(
     props.lineHeight,
     props.letterSpacing,
     props.maxLines,
+    props.measureHeightSlack,
     locale.value,
   ],
   scheduleFit,
