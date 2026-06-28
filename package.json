@@ -84,7 +84,7 @@
     "number-precision": "^1.6.0",
     "overlayscrollbars": "^2.16.0",
     "pinia": "^3.0.2",
-    "pptxgenjs": "^3.12.0",
+    "@lofcz/pptxgenjs": "^4.0.1",
     "pptxtojson": "^2.0.6",
     "prosemirror-commands": "^1.6.0",
     "prosemirror-dropcursor": "^1.8.1",
