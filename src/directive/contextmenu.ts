@@ -1,6 +1,6 @@
 import { type Directive, type DirectiveBinding, createVNode, render } from 'vue'
 import ContextmenuComponent from '@/components/Contextmenu/index.vue'
-import { getPptistPortalTarget } from '@/utils/portal'
+import { resolvePptistPortalTarget } from '@/utils/portal'
 
 const CTX_CONTEXTMENU_HANDLER = 'CTX_CONTEXTMENU_HANDLER'
 
@@ -16,7 +16,7 @@ const contextmenuListener = (el: HTMLElement, event: MouseEvent, binding: Direct
   if (!menus) return
 
   let container: HTMLDivElement | null = null
-  const portalTarget = getPptistPortalTarget()
+  const portalTarget = resolvePptistPortalTarget(el)
 
   // Remove context menu and detach listeners
   const removeContextmenu = () => {
