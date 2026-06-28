@@ -2,6 +2,7 @@ import type { Node, NodeType, ResolvedPos, Mark, MarkType, Schema } from 'prosem
 import type { EditorState, Selection } from 'prosemirror-state'
 import type { EditorView } from 'prosemirror-view'
 import { selectAll } from 'prosemirror-commands'
+import type { TextAlign } from '@/types/slides'
 
 export const isList = (node: Node, schema: Schema) => {
   return (
@@ -174,14 +175,12 @@ export const getAttrValueInSelection = (view: EditorView, attr: string) => {
   return value
 }
 
-type Align = 'left' | 'right' | 'center'
-
 interface DefaultAttrs {
   color: string
   backcolor: string
   fontsize: string
   fontname: string
-  align: Align
+  align: TextAlign
 }
 const _defaultAttrs: DefaultAttrs = {
   color: '#000000',
@@ -207,7 +206,7 @@ export const getTextAttrs = (view: EditorView, attrs: Partial<DefaultAttrs> = {}
   const fontsize = getAttrValue(marks, 'fontsize', 'fontsize') || defaultAttrs.fontsize
   const fontname = getAttrValue(marks, 'fontname', 'fontname') || defaultAttrs.fontname
   const link = getAttrValue(marks, 'link', 'href') || ''
-  const align = (getAttrValueInSelection(view, 'align') || defaultAttrs.align) as Align
+  const align = (getAttrValueInSelection(view, 'align') || defaultAttrs.align) as TextAlign
   const isBulletList = isActiveOfParentNodeType('bullet_list', view.state)
   const isOrderedList = isActiveOfParentNodeType('ordered_list', view.state)
   const isBlockquote = isActiveOfParentNodeType('blockquote', view.state)

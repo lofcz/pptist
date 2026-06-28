@@ -1,6 +1,6 @@
 import type { ShapePoolItem } from '@/configs/shapes'
 import type { LinePoolItem } from '@/configs/lines'
-import type { ImageClipDataRange, PPTElementOutline, PPTElementShadow, Gradient } from './slides'
+import type { ImageClipDataRange, PPTElementOutline, PPTElementShadow, Gradient, TextAlign } from './slides'
 
 export enum ElementOrderCommands {
   UP = 'up',
@@ -113,7 +113,7 @@ export interface TextFormatPainter {
   backcolor?: string
   fontsize?: string
   fontname?: string
-  align?: 'left' | 'right' | 'center'
+  align?: TextAlign
 }
 
 export interface ShapeFormatPainter {

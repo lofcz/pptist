@@ -25,6 +25,7 @@ import { setListStyle } from '@/utils/prosemirror/commands/setListStyle'
 import { replaceText } from '@/utils/prosemirror/commands/replaceText'
 import { applyPlaceholderStyles, type PlaceholderStyleOptions } from '@/utils/prosemirror/commands/applyPlaceholderStyles'
 import type { TextFormatPainterKeys } from '@/types/edit'
+import type { TextAlign } from '@/types/slides'
 import message from '@/utils/message'
 import { KEYS } from '@/configs/hotkey'
 import { useI18nContext } from '@/i18n/useI18nContext'
@@ -36,7 +37,7 @@ const props = withDefaults(defineProps<{
   defaultColor: string
   defaultFontName: string
   defaultFontSize?: string
-  defaultAlign?: 'left' | 'center' | 'right'
+  defaultAlign?: TextAlign
   value: string
   editable?: boolean
   autoFocus?: boolean
